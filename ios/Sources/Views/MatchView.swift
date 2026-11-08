@@ -203,17 +203,7 @@ struct MatchView: View {
         return ZStack {
             Group {
                 if vSize == .compact {
-                    TwoColumns { board } right: {
-                        HStack {
-                            Button { dismiss() } label: { Label("Back", systemImage: "chevron.left") }
-                                .font(.display(15, weight: .heavy))
-                            Spacer()
-                            Button { finish() } label: { Label("Skip", systemImage: "forward.end.fill") }
-                                .font(.display(15, weight: .heavy))
-                        }
-                        .foregroundStyle(Palette.accent)
-                        feed
-                    }
+                    landscape(r, current: current, thisOver: thisOver, shots: shots, anticipating: anticipating)
                 } else {
                     ScrollView {
                         VStack(spacing: DS.Space.md) { board; feed }
@@ -228,8 +218,64 @@ struct MatchView: View {
         }
     }
 
+    /// Landscape (iPhone Pro Max is ~830 × 420 pt inside the safe area): scoreboard and controls
+    /// on the left, the wagon wheel filling the right half at full height. No scrolling.
+    private func landscape(_ r: MatchResult, current: BallEvent?, thisOver: [BallEvent],
+                           shots: [WagonWheel.Shot], anticipating: Bool) -> some View {
+        GeometryReader { geo in
+            let gap: CGFloat = 12
+            let col = max(0, (geo.size.width - gap) / 2)
+            HStack(spacing: gap) {
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 6) {
+                        HStack {
+                            Button { dismiss() } label: { Label("Back", systemImage: "chevron.left") }
+                            Spacer()
+                            Button { finish() } label: { Label("Skip", systemImage: "forward.end.fill") }
+                        }
+                        .font(.display(15, weight: .heavy))
+                        .foregroundStyle(Palette.accent)
+                        ScoreBug(result: r, event: current, compact: true)
+                        statusLine(current: current, anticipating: anticipating, compact: true)
+                        if let e = current {
+                            CreaseCard(event: e, battingTeam: store.team(r.innings[e.innings].teamId), compact: true)
+                        }
+                        HStack(spacing: 5) {
+                            ForEach(Array(thisOver.enumerated()), id: \.offset) { _, e in
+                                BallChip(label: e.label, size: 24).transition(.scale.combined(with: .opacity))
+                            }
+                            Spacer(minLength: 0)
+                        }
+                        .frame(height: 26)
+                        .animation(.spring(response: 0.3, dampingFraction: 0.6), value: thisOver.count)
+                        HStack(spacing: 8) {
+                            Button { paused.toggle() } label: {
+                                Image(systemName: paused ? "play.fill" : "pause.fill").frame(width: 24)
+                            }
+                            .buttonStyle(SecondaryButtonStyle()).frame(width: 56)
+                            SpeedPicker(speed: $speed, options: MatchView.speeds.map(\.value),
+                                        labels: MatchView.speeds.map(\.label))
+                        }
+                    }
+                    .frame(width: col)
+                    .frame(minHeight: geo.size.height)
+                }
+                .frame(width: col)
+
+                WagonWheel(shots: shots, latest: shown - 1)
+                    .frame(width: col, height: geo.size.height)
+                    .overlay {
+                        if let e = current, !anticipating { BigCall(event: e).id(shown) }
+                    }
+            }
+            .frame(width: geo.size.width, height: geo.size.height)
+        }
+        .padding(.horizontal, DS.Space.sm)
+        .padding(.vertical, 4)
+    }
+
     /// "Bumrah runs in to Kohli…" before the ball, then the result.
-    @ViewBuilder private func statusLine(current: BallEvent?, anticipating: Bool) -> some View {
+    @ViewBuilder private func statusLine(current: BallEvent?, anticipating: Bool, compact: Bool = false) -> some View {
         let text: String = {
             if anticipating, shown < log.count {
                 let next = log[shown]
@@ -245,10 +291,10 @@ struct MatchView: View {
             return "Players walk out…"
         }()
         Text(text)
-            .font(.display(17, weight: .heavy))
+            .font(.display(compact ? 15 : 17, weight: .heavy))
             .foregroundStyle(anticipating ? Palette.muted : .white)
             .lineLimit(2).minimumScaleFactor(0.7)
-            .frame(maxWidth: .infinity, minHeight: 40, alignment: .leading)
+            .frame(maxWidth: .infinity, minHeight: compact ? 34 : 40, alignment: .leading)
             .animation(.easeInOut(duration: 0.2), value: text)
     }
 
@@ -273,6 +319,7 @@ struct ScoreBug: View {
     @EnvironmentObject var store: GameStore
     let result: MatchResult
     let event: BallEvent?
+    var compact = false
 
     var body: some View {
         let inn = event?.innings ?? 0
@@ -282,20 +329,20 @@ struct ScoreBug: View {
         VStack(spacing: 0) {
             HStack(spacing: 0) {
                 HStack(spacing: 8) {
-                    if let batting { TeamBadge(team: batting, size: 34) }
-                    Text(batting?.short ?? "").font(.display(24))
+                    if let batting { TeamBadge(team: batting, size: compact ? 26 : 34) }
+                    Text(batting?.short ?? "").font(.display(compact ? 19 : 24))
                 }
-                .padding(.horizontal, 12).padding(.vertical, 8)
+                .padding(.horizontal, compact ? 8 : 12).padding(.vertical, compact ? 5 : 8)
                 .background(Color(hex: batting?.colorHex ?? "#333333"))
                 HStack(spacing: 6) {
-                    Text("\(event?.score ?? 0)-\(event?.wickets ?? 0)").font(.score(30)).lineLimit(1).minimumScaleFactor(0.6)
+                    Text("\(event?.score ?? 0)-\(event?.wickets ?? 0)").font(.score(compact ? 24 : 30)).lineLimit(1).minimumScaleFactor(0.6)
                         .contentTransition(.numericText())
                         .animation(.spring(response: 0.25), value: event?.score)
                     Text("\(balls / 6).\(balls % 6)").font(.score(16, weight: .semibold)).foregroundStyle(Palette.muted)
                 }
-                .padding(.horizontal, 12)
+                .padding(.horizontal, compact ? 8 : 12)
                 Spacer(minLength: 4)
-                Text("v \(bowling?.short ?? "")").font(.display(16, weight: .heavy)).foregroundStyle(Palette.muted)
+                Text("v \(bowling?.short ?? "")").font(.display(compact ? 14 : 16, weight: .heavy)).foregroundStyle(Palette.muted)
                     .lineLimit(1).padding(.trailing, 12)
             }
             .background(Palette.surface)
@@ -306,7 +353,7 @@ struct ScoreBug: View {
             }
             .lineLimit(1).minimumScaleFactor(0.6)
             .foregroundStyle(Palette.ink)
-            .padding(.horizontal, 12).padding(.vertical, 4)
+            .padding(.horizontal, compact ? 8 : 12).padding(.vertical, compact ? 2 : 4)
             .background(Palette.accent)
         }
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
@@ -330,34 +377,35 @@ struct ScoreBug: View {
 struct CreaseCard: View {
     let event: BallEvent
     let battingTeam: Franchise?
+    var compact = false
 
     var body: some View {
         VStack(spacing: 0) {
             ForEach(Array(event.batters.enumerated()), id: \.offset) { _, b in
                 HStack(spacing: 8) {
-                    Rectangle().fill(b.onStrike ? Palette.accent : Color.clear).frame(width: 4, height: 22)
+                    Rectangle().fill(b.onStrike ? Palette.accent : Color.clear).frame(width: 4, height: compact ? 18 : 22)
                     Text(b.name.uppercased() + (b.onStrike ? " *" : ""))
-                        .font(.display(18, weight: b.onStrike ? .black : .heavy)).lineLimit(1).minimumScaleFactor(0.6)
-                    Spacer()
-                    Text("\(b.runs)").font(.score(22)).lineLimit(1).fixedSize()
+                        .font(.display(compact ? 15 : 18, weight: b.onStrike ? .black : .heavy)).lineLimit(1).minimumScaleFactor(0.6)
+                    Spacer(minLength: 4)
+                    Text("\(b.runs)").font(.score(compact ? 18 : 22)).lineLimit(1).fixedSize()
                         .contentTransition(.numericText())
                     Text("(\(b.balls))").font(.score(14, weight: .regular)).foregroundStyle(Palette.muted).lineLimit(1).minimumScaleFactor(0.7).frame(width: 44, alignment: .leading)
                     Text("\(b.fours)×4 \(b.sixes)×6").font(.score(12, weight: .regular)).foregroundStyle(Palette.muted)
                         .lineLimit(1).minimumScaleFactor(0.6).frame(width: 52, alignment: .trailing)
                 }
-                .padding(.vertical, 6).padding(.trailing, 12)
+                .padding(.vertical, compact ? 3 : 6).padding(.trailing, compact ? 8 : 12)
             }
             Rectangle().fill(Palette.stroke).frame(height: 1)
             HStack(spacing: 8) {
                 Image(systemName: "figure.cricket").foregroundStyle(Palette.muted).frame(width: 18)
-                Text(event.bowler.name.uppercased()).font(.display(17, weight: .heavy)).lineLimit(1).minimumScaleFactor(0.6)
-                Spacer()
-                Text("\(event.bowler.overs)-\(event.bowler.runs)-\(event.bowler.wickets)").font(.score(20))
+                Text(event.bowler.name.uppercased()).font(.display(compact ? 14 : 17, weight: .heavy)).lineLimit(1).minimumScaleFactor(0.6)
+                Spacer(minLength: 4)
+                Text("\(event.bowler.overs)-\(event.bowler.runs)-\(event.bowler.wickets)").font(.score(compact ? 17 : 20)).lineLimit(1).fixedSize()
                 let econ = event.bowler.balls > 0 ? Double(event.bowler.runs) * 6 / Double(event.bowler.balls) : 0
                 Text("ECON \(String(format: "%.1f", econ))").font(.score(12, weight: .regular)).foregroundStyle(Palette.muted)
                     .lineLimit(1).minimumScaleFactor(0.6).frame(width: 52, alignment: .trailing)
             }
-            .padding(.vertical, 8).padding(.horizontal, 12)
+            .padding(.vertical, compact ? 5 : 8).padding(.horizontal, compact ? 8 : 12)
         }
         .background(Palette.surface)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
@@ -368,11 +416,12 @@ struct CreaseCard: View {
 
 struct BallChip: View {
     let label: String
+    var size: CGFloat = 30
     var body: some View {
         let color: Color = label == "W" ? Palette.wicket : label == "6" ? Palette.six : label == "4" ? Palette.four : Color.white.opacity(0.14)
         Text(label)
             .font(.caption.weight(.heavy))
-            .frame(width: 30, height: 30)
+            .frame(width: size, height: size)
             .background(Circle().fill(color))
     }
 }

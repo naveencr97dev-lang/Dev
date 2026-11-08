@@ -111,6 +111,8 @@ struct WagonWheel: View {
                 .padding(8)
             }
         }
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous).stroke(Palette.stroke))
     }
 
     private func legend(_ color: Color, _ text: String) -> some View {
