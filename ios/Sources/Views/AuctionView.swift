@@ -214,7 +214,7 @@ struct AuctionView: View {
     private func bidButtons(_ g: GameState, _ p: Player, compact: Bool = false) -> some View {
         let next = g.nextBidAmount(book: store.book) ?? p.base
         let humans = g.teams.filter { !$0.isCPU }
-        let columns = [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)]
+        let columns = Array(repeating: GridItem(.flexible(), spacing: 10), count: humans.count == 1 ? 1 : 2)
         return LazyVGrid(columns: columns, spacing: 10) {
             ForEach(humans) { t in
                 let leading = g.auction.leader == t.id
@@ -273,27 +273,38 @@ struct AuctionView: View {
     }
 
     private func purseStrip(_ g: GameState, compact: Bool = false) -> some View {
-        VStack(alignment: .leading, spacing: DS.Space.sm) {
+        let fit = g.teams.count <= 6   // few teams: tiles share the full width
+        return VStack(alignment: .leading, spacing: DS.Space.sm) {
             if !compact { SectionLabel(text: "Purses") }
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: compact ? 6 : 8) {
-                    ForEach(g.teams) { t in
-                        VStack(spacing: compact ? 2 : 4) {
-                            TeamBadge(team: t, size: compact ? 24 : 34)
-                            Text(Money.format(t.purse)).font(.score(compact ? 11 : 13))
-                                .contentTransition(.numericText())
-                            HStack(spacing: compact ? 1.5 : 2) {
-                                ForEach(0..<g.rules.maxSquad, id: \.self) { i in
-                                    Capsule().fill(i < t.squad.count ? Color(hex: t.colorHex) : Color.white.opacity(0.12))
-                                        .frame(width: compact ? 3 : 4, height: compact ? 6 : 8)
-                                }
-                            }
+            if fit {
+                purseTiles(g, compact: compact, stretch: true)
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    purseTiles(g, compact: compact, stretch: false)
+                }
+            }
+        }
+    }
+
+    private func purseTiles(_ g: GameState, compact: Bool, stretch: Bool) -> some View {
+        HStack(spacing: compact ? 6 : 8) {
+            ForEach(g.teams) { t in
+                VStack(spacing: compact ? 2 : 4) {
+                    TeamBadge(team: t, size: compact ? 24 : 34)
+                    Text(Money.format(t.purse)).font(.score(compact ? 11 : 13))
+                        .lineLimit(1).minimumScaleFactor(0.7)
+                        .contentTransition(.numericText())
+                    HStack(spacing: compact ? 1.5 : 2) {
+                        ForEach(0..<g.rules.maxSquad, id: \.self) { i in
+                            Capsule().fill(i < t.squad.count ? Color(hex: t.colorHex) : Color.white.opacity(0.12))
+                                .frame(width: compact ? 3 : 4, height: compact ? 6 : 8)
                         }
-                        .padding(compact ? 6 : 8)
-                        .background(RoundedRectangle(cornerRadius: DS.Radius.md).fill(Palette.surface))
-                        .overlay(RoundedRectangle(cornerRadius: DS.Radius.md).stroke(Palette.stroke))
                     }
                 }
+                .padding(compact ? 6 : 8)
+                .frame(maxWidth: stretch ? .infinity : nil)
+                .background(RoundedRectangle(cornerRadius: DS.Radius.md).fill(Palette.surface))
+                .overlay(RoundedRectangle(cornerRadius: DS.Radius.md).stroke(Palette.stroke))
             }
         }
     }

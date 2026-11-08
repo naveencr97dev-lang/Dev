@@ -247,16 +247,19 @@ struct TwoColumns<Left: View, Right: View>: View {
             let gap = DS.Space.md
             let col = max(0, (geo.size.width - gap) / 2)
             HStack(alignment: .top, spacing: gap) {
+                // Each column is centred vertically when it fits, and scrolls when it doesn't.
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: DS.Space.sm) { left }
                         .frame(width: col)
                         .padding(.vertical, DS.Space.sm)
+                        .frame(minHeight: geo.size.height)
                 }
                 .frame(width: col)
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: DS.Space.sm) { right }
                         .frame(width: col)
                         .padding(.vertical, DS.Space.sm)
+                        .frame(minHeight: geo.size.height)
                 }
                 .frame(width: col)
             }
