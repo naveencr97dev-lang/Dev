@@ -10,7 +10,8 @@
 workflows:
   ios-unsigned:
     name: Streaklet unsigned IPA
-    instance_type: mac_mini_m2
+    # No instance_type set -> Codemagic uses your plan's default macOS instance
+    # (works on the free tier). Add one only if you have a paid instance.
     max_build_duration: 30
     environment:
       xcode: 15.4
