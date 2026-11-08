@@ -98,6 +98,23 @@ struct MatchView: View {
 
     static func isOverEnd(_ e: BallEvent) -> Bool { e.ballInOver == 6 && e.label != "wd" }
 
+    /// Runs and wickets per over so far in an innings, from the ball log.
+    static func liveOvers(_ log: [BallEvent], upTo shown: Int, innings: Int) -> [(runs: Int, wickets: Int)] {
+        var out: [(runs: Int, wickets: Int)] = []
+        var start = 0, prevScore = 0, currentOver = -1
+        for e in log[..<shown] where e.innings == innings {
+            if e.over != currentOver {
+                start = prevScore
+                currentOver = e.over
+                while out.count <= e.over { out.append((0, 0)) }
+            }
+            out[e.over].runs = e.score - start
+            if e.label == "W" { out[e.over].wickets += 1 }
+            prevScore = e.score
+        }
+        return out
+    }
+
     private func advance() {
         guard !finished, !log.isEmpty, !paused else { return }
         if inningsBreak {
@@ -176,6 +193,11 @@ struct MatchView: View {
                     Spacer()
                 }
                 .animation(.spring(response: 0.3, dampingFraction: 0.6), value: thisOver.count)
+            }
+            SectionLabel(text: "Runs per over")
+            AppCard(padding: DS.Space.md) {
+                LiveOverBars(perOver: MatchView.liveOvers(log, upTo: shown, innings: inningsNow),
+                             color: Color(hex: store.team(r.innings[min(inningsNow, 1)].teamId)?.colorHex ?? "#D7FF3A"))
             }
             SectionLabel(text: "Commentary")
             AppCard(padding: DS.Space.md) {
@@ -507,7 +529,7 @@ struct MatchResultContent: View {
                 ForEach(Array(result.innings.prefix(2).enumerated()), id: \.offset) { _, inn in
                     InningsCardView(innings: inn)
                 }
-                worm
+                manhattan
                 if let moments = result.highlights, !moments.isEmpty {
                     VStack(alignment: .leading, spacing: DS.Space.sm) {
                         HStack {
@@ -555,35 +577,85 @@ struct MatchResultContent: View {
         }
     }
 
-    private var worm: some View {
+    /// Manhattan: runs in every over for both sides, red dots for wickets.
+    private var manhattan: some View {
         let a = result.innings[0], b = result.innings[1]
         let ta = store.team(a.teamId), tb = store.team(b.teamId)
         let nameA = ta?.short ?? "A", nameB = (tb?.short ?? "B") == nameA ? nameA + " " : (tb?.short ?? "B")
-        let points = a.overRuns.enumerated().map { WormPoint(team: nameA, over: $0.offset + 1, runs: $0.element) }
-            + b.overRuns.enumerated().map { WormPoint(team: nameB, over: $0.offset + 1, runs: $0.element) }
+        let bars = a.perOver.enumerated().map { OverBar(team: nameA, over: $0.offset + 1, runs: $0.element.runs, wickets: $0.element.wickets) }
+            + b.perOver.enumerated().map { OverBar(team: nameB, over: $0.offset + 1, runs: $0.element.runs, wickets: $0.element.wickets) }
         return VStack(alignment: .leading, spacing: DS.Space.sm) {
-            SectionLabel(text: "Worm")
+            SectionLabel(text: "Runs per over")
             AppCard(padding: DS.Space.md) {
-                Chart(points) { p in
-                    LineMark(x: .value("Over", p.over), y: .value("Runs", p.runs))
+                Chart(bars) { p in
+                    BarMark(x: .value("Over", String(p.over)), y: .value("Runs", p.runs), width: .ratio(0.85))
                         .foregroundStyle(by: .value("Team", p.team))
-                        .interpolationMethod(.monotone)
+                        .position(by: .value("Team", p.team))
+                        .annotation(position: .top, spacing: 1) {
+                            if p.wickets > 0 {
+                                VStack(spacing: 1) {
+                                    ForEach(0..<min(p.wickets, 3), id: \.self) { _ in
+                                        Circle().fill(Palette.wicket).frame(width: 4, height: 4)
+                                    }
+                                }
+                            }
+                        }
                 }
                 .chartForegroundStyleScale(domain: [nameA, nameB],
                                            range: [ta.map { Color(hex: $0.colorHex) } ?? .blue,
                                                    tb.map { Color(hex: $0.colorHex) } ?? .orange])
-                .chartXScale(domain: 0...20)
-                .frame(height: 170)
+                .chartXAxis {
+                    AxisMarks(values: ["1", "5", "10", "15", "20"]) { _ in
+                        AxisValueLabel()
+                    }
+                }
+                .frame(height: 190)
+                HStack(spacing: 6) {
+                    Circle().fill(Palette.wicket).frame(width: 5, height: 5)
+                    Text("= wicket in that over").font(.caption2).foregroundStyle(Palette.muted)
+                }
             }
         }
     }
 }
 
-struct WormPoint: Identifiable {
+struct OverBar: Identifiable {
     var id: String { "\(team)-\(over)" }
     let team: String
     let over: Int
     let runs: Int
+    let wickets: Int
+}
+
+/// Live over-by-over bars for the innings in progress (no Charts, updates every ball).
+struct LiveOverBars: View {
+    let perOver: [(runs: Int, wickets: Int)]
+    let color: Color
+
+    var body: some View {
+        let maxRuns = max(12, perOver.map { $0.runs }.max() ?? 0)
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(alignment: .bottom, spacing: 3) {
+                ForEach(0..<20, id: \.self) { i in
+                    VStack(spacing: 2) {
+                        if i < perOver.count, perOver[i].wickets > 0 {
+                            Circle().fill(Palette.wicket).frame(width: 4, height: 4)
+                        }
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(i < perOver.count ? color.opacity(i == perOver.count - 1 ? 1 : 0.7) : Color.white.opacity(0.06))
+                            .frame(height: i < perOver.count ? max(2, CGFloat(perOver[i].runs) / CGFloat(maxRuns) * 60) : 2)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+            }
+            .frame(height: 70, alignment: .bottom)
+            .animation(.spring(response: 0.35, dampingFraction: 0.7), value: perOver.map { $0.runs })
+            HStack {
+                Text("1").font(.score(10)); Spacer(); Text("10").font(.score(10)); Spacer(); Text("20").font(.score(10))
+            }
+            .foregroundStyle(Palette.muted)
+        }
+    }
 }
 
 struct InningsCardView: View {

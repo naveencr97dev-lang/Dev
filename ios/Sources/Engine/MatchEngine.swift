@@ -50,6 +50,17 @@ struct InningsCard: Codable, Hashable {
     var bowlers: [BowlerCard] = []
     /// Cumulative score at the end of each over (for the worm chart).
     var overRuns: [Int] = []
+    /// Cumulative wickets at the end of each over (optional so older saves still load).
+    var overWickets: [Int]? = nil
+
+    /// Runs and wickets in each over (Manhattan chart).
+    var perOver: [(runs: Int, wickets: Int)] {
+        let wk = overWickets ?? []
+        return overRuns.indices.map { i in
+            (overRuns[i] - (i > 0 ? overRuns[i - 1] : 0),
+             i < wk.count ? wk[i] - (i > 0 && i - 1 < wk.count ? wk[i - 1] : 0) : 0)
+        }
+    }
     var allOut = false
     var maxBalls = 120
 
@@ -393,6 +404,7 @@ struct MatchEngine {
                                      score: card.runs, wickets: card.wickets, batters: snap.0, bowler: snap.1))
             }
             card.overRuns.append(card.runs)
+            card.overWickets = (card.overWickets ?? []) + [card.wickets]
             let overRuns = card.runs - runsAtOverStart
             let chaseDone = target.map { card.runs >= $0 } ?? false
             if overRuns >= 16 && maxOvers == 20 && !chaseDone {
@@ -401,7 +413,11 @@ struct MatchEngine {
             }
             swap(&striker, &nonStriker)
         }
-        if card.overRuns.count < (card.balls + 5) / 6 { card.overRuns.append(card.runs) }
+        // Close the last, partial over (also catches a chase won by a wide before any legal ball).
+        if card.overRuns.last != card.runs || (card.overWickets?.last ?? 0) != card.wickets {
+            card.overRuns.append(card.runs)
+            card.overWickets = (card.overWickets ?? []) + [card.wickets]
+        }
         return card
     }
 

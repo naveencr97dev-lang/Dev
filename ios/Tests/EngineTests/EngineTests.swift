@@ -148,6 +148,10 @@ final class EngineTests: XCTestCase {
                 XCTAssertTrue(r.innings.allSatisfy { inn in inn.bowlers.allSatisfy { $0.balls <= 24 } })
                 XCTAssertEqual(r.innings[0].runs, r.innings[0].batters.reduce(0) { $0 + $1.runs } + r.innings[0].extras)
                 XCTAssertEqual(r.pitch, pitch)
+                for inn in r.innings {
+                    XCTAssertEqual(inn.perOver.reduce(0) { $0 + $1.runs }, inn.runs)
+                    XCTAssertEqual(inn.perOver.reduce(0) { $0 + $1.wickets }, inn.wickets)
+                }
                 // Highlights: some, capped, in match order, ending with how it was won.
                 let h = r.highlights ?? []
                 XCTAssertFalse(h.isEmpty)

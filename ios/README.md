@@ -52,7 +52,8 @@ Franchise names are fictional; the app is not affiliated with any real league.
    the end of each over, and an **innings break** card with the target. You can also skip to
    the scorecard. Points table with NRR, plus Orange and Purple Cap leaderboards. Batting order
    can be changed between matches.
-   After every match: **scorecard**, then the **worm**, then **highlights**: up to 12 key
+   After every match: **scorecard**, then **runs per over** (bar chart for both teams, red dots
+   for wickets), then **highlights**: up to 12 key
    moments (wickets, sixes, fifties/hundreds, big overs, the winning runs) with a ▶︎ Watch
    button for the story-style reel.
 6. **Playoffs → Final → Trophy ceremony** with awards. Afterwards, **Back to season**
