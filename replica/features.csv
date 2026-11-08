@@ -46,3 +46,5 @@ Design system refresh (tokens/cards/rings),ux,should,no,yes,inspired by ShadKit/
 Goals with attached habits,goals,should,no,yes,own idea
 Habit frequency daily/weekly/monthly,goals,should,yes,yes,daily/weekly/monthly targets
 Adjustable app text size,ux,should,yes,yes,Settings - Dynamic Type small..xlarge
+Capture ideas & issues in-app,feedback,should,no,yes,own idea - notes saved on device
+Today grouped by goal (collapsible),ux,should,no,yes,reduce clutter with multiple goals

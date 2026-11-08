@@ -7,6 +7,7 @@ struct TodayView: View {
     @State private var showingJournal = false
     @State private var statusFilter: StatusFilter = .all
     @State private var timeFilter: TimeFilter = .all
+    @State private var collapsedGroups: Set<String> = []
 
     private var stats: Stats { Stats(store: store) }
 
@@ -47,14 +48,8 @@ struct TodayView: View {
                             .listRowBackground(Color.clear)
                     }
                 } else {
-                    Section {
-                        ForEach(habits) { habit in
-                            NavigationLink { HabitDetailView(habit: habit) } label: {
-                                HabitRow(habit: habit, date: selected)
-                            }
-                        }
-                    } header: {
-                        Text(doneCount == habits.count ? "All done — nice 🎉" : "\(doneCount) of \(habits.count) done")
+                    ForEach(groups) { group in
+                        groupSection(group)
                     }
                 }
             }
@@ -77,6 +72,81 @@ struct TodayView: View {
     }
 
     private var doneCount: Int { habits.filter { store.isDone($0, on: selected) }.count }
+
+    // MARK: - Grouping by goal
+
+    struct HabitGroup: Identifiable {
+        let id: String
+        let goal: Goal?
+        let habits: [Habit]
+    }
+
+    private var groups: [HabitGroup] {
+        let items = habits
+        let goalIds = Set(store.goals.map { $0.id })
+        var result: [HabitGroup] = []
+        for goal in store.sortedGoals {
+            let gh = items.filter { $0.goalId == goal.id }
+            if !gh.isEmpty { result.append(HabitGroup(id: goal.id.uuidString, goal: goal, habits: gh)) }
+        }
+        let ungrouped = items.filter { $0.goalId == nil || !goalIds.contains($0.goalId!) }
+        if !ungrouped.isEmpty { result.append(HabitGroup(id: "none", goal: nil, habits: ungrouped)) }
+        return result
+    }
+
+    @ViewBuilder
+    private func groupSection(_ group: HabitGroup) -> some View {
+        let done = group.habits.filter { store.isDone($0, on: selected) }.count
+        // With goals present, collapse into disclosure groups to cut clutter.
+        if group.goal != nil || store.goals.contains(where: { !store.habits(for: $0).isEmpty }) {
+            Section {
+                DisclosureGroup(isExpanded: expansion(group.id)) {
+                    ForEach(group.habits) { habit in
+                        NavigationLink { HabitDetailView(habit: habit) } label: {
+                            HabitRow(habit: habit, date: selected)
+                        }
+                    }
+                } label: {
+                    groupHeader(group, done: done)
+                }
+            }
+        } else {
+            Section {
+                ForEach(group.habits) { habit in
+                    NavigationLink { HabitDetailView(habit: habit) } label: {
+                        HabitRow(habit: habit, date: selected)
+                    }
+                }
+            } header: {
+                Text(done == group.habits.count ? "All done — nice 🎉" : "\(done) of \(group.habits.count) done")
+            }
+        }
+    }
+
+    private func groupHeader(_ group: HabitGroup, done: Int) -> some View {
+        HStack(spacing: 10) {
+            if let goal = group.goal {
+                Text(goal.emoji)
+                Text(goal.name).font(.body.weight(.semibold))
+            } else {
+                Image(systemName: "tray").foregroundStyle(.secondary)
+                Text("Other").font(.body.weight(.semibold))
+            }
+            Spacer()
+            Text("\(done)/\(group.habits.count)")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private func expansion(_ id: String) -> Binding<Bool> {
+        Binding(
+            get: { !collapsedGroups.contains(id) },
+            set: { expanded in
+                if expanded { collapsedGroups.remove(id) } else { collapsedGroups.insert(id) }
+            }
+        )
+    }
 
     private var title: String {
         Calendar.current.isDateInToday(selected) ? "Today" :

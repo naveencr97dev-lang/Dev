@@ -7,6 +7,7 @@ final class Store: ObservableObject {
     @Published var checkins: [Checkin] = []
     @Published var moods: [MoodEntry] = []
     @Published var goals: [Goal] = []
+    @Published var feedback: [FeedbackNote] = []
     @Published var groceryItems: [GroceryItem] = []
     @Published var groceryChecks: [GroceryCheck] = []
     @Published var appearance: AppearanceMode = .system
@@ -28,6 +29,7 @@ final class Store: ObservableObject {
         var checkins: [Checkin]
         var moods: [MoodEntry]
         var goals: [Goal]?
+        var feedback: [FeedbackNote]?
         var groceryItems: [GroceryItem]?
         var groceryChecks: [GroceryCheck]?
         var appearance: AppearanceMode
@@ -46,6 +48,7 @@ final class Store: ObservableObject {
         checkins = snap.checkins
         moods = snap.moods
         goals = snap.goals ?? []
+        feedback = snap.feedback ?? []
         groceryItems = snap.groceryItems ?? []
         groceryChecks = snap.groceryChecks ?? []
         appearance = snap.appearance
@@ -54,7 +57,7 @@ final class Store: ObservableObject {
 
     func save() {
         let snap = Snapshot(habits: habits, checkins: checkins, moods: moods,
-                            goals: goals,
+                            goals: goals, feedback: feedback,
                             groceryItems: groceryItems, groceryChecks: groceryChecks,
                             appearance: appearance, textSize: textSize)
         if let data = try? JSONEncoder().encode(snap) {
@@ -331,8 +334,44 @@ final class Store: ObservableObject {
         }
     }
 
+    // MARK: - Feedback (ideas & issues)
+
+    var sortedFeedback: [FeedbackNote] {
+        feedback.sorted { a, b in
+            if a.done != b.done { return !a.done }   // open notes first
+            return a.createdAt > b.createdAt          // newest first
+        }
+    }
+
+    func addFeedback(_ text: String, kind: FeedbackKind) {
+        let t = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !t.isEmpty else { return }
+        feedback.append(FeedbackNote(text: t, kind: kind))
+        save()
+    }
+
+    func toggleFeedbackDone(_ note: FeedbackNote) {
+        guard let idx = feedback.firstIndex(where: { $0.id == note.id }) else { return }
+        feedback[idx].done.toggle()
+        save()
+    }
+
+    func deleteFeedback(_ note: FeedbackNote) {
+        feedback.removeAll { $0.id == note.id }
+        save()
+    }
+
+    /// Plain-text export of all notes (for sharing).
+    func feedbackExport() -> String {
+        sortedFeedback.map { n in
+            let box = n.done ? "[x]" : "[ ]"
+            return "\(box) \(n.kind.label.uppercased()): \(n.text)"
+        }.joined(separator: "\n")
+    }
+
     func resetAll() {
         habits = []; checkins = []; moods = []
+        goals = []; feedback = []
         groceryItems = []; groceryChecks = []
         save()
     }

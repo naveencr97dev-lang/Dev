@@ -41,6 +41,21 @@ struct SettingsView: View {
                         .foregroundStyle(.secondary)
                 }
 
+                Section("Feedback") {
+                    NavigationLink {
+                        FeedbackView()
+                    } label: {
+                        HStack {
+                            Label("Ideas & Issues", systemImage: "lightbulb")
+                            Spacer()
+                            if !store.feedback.filter({ !$0.done }).isEmpty {
+                                Text("\(store.feedback.filter { !$0.done }.count)")
+                                    .font(.caption).foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                }
+
                 Section("Data") {
                     Button("Load sample habits") { store.seedDemoIfEmpty() }
                     Button("Reset all data", role: .destructive) { showingReset = true }
