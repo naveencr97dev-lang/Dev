@@ -10,7 +10,9 @@ struct MatchView: View {
     @State private var log: [BallEvent] = []
     @State private var shown = 0
     @State private var finished = false
-    @State private var speed = 1
+    /// Balls per tick (a tick is 0.06 s). Remembered between matches.
+    @AppStorage("matchSpeed") private var speed: Double = 0.5
+    @State private var carry: Double = 0
     @State private var showReel = false
     private let clock = Timer.publish(every: 0.06, on: .main, in: .common).autoconnect()
 
@@ -53,8 +55,12 @@ struct MatchView: View {
 
     private func advance() {
         guard !finished, !log.isEmpty else { return }
+        carry += speed
+        let step = Int(carry)
+        guard step > 0 else { return }
+        carry -= Double(step)
         let before = shown
-        shown = min(log.count, shown + speed)
+        shown = min(log.count, shown + step)
         if log[before..<shown].contains(where: { $0.label == "W" }) { Haptics.heavy() }
         else if log[before..<shown].contains(where: { $0.label == "6" }) { Haptics.tap() }
         if shown >= log.count { finish() }
@@ -114,12 +120,7 @@ struct MatchView: View {
                     }
                 }
             }
-            Picker("Speed", selection: $speed) {
-                Text("1×").tag(1)
-                Text("2×").tag(2)
-                Text("4×").tag(4)
-            }
-            .pickerStyle(.segmented)
+            SpeedPicker(speed: $speed, options: [0.25, 0.5, 1, 2, 4])
         }
 
         return Group {

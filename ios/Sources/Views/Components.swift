@@ -143,3 +143,28 @@ extension View {
         self.scrollContentBackground(.hidden).background(AppBackground())
     }
 }
+
+/// Segmented speed control: ¼× ½× 1× 2× 4×.
+struct SpeedPicker: View {
+    @Binding var speed: Double
+    let options: [Double]
+
+    var body: some View {
+        Picker("Speed", selection: $speed) {
+            ForEach(options, id: \.self) { Text(SpeedPicker.label($0)).tag($0) }
+        }
+        .pickerStyle(.segmented)
+        .onAppear {
+            // A remembered speed that this control doesn't offer falls back to 1×.
+            if !options.contains(speed) { speed = 1 }
+        }
+    }
+
+    static func label(_ v: Double) -> String {
+        switch v {
+        case 0.25: return "¼×"
+        case 0.5: return "½×"
+        default: return "\(Int(v))×"
+        }
+    }
+}

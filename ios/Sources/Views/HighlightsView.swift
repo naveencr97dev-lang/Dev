@@ -49,7 +49,9 @@ struct HighlightsReel: View {
     @State private var index = 0
     @State private var progress: Double = 0
     @State private var paused = false
+    @AppStorage("reelSpeed") private var speed: Double = 1
     private let tick = Timer.publish(every: 0.05, on: .main, in: .common).autoconnect()
+    /// Seconds per moment at 1×.
     private let perMoment = 2.8
 
     private var moments: [Highlight] { result.highlights ?? [] }
@@ -91,6 +93,7 @@ struct HighlightsReel: View {
             }
             Spacer(minLength: 0)
 
+            SpeedPicker(speed: $speed, options: [0.5, 1, 2])
             HStack(spacing: 10) {
                 Button { go(index - 1) } label: { Image(systemName: "backward.fill") }
                     .buttonStyle(SecondaryButtonStyle()).frame(width: 70)
@@ -107,7 +110,7 @@ struct HighlightsReel: View {
         .onTapGesture { go(index + 1) }
         .onReceive(tick) { _ in
             guard !paused, !moments.isEmpty else { return }
-            progress += 0.05 / perMoment
+            progress += 0.05 * speed / perMoment
             if progress >= 1 { go(index + 1) }
         }
         .onAppear { feedback() }
