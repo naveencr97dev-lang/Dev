@@ -5,6 +5,7 @@ struct Fixture: Codable, Hashable, Identifiable {
     let home: Int
     let away: Int
     let stage: Stage
+    var pitch: Pitch = .indianFlat
     var resultId: UUID? = nil
 
     var played: Bool { resultId != nil }

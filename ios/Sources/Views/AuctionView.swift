@@ -2,6 +2,7 @@ import SwiftUI
 
 struct AuctionView: View {
     @EnvironmentObject var store: GameStore
+    @Environment(\.verticalSizeClass) private var vSize
     @State private var showSquads = false
     @State private var confirmSim = false
     @State private var confirmQuit = false
@@ -9,34 +10,41 @@ struct AuctionView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
+            Group {
                 if let g = store.game {
-                    VStack(spacing: DS.Space.md) {
-                        lotHeader(g)
-                        if let p = store.currentPlayer {
-                            PlayerCard(player: p)
-                            bidPanel(g, p)
-                            bidButtons(g, p)
+                    if vSize == .compact {
+                        // Landscape: player on the left, bidding on the right (good for casting).
+                        HStack(alignment: .top, spacing: DS.Space.lg) {
+                            ScrollView { VStack(spacing: DS.Space.md) { lotColumn(g) }.padding(.vertical, DS.Space.sm) }
+                            ScrollView { VStack(spacing: DS.Space.md) { bidColumn(g) }.padding(.vertical, DS.Space.sm) }
                         }
-                        purseStrip(g)
-                        recentSales(g)
+                        .padding(.horizontal, DS.Space.lg)
+                    } else {
+                        ScrollView {
+                            VStack(spacing: DS.Space.md) {
+                                lotColumn(g)
+                                bidColumn(g)
+                            }
+                            .padding(DS.Space.lg)
+                        }
                     }
-                    .padding(DS.Space.lg)
                 }
             }
             .background(AppBackground())
             .overlay {
                 if let b = store.banner {
-                    SoldBanner(record: b).transition(.scale.combined(with: .opacity))
+                    SoldTicket(record: b)
+                        .transition(.asymmetric(insertion: .scale(scale: 0.6).combined(with: .opacity),
+                                                removal: .opacity))
                 }
             }
-            .animation(.spring(response: 0.35, dampingFraction: 0.7), value: store.banner)
+            .animation(.spring(response: 0.4, dampingFraction: 0.62), value: store.banner)
             .navigationTitle("Auction")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button { store.paused.toggle() } label: {
-                        Label(store.paused ? "Resume" : "Pause", systemImage: store.paused ? "play.fill" : "pause.fill")
+                        Image(systemName: store.paused ? "play.fill" : "pause.fill")
                     }
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -52,7 +60,7 @@ struct AuctionView: View {
                     .environmentObject(store)
             }
             .onChange(of: showSquads) { open in store.paused = open }
-            .confirmationDialog("Let the CPU finish the auction? Human teams won't bid on the remaining players; anyone short of 11 gets filled at base price.",
+            .confirmationDialog("Let the CPU finish the auction? Human teams won't bid on the remaining players; empty slots get filled at base price.",
                                 isPresented: $confirmSim, titleVisibility: .visible) {
                 Button("Sim rest of auction") { store.simRestOfAuction() }
                 Button("Cancel", role: .cancel) {}
@@ -63,120 +71,169 @@ struct AuctionView: View {
         .keepAwake()
     }
 
+    // MARK: Columns
+
+    @ViewBuilder private func lotColumn(_ g: GameState) -> some View {
+        lotHeader(g)
+        if let p = store.currentPlayer {
+            PlayerCard(player: p, setName: store.currentSetName)
+            bidPanel(g, p)
+        }
+    }
+
+    @ViewBuilder private func bidColumn(_ g: GameState) -> some View {
+        if let p = store.currentPlayer {
+            bidButtons(g, p)
+            actionRow(g)
+        }
+        purseStrip(g)
+        recentSales(g)
+    }
+
     // MARK: Sections
 
     private func lotHeader(_ g: GameState) -> some View {
         let a = g.auction
-        let pool = store.currentPlayer?.pool ?? ""
-        return HStack {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(a.round == 1 ? "LOT \(min(a.index + 1, a.queue.count)) OF \(a.queue.count)" : "ACCELERATED · \(min(a.index + 1, a.queue.count))/\(a.queue.count)")
-                    .font(.caption.weight(.bold)).foregroundStyle(Palette.gold)
-                Text(a.round == 1 ? pool : "Unsold players return")
-                    .font(.headline)
-            }
+        let filled = g.teams.reduce(0) { $0 + $1.squad.count }
+        let slots = g.teams.count * g.rules.maxSquad
+        return HStack(alignment: .firstTextBaseline) {
+            Text("LOT \(min(a.index + 1, a.queue.count))")
+                .font(.display(26)).foregroundStyle(Palette.accent)
+            Text("/ \(a.queue.count)").font(.display(18, weight: .heavy)).foregroundStyle(Palette.muted)
             Spacer()
-            if store.paused {
-                Chip(text: "PAUSED", color: .orange.opacity(0.6))
-            }
+            if store.paused { Chip(text: "Paused", color: .orange.opacity(0.7)) }
+            Text("\(filled)/\(slots) SLOTS FILLED").font(.display(14, weight: .heavy)).foregroundStyle(Palette.muted)
         }
     }
 
     private func bidPanel(_ g: GameState, _ p: Player) -> some View {
         let leader = g.auction.leader.flatMap { g.team($0) }
         let fraction = max(0, min(1, store.timeLeft / g.rules.bidSeconds))
-        return AppCard(tint: leader.map { Color(hex: $0.colorHex) }) {
-            VStack(spacing: DS.Space.sm) {
-                HStack(alignment: .center) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(leader == nil ? "BASE PRICE" : "CURRENT BID")
-                            .font(.caption.weight(.bold)).foregroundStyle(.secondary)
-                        Text(Money.format(g.auction.currentBid ?? p.base))
-                            .font(.display(38, weight: .heavy))
-                            .contentTransition(.numericText())
-                    }
-                    Spacer()
-                    if let leader {
-                        VStack(spacing: 4) {
-                            TeamBadge(team: leader, size: 48)
-                            Text(leader.isCPU ? "CPU" : "Leading").font(.caption2.weight(.bold))
-                        }
-                    } else {
-                        Text("No bids yet").font(.subheadline).foregroundStyle(.secondary)
-                    }
+        let urgent = fraction < 0.3
+        return VStack(spacing: 10) {
+            HStack(alignment: .center, spacing: DS.Space.md) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(leader == nil ? "BASE PRICE" : "CURRENT BID")
+                        .font(.display(13, weight: .heavy)).foregroundStyle(Palette.ink)
+                        .padding(.horizontal, 10).padding(.vertical, 3)
+                        .background(Slant().fill(leader == nil ? Palette.muted : Palette.accent))
+                    Text(Money.format(g.auction.currentBid ?? p.base))
+                        .font(.score(44))
+                        .contentTransition(.numericText())
+                        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: g.auction.currentBid)
                 }
-                ProgressView(value: fraction)
-                    .tint(fraction < 0.35 ? Palette.wicket : Palette.gold)
-                    .animation(.linear(duration: 0.1), value: fraction)
-                HStack {
-                    Text(store.lastAction).font(.footnote).foregroundStyle(.secondary).lineLimit(1)
-                    Spacer()
-                    Text(String(format: "%.0fs", max(0, store.timeLeft.rounded(.up))))
-                        .font(.footnote.monospacedDigit().weight(.bold))
+                Spacer()
+                if let leader {
+                    VStack(spacing: 4) {
+                        TeamBadge(team: leader, size: 54).pulse(Color(hex: leader.colorHex), active: true)
+                        Text(leader.isCPU ? "CPU" : "LEADING").font(.display(12, weight: .heavy)).foregroundStyle(Palette.muted)
+                    }
+                    .transition(.scale.combined(with: .opacity))
+                    .id(leader.id)
+                } else {
+                    Text("No bids yet").font(.subheadline).foregroundStyle(Palette.muted)
                 }
             }
+            .animation(.spring(response: 0.35, dampingFraction: 0.6), value: g.auction.leader)
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(Color.white.opacity(0.07))
+                    Capsule().fill(urgent ? Palette.wicket : Palette.accent)
+                        .frame(width: geo.size.width * fraction)
+                        .animation(.linear(duration: 0.1), value: fraction)
+                }
+            }
+            .frame(height: 6)
+            HStack {
+                Text(store.lastAction).font(.footnote).foregroundStyle(Palette.muted).lineLimit(1)
+                Spacer()
+                Text("\(Int(max(0, store.timeLeft.rounded(.up))))s")
+                    .font(.score(16)).foregroundStyle(urgent ? Palette.wicket : .white)
+            }
         }
+        .padding(DS.Space.lg)
+        .background(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous).fill(Palette.surface))
+        .overlay(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
+            .stroke(leader.map { Color(hex: $0.colorHex) } ?? Palette.stroke, lineWidth: leader == nil ? 1 : 2))
     }
 
     private func bidButtons(_ g: GameState, _ p: Player) -> some View {
         let next = g.nextBidAmount(book: store.book) ?? p.base
         let humans = g.teams.filter { !$0.isCPU }
         let columns = [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)]
-        return VStack(spacing: 10) {
-            LazyVGrid(columns: columns, spacing: 10) {
-                ForEach(humans) { t in
-                    let leading = g.auction.leader == t.id
-                    let reason = AuctionEngine.blockReason(t, on: p, amount: next, rules: g.rules, players: store.book.byId)
-                    let enabled = !leading && reason == nil && store.banner == nil && !store.paused
-                    Button { store.humanBid(t.id) } label: {
-                        VStack(spacing: 3) {
-                            Text(t.short).font(.display(20, weight: .heavy))
-                            Text(leading ? "Leading ✓" : (reason ?? "Bid \(Money.format(next))"))
-                                .font(.caption.weight(.bold))
-                            Text("\(Money.format(t.purse)) · \(t.squad.count)/\(g.rules.maxSquad)")
-                                .font(.caption2).opacity(0.85)
+        return LazyVGrid(columns: columns, spacing: 10) {
+            ForEach(humans) { t in
+                let leading = g.auction.leader == t.id
+                let reason = AuctionEngine.blockReason(t, on: p, amount: next, rules: g.rules, players: store.book.byId)
+                let enabled = !leading && reason == nil && store.banner == nil && !store.paused
+                let color = Color(hex: t.colorHex)
+                Button { store.humanBid(t.id) } label: {
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack(spacing: 8) {
+                            TeamBadge(team: t, size: 30)
+                            Text(leading ? "LEADING" : (reason?.uppercased() ?? "BID \(Money.format(next))"))
+                                .font(.display(17)).lineLimit(1).minimumScaleFactor(0.7)
                         }
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .background(
-                            RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
-                                .fill(Color(hex: t.colorHex).opacity(enabled || leading ? 0.95 : 0.25))
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
-                                .stroke(leading ? Color.white : .clear, lineWidth: 2)
-                        )
+                        Text("\(Money.format(t.purse)) · \(t.squad.count)/\(g.rules.maxSquad)")
+                            .font(.score(13, weight: .semibold)).opacity(0.85)
+                        Text(store.needs(t.id).summary).font(.caption2).opacity(0.75).lineLimit(1)
                     }
-                    .buttonStyle(.plain)
-                    .disabled(!enabled)
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(10)
+                    .background(
+                        RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
+                            .fill(LinearGradient(colors: [color.opacity(enabled || leading ? 0.95 : 0.22),
+                                                          color.opacity(enabled || leading ? 0.6 : 0.12)],
+                                                 startPoint: .topLeading, endPoint: .bottomTrailing))
+                    )
+                    .overlay(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
+                        .stroke(leading ? Palette.accent : .clear, lineWidth: 2))
+                    .pulse(color, active: leading)
                 }
+                .buttonStyle(BidButtonStyle())
+                .disabled(!enabled)
             }
-            Button {
-                store.hammerNow()
-            } label: {
-                Label(g.auction.leader == nil ? "No takers — mark unsold" : "Hammer it — SOLD now", systemImage: "hammer.fill")
+        }
+    }
+
+    private func actionRow(_ g: GameState) -> some View {
+        HStack(spacing: 10) {
+            Button { store.skipLot() } label: { Label("Skip", systemImage: "forward.fill") }
+                .buttonStyle(SecondaryButtonStyle())
+            Button { store.hammerNow() } label: {
+                Label(g.auction.leader == nil ? "Unsold" : "Sold", systemImage: "hammer.fill")
             }
             .buttonStyle(SecondaryButtonStyle())
-            .disabled(store.banner != nil || store.paused)
         }
+        .disabled(store.banner != nil || store.paused)
+        .overlay(alignment: .bottom) {
+            Text("Skip: CPUs settle this player instantly")
+                .font(.caption2).foregroundStyle(Palette.muted).offset(y: 18)
+        }
+        .padding(.bottom, 14)
     }
 
     private func purseStrip(_ g: GameState) -> some View {
         VStack(alignment: .leading, spacing: DS.Space.sm) {
             SectionLabel(text: "Purses")
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 10) {
+                HStack(spacing: 8) {
                     ForEach(g.teams) { t in
                         VStack(spacing: 4) {
                             TeamBadge(team: t, size: 34)
-                            Text(Money.format(t.purse)).font(.caption2.monospacedDigit().weight(.semibold))
-                            Text("\(t.squad.count) · \(AuctionEngine.overseasCount(t, players: store.book.byId))✈︎")
-                                .font(.caption2).foregroundStyle(.secondary)
+                            Text(Money.format(t.purse)).font(.score(13))
+                                .contentTransition(.numericText())
+                            HStack(spacing: 2) {
+                                ForEach(0..<g.rules.maxSquad, id: \.self) { i in
+                                    Capsule().fill(i < t.squad.count ? Color(hex: t.colorHex) : Color.white.opacity(0.12))
+                                        .frame(width: 4, height: 8)
+                                }
+                            }
                         }
-                        .frame(width: 66)
-                        .padding(.vertical, 8)
-                        .background(RoundedRectangle(cornerRadius: DS.Radius.sm).fill(Palette.card))
+                        .padding(8)
+                        .background(RoundedRectangle(cornerRadius: DS.Radius.md).fill(Palette.surface))
+                        .overlay(RoundedRectangle(cornerRadius: DS.Radius.md).stroke(Palette.stroke))
                     }
                 }
             }
@@ -184,24 +241,25 @@ struct AuctionView: View {
     }
 
     private func recentSales(_ g: GameState) -> some View {
-        let recent = g.auction.history.suffix(6).reversed()
+        let recent = Array(g.auction.history.suffix(6).reversed())
         return Group {
             if !recent.isEmpty {
                 VStack(alignment: .leading, spacing: DS.Space.sm) {
                     SectionLabel(text: "Recent")
                     AppCard(padding: DS.Space.md) {
                         VStack(spacing: 8) {
-                            ForEach(Array(recent.enumerated()), id: \.offset) { _, s in
+                            ForEach(Array(recent.enumerated()), id: \.offset) { i, s in
                                 HStack {
                                     Text(store.player(s.playerId)?.name ?? "").font(.subheadline).lineLimit(1)
                                     Spacer()
                                     if let tid = s.teamId, let t = g.team(tid) {
-                                        Text(Money.format(s.price)).font(.subheadline.monospacedDigit().weight(.semibold))
-                                        TeamBadge(team: t, size: 24)
+                                        Text(Money.format(s.price)).font(.score(15))
+                                        TeamBadge(team: t, size: 22)
                                     } else {
-                                        Text("Unsold").font(.subheadline).foregroundStyle(.secondary)
+                                        Text("UNSOLD").font(.display(13, weight: .heavy)).foregroundStyle(Palette.muted)
                                     }
                                 }
+                                .opacity(i == 0 ? 1 : 0.75)
                             }
                         }
                     }
@@ -211,66 +269,152 @@ struct AuctionView: View {
     }
 }
 
-struct PlayerCard: View {
-    let player: Player
-
-    var body: some View {
-        AppCard {
-            VStack(alignment: .leading, spacing: DS.Space.md) {
-                HStack(alignment: .top) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(player.name).font(.display(28, weight: .heavy)).minimumScaleFactor(0.6).lineLimit(1)
-                        HStack(spacing: 6) {
-                            Chip(text: player.role.label.uppercased(), color: Palette.gold.opacity(0.3))
-                            if player.overseas { Chip(text: "✈︎ OVERSEAS", color: Color.blue.opacity(0.35)) }
-                            if player.pool == "Uncapped" { Chip(text: "UNCAPPED") }
-                        }
-                    }
-                    Spacer()
-                    VStack(spacing: 0) {
-                        Text("\(player.rating)").font(.display(30, weight: .heavy)).foregroundStyle(Palette.gold)
-                        Text("OVR").font(.caption2.weight(.bold)).foregroundStyle(.secondary)
-                    }
-                }
-                RatingBar(label: "BAT", value: player.bat, color: Palette.four)
-                RatingBar(label: "BOWL", value: player.bowl, color: Palette.six)
-                Text(player.line).font(.footnote).foregroundStyle(.secondary)
-            }
-        }
-        .id(player.id)
-        .transition(.asymmetric(insertion: .move(edge: .trailing).combined(with: .opacity), removal: .opacity))
+struct BidButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.94 : 1)
+            .animation(.spring(response: 0.2, dampingFraction: 0.5), value: configuration.isPressed)
     }
 }
 
-struct SoldBanner: View {
+/// Trading-card style lot, flips in for every new player.
+struct PlayerCard: View {
+    let player: Player
+    var setName: String = ""
+
+    var body: some View {
+        FlipCard(id: player.id) {
+            VStack(alignment: .leading, spacing: 0) {
+                HStack {
+                    Text(setName.uppercased()).font(.display(13, weight: .heavy))
+                    Spacer()
+                    Text(player.role.label.uppercased()).font(.display(13, weight: .heavy))
+                }
+                .foregroundStyle(Palette.ink)
+                .padding(.horizontal, DS.Space.lg).padding(.vertical, 6)
+                .background(Palette.role(player.role))
+
+                VStack(alignment: .leading, spacing: DS.Space.md) {
+                    HStack(alignment: .top) {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(player.name.uppercased()).font(.display(34)).minimumScaleFactor(0.5).lineLimit(1)
+                            HStack(spacing: 6) {
+                                if player.overseas { Chip(text: "✈︎ Overseas", color: Color(hex: "#1E3A8A")) }
+                                if player.pool == "Uncapped" { Chip(text: "Uncapped") }
+                                if player.isLegend { Chip(text: "★ Legend", color: Palette.accent, textColor: Palette.ink) }
+                                if player.bowl >= 40 { Chip(text: player.bowlType == .spin ? "Spin" : "Pace") }
+                            }
+                        }
+                        Spacer()
+                        VStack(spacing: -4) {
+                            Text("\(player.rating)").font(.display(46)).foregroundStyle(Palette.accent)
+                            Text("OVR").font(.display(12, weight: .heavy)).foregroundStyle(Palette.muted)
+                        }
+                    }
+                    RatingBar(label: "BAT", value: player.bat, color: Color(hex: "#F59E0B"))
+                    RatingBar(label: "BOWL", value: player.bowl, color: Color(hex: "#F43F5E"))
+                    TraitChips(traits: player.traits, showBlurb: true)
+                    Text(player.line).font(.footnote).foregroundStyle(Palette.muted)
+                }
+                .padding(DS.Space.lg)
+            }
+            .background(
+                ZStack {
+                    Palette.surface
+                    LinearGradient(colors: [Palette.role(player.role).opacity(0.18), .clear], startPoint: .top, endPoint: .center)
+                }
+            )
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
+                .stroke(player.isLegend ? Palette.accent.opacity(0.7) : Palette.stroke, lineWidth: player.isLegend ? 1.5 : 1))
+        }
+    }
+}
+
+/// Re-runs a 3D flip whenever `id` changes.
+struct FlipCard<Content: View>: View {
+    let id: String
+    @ViewBuilder var content: Content
+    @State private var angle: Double = 90
+
+    var body: some View {
+        content
+            .rotation3DEffect(.degrees(angle), axis: (x: 0, y: 1, z: 0), perspective: 0.6)
+            .opacity(angle > 80 ? 0 : 1)
+            .onAppear { flip() }
+            .onChange(of: id) { _ in
+                var reset = Transaction()
+                reset.disablesAnimations = true
+                withTransaction(reset) { angle = 90 }
+                DispatchQueue.main.async { flip() }
+            }
+    }
+
+    private func flip() {
+        withAnimation(.spring(response: 0.5, dampingFraction: 0.72)) { angle = 0 }
+    }
+}
+
+/// SOLD / UNSOLD ticket that pops over the auction.
+struct SoldTicket: View {
     @EnvironmentObject var store: GameStore
     let record: SaleRecord
+    @State private var stamp = false
 
     var body: some View {
         let team = record.teamId.flatMap { store.team($0) }
+        let color = team.map { Color(hex: $0.colorHex) } ?? Palette.muted
         ZStack {
-            Color.black.opacity(0.55).ignoresSafeArea()
-            VStack(spacing: 10) {
-                Text(team == nil ? "UNSOLD" : "SOLD!")
-                    .font(.display(54, weight: .black))
-                    .foregroundStyle(team == nil ? Color.gray : Palette.gold)
-                Text(store.player(record.playerId)?.name ?? "").font(.display(24))
-                if let team {
-                    HStack(spacing: 10) {
-                        TeamBadge(team: team, size: 44)
-                        VStack(alignment: .leading) {
-                            Text(team.name).font(.headline)
-                            Text(Money.format(record.price)).font(.display(26, weight: .heavy))
+            Color.black.opacity(0.6).ignoresSafeArea()
+            VStack(spacing: 0) {
+                VStack(spacing: 6) {
+                    Text(store.player(record.playerId)?.name.uppercased() ?? "").font(.display(30)).lineLimit(1).minimumScaleFactor(0.5)
+                    if let team {
+                        HStack(spacing: 10) {
+                            TeamBadge(team: team, size: 40)
+                            Text(team.name.uppercased()).font(.display(18, weight: .heavy))
                         }
+                    } else {
+                        Text("No takers").font(.headline).foregroundStyle(Palette.muted)
                     }
                 }
+                .padding(.vertical, 22).padding(.horizontal, 28)
+                Line().stroke(style: StrokeStyle(lineWidth: 1.5, dash: [6, 6])).foregroundStyle(Palette.ink.opacity(0.5))
+                    .frame(height: 1).padding(.horizontal, 20)
+                HStack {
+                    Text(team == nil ? "UNSOLD" : "SOLD").font(.display(44))
+                    Spacer()
+                    if team != nil { Text(Money.format(record.price)).font(.score(32)) }
+                }
+                .padding(.vertical, 16).padding(.horizontal, 28)
             }
-            .padding(30)
-            .background(RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .fill(team.map { Color(hex: $0.colorHex).opacity(0.35) } ?? Color.white.opacity(0.08)))
-            .background(RoundedRectangle(cornerRadius: 28, style: .continuous).fill(.ultraThinMaterial))
-            .padding(30)
+            .foregroundStyle(Palette.ink)
+            .background(TicketShape().fill(team == nil ? Color(hex: "#C9CDD6") : Palette.accent, style: FillStyle(eoFill: true))
+                .clipShape(Rectangle()))
+            .overlay(alignment: .topTrailing) {
+                Text(team?.short ?? "—")
+                    .font(.display(20)).foregroundStyle(.white)
+                    .padding(.horizontal, 10).padding(.vertical, 4)
+                    .background(Slant().fill(color))
+                    .rotationEffect(.degrees(stamp ? -8 : -30))
+                    .scaleEffect(stamp ? 1 : 2.2)
+                    .opacity(stamp ? 1 : 0)
+                    .offset(x: 6, y: -12)
+            }
+            .rotationEffect(.degrees(-3))
+            .padding(32)
+            .frame(maxWidth: 460)
         }
         .allowsHitTesting(false)
+        .onAppear { withAnimation(.spring(response: 0.35, dampingFraction: 0.5).delay(0.15)) { stamp = true } }
+    }
+}
+
+struct Line: Shape {
+    func path(in r: CGRect) -> Path {
+        var p = Path()
+        p.move(to: CGPoint(x: r.minX, y: r.midY))
+        p.addLine(to: CGPoint(x: r.maxX, y: r.midY))
+        return p
     }
 }

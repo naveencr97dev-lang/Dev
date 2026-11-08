@@ -177,10 +177,22 @@ final class GameStore: ObservableObject {
         }
     }
 
+    /// Skip watching this lot: CPU teams settle it instantly.
+    func skipLot() {
+        guard banner == nil, game?.auction.lotClosed == false else { return }
+        var record: SaleRecord?
+        mutate { record = $0.skipLot(book: book) }
+        showSale(record)
+    }
+
     func hammerNow() {
         guard banner == nil else { return }
         var record: SaleRecord?
         mutate { record = $0.hammer() }
+        showSale(record)
+    }
+
+    private func showSale(_ record: SaleRecord?) {
         guard let record else { return }
         banner = record
         bannerDelay = 1.8
@@ -224,6 +236,21 @@ final class GameStore: ObservableObject {
 
     func finishSeason() {
         mutate { $0.finishSeason() }
+    }
+
+    func reopenSeason() {
+        mutate { $0.reopenSeason() }
+    }
+
+    func needs(_ teamId: Int) -> AuctionEngine.Needs {
+        game?.needs(teamId, book: book) ?? .init()
+    }
+
+    /// Label for the current lot's set (Marquee, Bowlers, ...).
+    var currentSetName: String {
+        guard let g = game, let p = currentPlayer else { return "" }
+        if g.auction.round == 2 { return "Accelerated round" }
+        return AuctionEngine.setName(for: p, index: g.auction.index, teamCount: g.teams.count)
     }
 
     func log(for fixtureId: Int) -> [BallEvent] { logs[fixtureId] ?? [] }

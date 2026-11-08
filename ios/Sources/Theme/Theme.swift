@@ -1,6 +1,10 @@
 import SwiftUI
 import UIKit
 
+// Night-match broadcast look: near-black, one electric accent, compressed italic type,
+// slanted "score bug" shapes and springy motion (inspired by motion patterns on 60fps.design:
+// counters, card flips, ticket pops, pulses, staggered lists).
+
 extension Color {
     init(hex: String) {
         let s = hex.trimmingCharacters(in: CharacterSet(charactersIn: "#"))
@@ -11,25 +15,36 @@ extension Color {
                       green: Double((rgb & 0x00FF00) >> 8) / 255,
                       blue: Double(rgb & 0x0000FF) / 255)
         } else {
-            self.init(red: 0.98, green: 0.75, blue: 0.14)
+            self.init(red: 0.84, green: 1, blue: 0.23)
         }
     }
 }
 
-/// Night-match stadium palette.
 enum Palette {
-    static let gold = Color(hex: "#FBBF24")
-    static let bgTop = Color(hex: "#0B1230")
-    static let bgBottom = Color(hex: "#05070F")
-    static let card = Color.white.opacity(0.07)
-    static let cardStroke = Color.white.opacity(0.10)
-    static let six = Color(hex: "#A855F7")
-    static let four = Color(hex: "#22C55E")
-    static let wicket = Color(hex: "#EF4444")
+    static let accent = Color(hex: "#D7FF3A")      // floodlight lime
+    static let ink = Color(hex: "#07080B")
+    static let surface = Color(hex: "#12151C")
+    static let surfaceHi = Color(hex: "#1B1F29")
+    static let stroke = Color(hex: "#272B36")
+    static let muted = Color(hex: "#8B90A0")
+    static let four = Color(hex: "#38BDF8")
+    static let six = Color(hex: "#E879F9")
+    static let wicket = Color(hex: "#FF4D4D")
+    static let card = surface
+    static let cardStroke = stroke
 
     static let teamColors = ["#2563EB", "#EAB308", "#DC2626", "#7C3AED", "#0EA5E9",
                              "#F97316", "#E11D48", "#EC4899", "#06B6D4", "#14B8A6",
                              "#84CC16", "#64748B"]
+
+    static func role(_ r: Role) -> Color {
+        switch r {
+        case .BAT: return Color(hex: "#F59E0B")
+        case .WK: return Color(hex: "#22D3EE")
+        case .AR: return Color(hex: "#A78BFA")
+        case .BOWL: return Color(hex: "#F43F5E")
+        }
+    }
 }
 
 enum DS {
@@ -41,25 +56,45 @@ enum DS {
         static let xl: CGFloat = 24
     }
     enum Radius {
-        static let sm: CGFloat = 10
-        static let md: CGFloat = 16
-        static let lg: CGFloat = 22
+        static let sm: CGFloat = 6
+        static let md: CGFloat = 12
+        static let lg: CGFloat = 16
     }
 }
 
 extension Font {
-    static func display(_ size: CGFloat, weight: Font.Weight = .bold) -> Font {
-        .system(size: size, weight: weight, design: .rounded)
+    /// Broadcast headline: heavy, compressed, italic.
+    static func display(_ size: CGFloat, weight: Font.Weight = .black) -> Font {
+        .system(size: size, weight: weight).width(.compressed).italic()
+    }
+    /// Scoreboard numerals: condensed, tabular.
+    static func score(_ size: CGFloat, weight: Font.Weight = .heavy) -> Font {
+        .system(size: size, weight: weight).width(.condensed).monospacedDigit()
     }
 }
 
 struct AppBackground: View {
     var body: some View {
-        LinearGradient(colors: [Palette.bgTop, Palette.bgBottom], startPoint: .top, endPoint: .bottom)
-            .ignoresSafeArea()
+        ZStack {
+            Palette.ink
+            RadialGradient(colors: [Palette.accent.opacity(0.10), .clear], center: .topLeading, startRadius: 10, endRadius: 520)
+            RadialGradient(colors: [Color(hex: "#2563EB").opacity(0.10), .clear], center: .bottomTrailing, startRadius: 10, endRadius: 600)
+            // Mowed-pitch stripes, barely visible.
+            GeometryReader { geo in
+                HStack(spacing: 0) {
+                    ForEach(0..<8, id: \.self) { i in
+                        Rectangle().fill(Color.white.opacity(i % 2 == 0 ? 0.012 : 0))
+                    }
+                }
+                .frame(width: geo.size.width * 1.4)
+                .rotationEffect(.degrees(-12))
+            }
+        }
+        .ignoresSafeArea()
     }
 }
 
+/// Surface with an optional team-colour edge bar.
 struct AppCard<Content: View>: View {
     var padding: CGFloat = DS.Space.lg
     var tint: Color? = nil
@@ -68,52 +103,93 @@ struct AppCard<Content: View>: View {
     var body: some View {
         content
             .padding(padding)
+            .padding(.leading, tint == nil ? 0 : 4)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
-                RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
-                    .fill(tint.map { $0.opacity(0.18) } ?? Palette.card)
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous).fill(Palette.surface)
+                    if let tint {
+                        RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
+                            .fill(LinearGradient(colors: [tint.opacity(0.28), tint.opacity(0.02)], startPoint: .leading, endPoint: .trailing))
+                        Rectangle().fill(tint).frame(width: 5)
+                    }
+                }
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
             )
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
-                    .stroke(tint.map { $0.opacity(0.45) } ?? Palette.cardStroke, lineWidth: 1)
-            )
+            .overlay(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous).stroke(Palette.stroke, lineWidth: 1))
     }
 }
 
+/// Section header with a lime slash.
 struct SectionLabel: View {
     let text: String
     var body: some View {
-        Text(text.uppercased())
-            .font(.caption.weight(.semibold))
-            .foregroundStyle(.secondary)
-            .tracking(0.6)
+        HStack(spacing: 6) {
+            Slant().fill(Palette.accent).frame(width: 7, height: 14)
+            Text(text.uppercased())
+                .font(.display(15, weight: .heavy))
+                .foregroundStyle(Palette.muted)
+                .tracking(0.8)
+        }
     }
 }
 
-/// Big primary call-to-action.
+/// Parallelogram — the broadcast score-bug shape.
+struct Slant: Shape {
+    var skew: CGFloat = 0.28
+    func path(in r: CGRect) -> Path {
+        let dx = r.height * skew
+        var p = Path()
+        p.move(to: CGPoint(x: r.minX + dx, y: r.minY))
+        p.addLine(to: CGPoint(x: r.maxX, y: r.minY))
+        p.addLine(to: CGPoint(x: r.maxX - dx, y: r.maxY))
+        p.addLine(to: CGPoint(x: r.minX, y: r.maxY))
+        p.closeSubpath()
+        return p
+    }
+}
+
+/// Ticket with punched notches on both sides.
+struct TicketShape: Shape {
+    var notch: CGFloat = 14
+    var radius: CGFloat = 18
+    func path(in r: CGRect) -> Path {
+        var p = Path(roundedRect: r, cornerRadius: radius, style: .continuous)
+        let y = r.midY
+        p.addEllipse(in: CGRect(x: r.minX - notch, y: y - notch, width: notch * 2, height: notch * 2))
+        p.addEllipse(in: CGRect(x: r.maxX - notch, y: y - notch, width: notch * 2, height: notch * 2))
+        return p
+    }
+}
+
 struct PrimaryButtonStyle: ButtonStyle {
-    var color: Color = Palette.gold
+    var color: Color = Palette.accent
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.display(18))
-            .foregroundStyle(.black)
+            .font(.display(21))
+            .textCase(.uppercase)
+            .foregroundStyle(Palette.ink)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 15)
             .background(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous).fill(color))
-            .opacity(configuration.isPressed ? 0.8 : 1)
-            .scaleEffect(configuration.isPressed ? 0.98 : 1)
+            .shadow(color: color.opacity(configuration.isPressed ? 0.2 : 0.45), radius: configuration.isPressed ? 4 : 14, y: 4)
+            .scaleEffect(configuration.isPressed ? 0.97 : 1)
+            .animation(.spring(response: 0.25, dampingFraction: 0.6), value: configuration.isPressed)
     }
 }
 
 struct SecondaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.display(16, weight: .semibold))
+            .font(.display(17, weight: .heavy))
+            .textCase(.uppercase)
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 13)
-            .background(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous).fill(Color.white.opacity(0.10)))
-            .opacity(configuration.isPressed ? 0.7 : 1)
+            .background(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous).fill(Palette.surfaceHi))
+            .overlay(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous).stroke(Palette.stroke, lineWidth: 1))
+            .scaleEffect(configuration.isPressed ? 0.97 : 1)
+            .animation(.spring(response: 0.25, dampingFraction: 0.6), value: configuration.isPressed)
     }
 }
 
@@ -133,6 +209,36 @@ struct KeepAwake: ViewModifier {
     }
 }
 
+/// Rows slide up and fade in one after another.
+struct Staggered: ViewModifier {
+    let index: Int
+    @State private var shown = false
+    func body(content: Content) -> some View {
+        content
+            .opacity(shown ? 1 : 0)
+            .offset(y: shown ? 0 : 14)
+            .onAppear {
+                withAnimation(.spring(response: 0.45, dampingFraction: 0.8).delay(Double(min(index, 12)) * 0.04)) { shown = true }
+            }
+    }
+}
+
+/// Soft breathing glow, for the leading bidder.
+struct Pulse: ViewModifier {
+    let color: Color
+    let active: Bool
+    @State private var on = false
+    func body(content: Content) -> some View {
+        content
+            .shadow(color: color.opacity(active ? (on ? 0.85 : 0.3) : 0), radius: active ? (on ? 16 : 6) : 0)
+            .onAppear {
+                withAnimation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true)) { on = true }
+            }
+    }
+}
+
 extension View {
     func keepAwake() -> some View { modifier(KeepAwake()) }
+    func staggered(_ index: Int) -> some View { modifier(Staggered(index: index)) }
+    func pulse(_ color: Color, active: Bool) -> some View { modifier(Pulse(color: color, active: active)) }
 }

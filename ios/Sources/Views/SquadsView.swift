@@ -12,13 +12,14 @@ struct SquadsView: View {
             if let g = store.game {
                 if preseason {
                     Section {
-                        Text("Auction complete! Check your squad and set your Playing XI. The computer has auto-picked a balanced XI for every team.")
+                        Text("Auction complete! Every franchise has its XI. Tap a team to see it or change the batting order.")
                             .font(.subheadline).foregroundStyle(.secondary)
                     }
-                    .listRowBackground(Palette.card)
+                    .listRowBackground(Palette.surface)
                 }
                 Section("Franchises") {
                     ForEach(g.teams.sorted { ($0.isCPU ? 1 : 0, $0.id) < ($1.isCPU ? 1 : 0, $1.id) }) { t in
+                        let needs = AuctionEngine.needs(t, players: store.book.byId)
                         NavigationLink {
                             TeamDetailView(teamId: t.id)
                         } label: {
@@ -26,16 +27,22 @@ struct SquadsView: View {
                                 TeamBadge(team: t, size: 40)
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(t.name).font(.headline)
-                                    Text("\(t.squad.count) players · \(Money.format(t.purse)) left · \(t.isCPU ? "CPU" : "Human")")
+                                    Text("\(t.squad.count)/\(g.rules.maxSquad) · \(Money.format(t.purse)) left · \(t.isCPU ? "CPU" : "Human")")
                                         .font(.caption).foregroundStyle(.secondary)
+                                    if needs.total > 0 {
+                                        Text(needs.summary).font(.caption2).foregroundStyle(.orange)
+                                    }
                                 }
                                 Spacer()
-                                Text(strength(t)).font(.display(18)).foregroundStyle(Palette.gold)
+                                VStack(alignment: .trailing, spacing: 0) {
+                                    Text(strength(t)).font(.display(22)).foregroundStyle(Palette.accent)
+                                    Text("STR").font(.display(10, weight: .heavy)).foregroundStyle(Palette.muted)
+                                }
                             }
                         }
                     }
                 }
-                .listRowBackground(Palette.card)
+                .listRowBackground(Palette.surface)
 
                 let top = topBuys(g)
                 if !top.isEmpty {
@@ -51,7 +58,7 @@ struct SquadsView: View {
                             }
                         }
                     }
-                    .listRowBackground(Palette.card)
+                    .listRowBackground(Palette.surface)
                 }
 
                 if preseason {
@@ -66,8 +73,7 @@ struct SquadsView: View {
                 }
             }
         }
-        .scrollContentBackground(.hidden)
-        .background(AppBackground())
+        .darkList()
         .navigationTitle("Squads")
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
@@ -115,18 +121,18 @@ struct TeamDetailView: View {
                             Text(t.name).font(.display(22))
                             Text("Spent \(Money.format(g.rules.purse - t.purse)) · \(Money.format(t.purse)) left")
                                 .font(.subheadline).foregroundStyle(.secondary)
-                            Text("\(t.squad.count) players · \(AuctionEngine.overseasCount(t, players: store.book.byId)) overseas")
+                            Text("\(t.squad.count) players · \(AuctionEngine.overseasCount(t, players: store.book.byId)) overseas · \(AuctionEngine.needs(t, players: store.book.byId).summary)")
                                 .font(.subheadline).foregroundStyle(.secondary)
                         }
                     }
                 }
-                .listRowBackground(Palette.card)
+                .listRowBackground(Palette.surface)
 
                 if !t.xi.isEmpty {
                     Section {
-                        if g.phase == .squads || g.phase == .season {
-                            NavigationLink { PickXIView(teamId: teamId) } label: {
-                                Label("Edit Playing XI", systemImage: "pencil.circle.fill").foregroundStyle(Palette.gold)
+                        if (g.phase == .squads || g.phase == .season) && g.championId == nil {
+                            NavigationLink { BattingOrderView(teamId: teamId) } label: {
+                                Label("Change batting order", systemImage: "arrow.up.arrow.down.circle.fill").foregroundStyle(Palette.accent)
                             }
                         }
                         ForEach(Array(t.xi.enumerated()), id: \.element) { i, pid in
@@ -140,7 +146,7 @@ struct TeamDetailView: View {
                     } header: {
                         Text("Playing XI · batting order")
                     }
-                    .listRowBackground(Palette.card)
+                    .listRowBackground(Palette.surface)
                 }
 
                 let bench = t.squad.filter { !t.xi.contains($0) }
@@ -150,92 +156,61 @@ struct TeamDetailView: View {
                             if let p = store.player(pid) { PlayerRow(player: p, price: t.paid[pid]) }
                         }
                     }
-                    .listRowBackground(Palette.card)
+                    .listRowBackground(Palette.surface)
                 }
             }
         }
-        .scrollContentBackground(.hidden)
-        .background(AppBackground())
+        .darkList()
         .navigationTitle(store.team(teamId)?.short ?? "")
         .navigationBarTitleDisplayMode(.inline)
     }
 }
 
-struct PickXIView: View {
+struct BattingOrderView: View {
     @EnvironmentObject var store: GameStore
     @Environment(\.dismiss) private var dismiss
     let teamId: Int
-    @State private var selected: Set<String> = []
+    @State private var order: [String] = []
 
     var body: some View {
-        let g = store.game
-        let team = g?.team(teamId)
-        let rules = g?.rules ?? Rules()
-        let squad = (team?.squad ?? []).compactMap { store.player($0) }
-            .sorted { max($0.bat, $0.bowl) > max($1.bat, $1.bowl) }
-        let picked = squad.filter { selected.contains($0.id) }
-        let issues = TeamSelector.blockingIssues(picked, rules: rules)
-        let warnings = TeamSelector.warnings(picked)
-
         List {
             Section {
-                HStack(spacing: 16) {
-                    counter("\(picked.count)/11", "players", picked.count == 11)
-                    counter("\(picked.filter(\.overseas).count)/\(rules.maxOverseasXI)", "overseas", picked.filter(\.overseas).count <= rules.maxOverseasXI)
-                    counter("\(picked.filter(\.isBowlingOption).count)", "bowlers", picked.filter(\.isBowlingOption).count >= 5)
-                    counter("\(picked.filter { $0.role == .WK }.count)", "keeper", picked.contains { $0.role == .WK })
-                }
-                ForEach(issues + warnings, id: \.self) { Text("• \($0)").font(.footnote).foregroundStyle(issues.contains($0) ? Color.red : Color.orange) }
-                Button("Auto-pick best XI") {
-                    selected = Set(TeamSelector.autoXI(squad: squad, rules: rules))
-                    Haptics.tap()
-                }
-            }
-            .listRowBackground(Palette.card)
-
-            Section("Squad — tap to select") {
-                ForEach(squad) { p in
-                    Button {
-                        if selected.contains(p.id) { selected.remove(p.id) } else { selected.insert(p.id) }
-                        Haptics.tap()
-                    } label: {
-                        HStack {
-                            Image(systemName: selected.contains(p.id) ? "checkmark.circle.fill" : "circle")
-                                .foregroundStyle(selected.contains(p.id) ? Palette.gold : .secondary)
-                                .font(.title3)
+                ForEach(Array(order.enumerated()), id: \.element) { i, pid in
+                    if let p = store.player(pid) {
+                        HStack(spacing: 10) {
+                            Text("\(i + 1)").font(.score(15)).foregroundStyle(Palette.muted).frame(width: 22)
                             PlayerRow(player: p)
                         }
                     }
-                    .buttonStyle(.plain)
+                }
+                .onMove { order.move(fromOffsets: $0, toOffset: $1) }
+            } footer: {
+                Text("Drag to change the batting order. Your five best bowlers for the pitch bowl automatically.")
+            }
+            .listRowBackground(Palette.surface)
+            Section {
+                Button("Reset to best order") {
+                    order = TeamSelector.battingOrder(order.compactMap { store.player($0) }).map(\.id)
+                    Haptics.tap()
                 }
             }
-            .listRowBackground(Palette.card)
+            .listRowBackground(Palette.surface)
         }
-        .scrollContentBackground(.hidden)
-        .background(AppBackground())
-        .navigationTitle("Playing XI")
+        .environment(\.editMode, .constant(.active))
+        .darkList()
+        .navigationTitle("Batting order")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button("Save") {
-                    let order = TeamSelector.battingOrder(picked).map(\.id)
                     store.setXI(teamId: teamId, ids: order)
                     Haptics.success()
                     dismiss()
                 }
-                .disabled(!issues.isEmpty)
             }
         }
         .onAppear {
-            if selected.isEmpty { selected = Set(team?.xi ?? []) }
+            if order.isEmpty, let t = store.team(teamId) { order = t.xi.isEmpty ? t.squad : t.xi }
         }
-    }
-
-    private func counter(_ value: String, _ label: String, _ ok: Bool) -> some View {
-        VStack(spacing: 2) {
-            Text(value).font(.display(18)).foregroundStyle(ok ? Palette.four : .orange)
-            Text(label).font(.caption2).foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity)
     }
 }

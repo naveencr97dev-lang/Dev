@@ -10,26 +10,33 @@ Franchise names are fictional; the app is not affiliated with any real league.
 
 ## How a game goes
 
-1. **Setup**: 3–10 franchises. Mark each one 👤 Human or 🤖 CPU (CPU teams
-   fill out the league). Pick the purse, auction length, bid timer and season length.
-2. **Auction**: players come up one at a time (Marquee → Batters →
-   All-rounders → Keepers → Bowlers → Uncapped). Each human team has a coloured
-   bid button: whoever taps raises the bid. The timer resets on every bid, and when
-   it runs out the player is SOLD. CPU teams bid on their own based on player
-   value, squad needs and budget. Unsold players come back in an accelerated round.
+1. **Setup**: 3–10 franchises (default is 4). Mark each one 👤 Human or 🤖 CPU. Pick the purse,
+   the bid timer (5/8/12/30 s), the pitches (mixed venues or one type) and the season length.
+2. **Auction**: each team buys **exactly 11** (max 4 overseas). The pool is one XI per
+   team plus 12 extras (4 batters + 1 keeper, 2 all-rounders, 5 bowlers). With 4 teams
+   that's 56 players. The auction **stops as soon as every XI is full**.
+   - Order: Marquee → Batters & Keepers → All-rounders → Bowlers. Unsold players return in an accelerated round.
+   - Tap your crest to bid. The timer resets on every bid.
+   - **Skip** settles a lot instantly (CPU teams decide, no waiting). **Sold/Unsold** drops the hammer now.
+   - Each bid tile shows what your XI still needs (WK, bowlers, batters).
    - IPL-style increments: +₹5 L under ₹1 Cr, +₹10 L to ₹2 Cr, +₹20 L to ₹5 Cr, +₹25 L above.
-   - Squads are 11–18 players with max 8 overseas. A team can never bid so much
-     that it can't afford a full XI.
-3. **Squads**: every team gets an auto-picked balanced XI (a keeper, 5 bowlers,
-   max 4 overseas). Humans can edit their XI at any point in the season.
-4. **Season**: single (or double) round robin. Each match plays as a fast
-   ball-by-ball ticker (or skip straight to the scorecard). Includes a worm
-   chart, full scorecards, Player of the Match, points table with NRR,
-   Orange/Purple Cap leaderboards.
-5. **Playoffs → Final → Trophy ceremony** with season awards (Orange Cap,
-   Purple Cap, MVP, Most sixes, Best buy).
+3. **Legends**: 67 star players carry traits that change match-ups ball by ball:
+   Power Hitter, Anchor, Finisher, Spin/Pace Basher, Powerplay Blitz, Chase Master, 360°,
+   Death Specialist, New-Ball Swing, Mystery Spin, Miser, Wicket Taker, Express Pace.
+   A Spin Basher takes apart spinners. Mystery Spin works unless the batter reads spin.
+   New-Ball Swing is deadliest on an English seamer.
+4. **Pitches**: 🛣️ Indian Flat (about 205 par) · 🌧️ English Seamer (about 140, swing) ·
+   🦘 Aussie Bouncer (pace) · 🏜️ Dusty Turner (spin) · 🌴 Caribbean Slow (low and slow).
+   Captains pick the five bowlers that suit the pitch.
+5. **Season**: matches play live with a TV-style score strip: both batters' runs (balls, 4s, 6s),
+   the bowler's figures, the chase equation, this over and commentary. You can also skip to
+   the scorecard. Points table with NRR, plus Orange and Purple Cap leaderboards. Batting order
+   can be changed between matches.
+6. **Playoffs → Final → Trophy ceremony** with awards. Afterwards, **Back to season**
+   lets you browse every match, the table and stats.
 
-The game saves automatically. Close the app any time and it resumes where you left off.
+Portrait and landscape both work. Landscape uses a two-column layout that suits
+screen casting. The game saves automatically.
 
 ## Code layout
 
@@ -50,7 +57,7 @@ cd ios && swift test
 ```
 
 Tests cover the auction rules, valid squads for 3/8/10 teams, a 1,000-match
-calibration run (first innings averages ~172, ~6.5 wickets, a six every ~15 balls)
+calibration run per pitch, trait match-up checks
 and a full game from setup to champion.
 
 ## Getting an installable IPA (no Mac needed)

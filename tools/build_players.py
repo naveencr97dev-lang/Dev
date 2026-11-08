@@ -58,6 +58,88 @@ def pool(p, role):
         return "Uncapped"
     return {"BAT": "Batters", "AR": "All-rounders", "WK": "Wicket-keepers", "BOWL": "Bowlers"}[role]
 
+# Spin bowlers in the pool (everyone else who bowls is treated as pace).
+SPINNERS = set("""Axar Patel; Kuldeep Yadav; Noor Ahmad; Rashid Khan; Ravindra Jadeja; Sunil Narine;
+Varun Chakaravarthy; Yuzvendra Chahal; Will Jacks; Liam Livingstone; Wanindu Hasaranga; Abhishek Sharma;
+Riyan Parag; Ravi Bishnoi; Krunal Pandya; Mitch Santner; Washington Sundar; Akeal Hosein; Maheesh Theekshana;
+Rahul Chahar; Jacob Bethell; Rahul Tewatia; Digvesh Singh Rathi; Shahbaz Ahmed; Rachin Ravindra; Sai Kishore;
+Harpreet Brar; Mayank Markande; Suyash Sharma; Swapnil Singh; AM Ghazanfar; Kamindu Mendis; Jayant Yadav;
+Anukul Roy; Manimaran Siddharth; Harsh Dubey; Shreyas Gopal; Zeeshan Ansari; Vipraj Nigam; Karn Sharma;
+Kumar Kartikeya Singh; Prashant Solanki; Vignesh Puthur; Keshav Maharaj; George Linde; Praveen Dubey;
+Mahipal Lomror; Cooper Connolly; Rehan Ahmed; Raghu Sharma; Manav Suthar; Kanishk Chouhan; Vicky Ostwal;
+Musheer Khan; Prashant Veer; Glenn Phillips; Aiden Markram""".replace("\n", " ").split("; "))
+
+# Legend traits: how a star plays, used by the match engine for matchups.
+TRAITS = {
+    "Virat Kohli": ["anchor", "chaseMaster"],
+    "Rohit Sharma": ["powerplayBlitz", "powerHitter"],
+    "Suryakumar Yadav": ["threeSixty"],
+    "Heinrich Klaasen": ["spinBasher", "powerHitter"],
+    "Jos Buttler": ["powerplayBlitz", "chaseMaster"],
+    "Travis Head": ["powerplayBlitz", "paceBasher"],
+    "Abhishek Sharma": ["powerplayBlitz"],
+    "KL Rahul": ["anchor"],
+    "Shubman Gill": ["anchor"],
+    "Sai Sudharsan": ["anchor"],
+    "Yashasvi Jaiswal": ["powerplayBlitz"],
+    "Phil Salt": ["powerplayBlitz"],
+    "Nicholas Pooran": ["powerHitter", "spinBasher"],
+    "Rishabh Pant": ["spinBasher"],
+    "Mahendra Singh Dhoni": ["finisher", "chaseMaster"],
+    "Hardik Pandya": ["finisher"],
+    "Tim David": ["finisher", "powerHitter"],
+    "David Miller": ["finisher", "chaseMaster"],
+    "Rinku Singh": ["finisher"],
+    "Shimron Hetmyer": ["finisher"],
+    "Shivam Dube": ["spinBasher"],
+    "Tristan Stubbs": ["finisher"],
+    "Vaibhav Sooryavanshi": ["powerplayBlitz"],
+    "Priyansh Arya": ["powerplayBlitz"],
+    "Sanju Samson": ["spinBasher"],
+    "Shreyas Iyer": ["spinBasher", "anchor"],
+    "Ruturaj Gaikwad": ["anchor"],
+    "Tilak Varma": ["chaseMaster"],
+    "Quinton De Kock": ["powerplayBlitz"],
+    "Liam Livingstone": ["powerHitter"],
+    "Sunil Narine": ["powerplayBlitz", "mysterySpin", "economical"],
+    "Ashutosh Sharma": ["finisher"],
+    "Shashank Singh": ["finisher"],
+    "Rajat Patidar": ["spinBasher"],
+    "Mitch Marsh": ["paceBasher"],
+    "Prabhsimran Singh": ["powerplayBlitz"],
+    "Jasprit Bumrah": ["deathSpecialist", "economical"],
+    "Rashid Khan": ["mysterySpin", "economical"],
+    "Varun Chakaravarthy": ["mysterySpin"],
+    "Yuzvendra Chahal": ["wicketTaker"],
+    "Kuldeep Yadav": ["wicketTaker"],
+    "Mitchell Starc": ["newBallSwing", "deathSpecialist"],
+    "Trent Boult": ["newBallSwing"],
+    "Bhuvneshwar Kumar": ["newBallSwing", "economical"],
+    "Deepak Chahar": ["newBallSwing"],
+    "Arshdeep Singh": ["deathSpecialist", "newBallSwing"],
+    "Matheesha Pathirana": ["deathSpecialist"],
+    "Josh Hazlewood": ["economical", "newBallSwing"],
+    "Pat Cummins": ["economical"],
+    "Mohammed Shami": ["newBallSwing"],
+    "Mohammed Siraj": ["newBallSwing"],
+    "Kagiso Rabada": ["wicketTaker"],
+    "Jofra Archer": ["expressPace", "deathSpecialist"],
+    "Harshal Patel": ["deathSpecialist"],
+    "Thangarasu Natarajan": ["deathSpecialist"],
+    "Ravindra Jadeja": ["economical"],
+    "Axar Patel": ["economical"],
+    "Wanindu Hasaranga": ["wicketTaker"],
+    "Noor Ahmad": ["mysterySpin"],
+    "Ravi Bishnoi": ["wicketTaker"],
+    "Sam Curran": ["newBallSwing"],
+    "Lockie Ferguson": ["expressPace"],
+    "Mayank Yadav": ["expressPace"],
+    "Umran Malik": ["expressPace"],
+    "Anrich Nortje": ["expressPace"],
+    "Mustafizur Rahman": ["deathSpecialist"],
+    "Sandeep Sharma": ["deathSpecialist"],
+}
+
 def line(s):
     parts = [f"{s.get('matches', 0)} M"]
     if s.get("runs") is not None:
@@ -91,7 +173,12 @@ def main(path):
             "bat": bat_rating(p, role),
             "bowl": bowl_rating(p, role),
             "line": line(p.get("stats") or {}),
+            "bowlType": "spin" if p["name"] in SPINNERS else "pace",
+            "traits": TRAITS.get(p["name"], []),
         })
+    missing = (set(TRAITS) | SPINNERS) - {o["name"] for o in out}
+    if missing:
+        print("not in pool (ignored):", sorted(missing))
     json.dump(out, open("ios/Resources/players.json", "w"), indent=1, ensure_ascii=False)
     print(len(out), "players written")
 

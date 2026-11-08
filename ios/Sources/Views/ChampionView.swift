@@ -4,6 +4,7 @@ struct ChampionView: View {
     @EnvironmentObject var store: GameStore
     @State private var confirmNew = false
     @State private var burst = 0
+    @State private var lift = false
 
     var body: some View {
         ZStack {
@@ -12,9 +13,10 @@ struct ChampionView: View {
                     let awards = g.awards()
                     VStack(spacing: DS.Space.lg) {
                         Text("🏆").font(.system(size: 110)).padding(.top, DS.Space.lg)
-                        Text("CHAMPIONS").font(.display(16, weight: .heavy)).tracking(4).foregroundStyle(Palette.gold)
-                        TeamBadge(team: champ, size: 86)
-                        Text(champ.name).font(.display(32, weight: .heavy)).multilineTextAlignment(.center)
+                            .scaleEffect(lift ? 1 : 0.4).rotationEffect(.degrees(lift ? 0 : -20))
+                        Text("CHAMPIONS").font(.display(20, weight: .heavy)).tracking(6).foregroundStyle(Palette.accent)
+                        TeamBadge(team: champ, size: 92).pulse(Color(hex: champ.colorHex), active: true)
+                        Text(champ.name.uppercased()).font(.display(44)).multilineTextAlignment(.center)
                         if let final = g.results.last(where: { $0.stage == .final }) {
                             Text("\(champ.short) \(final.margin) in the Final")
                                 .font(.headline).foregroundStyle(.secondary)
@@ -42,9 +44,17 @@ struct ChampionView: View {
                             PointsTableView()
                         }
 
-                        Button("New Game") { confirmNew = true }
-                            .buttonStyle(PrimaryButtonStyle())
-                            .padding(.vertical, DS.Space.lg)
+                        VStack(spacing: 10) {
+                            Button {
+                                store.reopenSeason()
+                            } label: {
+                                Label("Back to season · all matches", systemImage: "list.bullet.rectangle.portrait")
+                            }
+                            .buttonStyle(SecondaryButtonStyle())
+                            Button("New Game") { confirmNew = true }
+                                .buttonStyle(PrimaryButtonStyle())
+                        }
+                        .padding(.vertical, DS.Space.lg)
                     }
                     .padding(DS.Space.lg)
                 }
@@ -59,7 +69,10 @@ struct ChampionView: View {
                 Button { burst += 1; Haptics.success() } label: { Image(systemName: "sparkles") }
             }
         }
-        .onAppear { Haptics.success() }
+        .onAppear {
+            Haptics.success()
+            withAnimation(.spring(response: 0.6, dampingFraction: 0.55).delay(0.1)) { lift = true }
+        }
         .confirmationDialog("Start a new game? This season will be cleared.", isPresented: $confirmNew, titleVisibility: .visible) {
             Button("New Game") { store.reset(); store.newGame() }
             Button("Cancel", role: .cancel) {}

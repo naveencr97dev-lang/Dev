@@ -33,7 +33,7 @@ struct GameState: Codable {
 
     static func newSetup(seed: UInt64) -> GameState {
         var g = GameState(rng: SeededRNG(seed: seed))
-        g.teams = (0..<8).map { i in
+        g.teams = (0..<4).map { i in
             let t = FranchiseTemplate.all[i]
             return Franchise(id: i, name: t.name, short: t.short, colorHex: t.color, isCPU: i >= 3)
         }
@@ -79,6 +79,16 @@ struct GameState: Codable {
         AuctionEngine.hammer(&auction, teams: &teams)
     }
 
+    /// Skip watching a lot: CPU teams settle it instantly (humans stop bidding), then hammer.
+    mutating func skipLot(book: PlayerBook) -> SaleRecord? {
+        AuctionEngine.autoResolveLot(&auction, teams: &teams, rules: rules, players: book.byId, rng: &rng)
+    }
+
+    func needs(_ teamId: Int, book: PlayerBook) -> AuctionEngine.Needs {
+        guard let t = team(teamId) else { return .init() }
+        return AuctionEngine.needs(t, players: book.byId)
+    }
+
     mutating func nextLot(book: PlayerBook) {
         AuctionEngine.advance(&auction, teams: teams, rules: rules, players: book.byId, rng: &rng)
         if auction.finished { finishAuction(book: book) }
@@ -104,7 +114,7 @@ struct GameState: Codable {
         auction.finished = true
         AuctionEngine.autofill(teams: &teams, allPlayers: book.all, rules: rules, players: book.byId)
         for i in teams.indices {
-            teams[i].xi = TeamSelector.autoXI(squad: teams[i].squad.compactMap { book[$0] }, rules: rules)
+            teams[i].xi = TeamSelector.battingOrder(teams[i].squad.compactMap { book[$0] }).map(\.id)
         }
         phase = .squads
     }
@@ -118,9 +128,17 @@ struct GameState: Codable {
 
     mutating func startSeason() {
         fixtures = SeasonEngine.leagueFixtures(teamIds: teams.map(\.id), double: rules.doubleRoundRobin, rng: &rng)
+        for i in fixtures.indices { fixtures[i].pitch = drawPitch() }
         results = []
         championId = nil
         phase = .season
+    }
+
+    mutating func drawPitch() -> Pitch {
+        switch rules.pitchMode {
+        case .fixed(let p): return p
+        case .mixed: return Pitch.allCases.randomElement(using: &rng) ?? .indianFlat
+        }
     }
 
     var nextFixture: Fixture? { fixtures.first { !$0.played } }
@@ -152,7 +170,7 @@ struct GameState: Codable {
         let f = fixtures[fi]
         var engine = MatchEngine(rng: rng)
         var log: [BallEvent] = []
-        let r = engine.play(side(f.home, book: book), side(f.away, book: book), stage: f.stage, log: &log)
+        let r = engine.play(side(f.home, book: book), side(f.away, book: book), stage: f.stage, pitch: f.pitch, log: &log)
         rng = engine.rng
         results.append(r)
         fixtures[fi].resultId = r.id
@@ -162,7 +180,8 @@ struct GameState: Codable {
             championId = r.winnerId
         } else if nextFixture == nil {
             let playoffResults = results.filter { $0.stage != .league }
-            if let next = SeasonEngine.nextPlayoff(table: table, playoffResults: playoffResults, nextId: fixtures.count + 1) {
+            if var next = SeasonEngine.nextPlayoff(table: table, playoffResults: playoffResults, nextId: fixtures.count + 1) {
+                next.pitch = drawPitch()
                 fixtures.append(next)
             }
         }
@@ -171,6 +190,11 @@ struct GameState: Codable {
 
     mutating func finishSeason() {
         if championId != nil { phase = .champion }
+    }
+
+    /// Back from the trophy ceremony to browse results, table and stats.
+    mutating func reopenSeason() {
+        if championId != nil { phase = .season }
     }
 
     // MARK: Awards

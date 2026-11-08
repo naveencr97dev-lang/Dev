@@ -50,14 +50,16 @@ final class EngineTests: XCTestCase {
     }
 
     func testAuctionProducesValidSquads() {
-        for (n, seed) in [(3, 1), (8, 2), (10, 3)] as [(Int, UInt64)] {
-            var rules = Rules()
-            for pool in PoolSize.allCases {
-                rules.poolSize = pool
+        for (n, seed) in [(3, 1), (4, 5), (8, 2), (10, 3)] as [(Int, UInt64)] {
+            let rules = Rules()
+            var rng = SeededRNG(seed: seed)
+            let queue = AuctionEngine.buildQueue(players: players, teamCount: n, rules: rules, rng: &rng)
+            XCTAssertEqual(queue.count, 11 * n + 12, "pool = one XI per team + 12 extras")
+            XCTAssertEqual(Set(queue).count, queue.count)
+            do {
                 let teams = runAuction(teams: n, rules: rules, seed: seed)
                 for t in teams {
-                    XCTAssertGreaterThanOrEqual(t.squad.count, rules.minSquad, "\(t.name) n=\(n)")
-                    XCTAssertLessThanOrEqual(t.squad.count, rules.maxSquad)
+                    XCTAssertEqual(t.squad.count, 11, "\(t.name) n=\(n)")
                     XCTAssertGreaterThanOrEqual(t.purse, 0)
                     XCTAssertLessThanOrEqual(AuctionEngine.overseasCount(t, players: byId), rules.maxOverseasSquad)
                     let xi = TeamSelector.autoXI(squad: t.squad.compactMap { byId[$0] }, rules: rules)
@@ -69,8 +71,9 @@ final class EngineTests: XCTestCase {
             }
             let teams = runAuction(teams: n, rules: Rules(), seed: seed)
             let spent = teams.map { Rules().purse - $0.purse }
-            print("auction n=\(n): squads \(teams.map(\.squad.count)) spent \(spent.map(Money.format))")
-            if n == 8 {
+            let needs = teams.map { AuctionEngine.needs($0, players: byId).summary }
+            print("auction n=\(n): spent \(spent.map(Money.format)) needs \(needs)")
+            if n == 4 {
                 let top = teams.flatMap { t in t.paid.map { ($0.key, $0.value) } }.sorted { $0.1 > $1.1 }.prefix(5)
                 print("  top buys:", top.map { "\(byId[$0.0]!.name) \(Money.format($0.1))" })
             }
@@ -81,6 +84,7 @@ final class EngineTests: XCTestCase {
         let rules = Rules()
         var teams = makeTeams(3, rules: rules)
         teams[0].isCPU = false
+        XCTAssertEqual(Pitch.allCases.count, 5)
         var rng = SeededRNG(seed: 9)
         var state = AuctionState()
         state.queue = AuctionEngine.buildQueue(players: players, teamCount: 3, rules: rules, rng: &rng)
@@ -93,45 +97,108 @@ final class EngineTests: XCTestCase {
         teams[1].purse = 100
         XCTAssertEqual(AuctionEngine.maxAffordable(teams[1], rules: rules), -200)
         XCTAssertFalse(AuctionEngine.canBid(teams[1], on: p, amount: p.base, rules: rules, players: byId))
+        // Overseas: max 4 in an 11-man squad.
+        var t = teams[2]
+        t.squad = players.filter(\.overseas).prefix(4).map(\.id)
+        let os = players.first { $0.overseas && !t.squad.contains($0.id) }!
+        XCTAssertEqual(AuctionEngine.blockReason(t, on: os, amount: os.base, rules: rules, players: byId), "Overseas full")
+    }
+
+    func sides(_ teams: [Franchise]) -> [MatchEngine.Side] {
+        teams.map { t in
+            MatchEngine.Side(teamId: t.id, xi: TeamSelector.autoXI(squad: t.squad.compactMap { byId[$0] }, rules: Rules()).compactMap { byId[$0] })
+        }
     }
 
     func testMatchCalibration() {
-        let rules = Rules()
-        let teams = runAuction(teams: 8, rules: rules, seed: 42)
-        let sides = teams.map { t in
-            MatchEngine.Side(teamId: t.id, xi: TeamSelector.autoXI(squad: t.squad.compactMap { byId[$0] }, rules: rules).compactMap { byId[$0] })
+        let teams = runAuction(teams: 8, rules: Rules(), seed: 42)
+        let sides = sides(teams)
+        var averages: [Pitch: Double] = [:]
+        for pitch in Pitch.allCases {
+            var engine = MatchEngine(rng: SeededRNG(seed: 7))
+            var firstInn: [Int] = [], wkts: [Int] = [], sixes = 0, balls = 0, chaseWins = 0, ties = 0
+            var spinWkts = 0, paceWkts = 0
+            let n = 600
+            for i in 0..<n {
+                let a = sides[i % 8], b = sides[(i + 1 + i / 8) % 8 == i % 8 ? (i + 1) % 8 : (i + 1 + i / 8) % 8]
+                var log: [BallEvent] = []
+                let r = engine.play(a, b, stage: .league, pitch: pitch, log: &log)
+                firstInn.append(r.innings[0].runs)
+                wkts.append(r.innings[0].wickets)
+                sixes += r.innings.reduce(0) { $0 + $1.batters.reduce(0) { $0 + $1.sixes } }
+                balls += r.innings.reduce(0) { $0 + $1.balls }
+                if r.winnerId == r.innings[1].teamId { chaseWins += 1 }
+                if r.superOver { ties += 1 }
+                for inn in r.innings { for bw in inn.bowlers {
+                    if byId[bw.id]?.bowlType == .spin { spinWkts += bw.wickets } else { paceWkts += bw.wickets }
+                } }
+                XCTAssertLessThanOrEqual(r.innings[0].balls, 120)
+                XCTAssertLessThanOrEqual(r.innings[0].wickets, 10)
+                XCTAssertTrue(r.innings.allSatisfy { inn in inn.bowlers.allSatisfy { $0.balls <= 24 } })
+                XCTAssertEqual(r.innings[0].runs, r.innings[0].batters.reduce(0) { $0 + $1.runs } + r.innings[0].extras)
+                XCTAssertEqual(r.pitch, pitch)
+                // Live snapshots: two batters (one on strike) until all out, bowler figures add up.
+                for e in log where e.label != "W" {
+                    XCTAssertEqual(e.batters.count, 2)
+                    XCTAssertEqual(e.batters.filter(\.onStrike).count, 1)
+                }
+                if let last = log.last(where: { $0.innings == 0 }) {
+                    XCTAssertEqual(last.score, r.innings[0].runs)
+                }
+            }
+            let avg = Double(firstInn.reduce(0, +)) / Double(n)
+            averages[pitch] = avg
+            let sorted = firstInn.sorted()
+            let avgW = Double(wkts.reduce(0, +)) / Double(n)
+            let ballsPerSix = Double(balls) / Double(max(sixes, 1))
+            print(String(format: "%@: 1st inns avg %.1f (p10 %d, p90 %d), wkts %.1f, balls/six %.1f, chase win %.0f%%, ties %d, spin share of wkts %.0f%%",
+                         pitch.label, avg, sorted[n / 10], sorted[n * 9 / 10], avgW, ballsPerSix,
+                         Double(chaseWins) * 100 / Double(n), ties, Double(spinWkts) * 100 / Double(max(1, spinWkts + paceWkts))))
+            XCTAssertTrue((130...215).contains(avg), "\(pitch) avg \(avg)")
+            XCTAssertTrue((4...9).contains(avgW), "\(pitch) wickets \(avgW)")
         }
-        var engine = MatchEngine(rng: SeededRNG(seed: 7))
-        var firstInn: [Int] = [], wkts: [Int] = [], sixes = 0, balls = 0, chaseWins = 0, ties = 0
-        var wins = [Int: Int]()
-        let n = 1000
-        for i in 0..<n {
-            let a = sides[i % 8], b = sides[(i / 8 + i + 1) % 8 == i % 8 ? (i + 1) % 8 : (i / 8 + i + 1) % 8]
-            var log: [BallEvent] = []
-            let r = engine.play(a, b, stage: .league, log: &log)
-            firstInn.append(r.innings[0].runs)
-            wkts.append(r.innings[0].wickets)
-            sixes += r.innings.reduce(0) { $0 + $1.batters.reduce(0) { $0 + $1.sixes } }
-            balls += r.innings.reduce(0) { $0 + $1.balls }
-            if r.winnerId == r.innings[1].teamId { chaseWins += 1 }
-            if r.superOver { ties += 1 }
-            wins[r.winnerId, default: 0] += 1
-            XCTAssertLessThanOrEqual(r.innings[0].balls, 120)
-            XCTAssertLessThanOrEqual(r.innings[0].wickets, 10)
-            XCTAssertTrue(r.innings.allSatisfy { inn in inn.bowlers.allSatisfy { $0.balls <= 24 } })
-            XCTAssertEqual(r.innings[0].runs, r.innings[0].batters.reduce(0) { $0 + $1.runs } + r.innings[0].extras)
-            XCTAssertFalse(log.isEmpty)
+        XCTAssertGreaterThan(averages[.indianFlat]!, averages[.englishSeam]! + 15, "India should score well above England")
+        XCTAssertGreaterThan(averages[.indianFlat]!, averages[.dustyTurner]! + 15)
+    }
+
+    /// Traits must actually change outcomes in their match-ups.
+    func testTraitsMatter() {
+        func make(_ name: String, bat: Int, bowl: Int, type: BowlType = .pace, traits: [Trait] = []) -> Player {
+            Player(id: name, name: name, role: .BAT, overseas: false, country: "", base: 30, pool: "", rating: 70,
+                   bat: bat, bowl: bowl, line: "", bowlType: type, traits: traits)
         }
-        let avg = Double(firstInn.reduce(0, +)) / Double(n)
-        let sorted = firstInn.sorted()
-        let avgW = Double(wkts.reduce(0, +)) / Double(n)
-        let ballsPerSix = Double(balls) / Double(max(sixes, 1))
-        print(String(format: "calibration: 1st inns avg %.1f (p10 %d, p90 %d), wkts %.1f, balls/six %.1f, chase win %.0f%%, super overs %d",
-                     avg, sorted[n / 10], sorted[n * 9 / 10], avgW, ballsPerSix, Double(chaseWins) * 100 / Double(n), ties))
-        print("  wins by team:", wins.sorted { $0.key < $1.key }.map { "\($0.key):\($0.value)" })
-        XCTAssertTrue((150...195).contains(avg), "avg first innings \(avg)")
-        XCTAssertTrue((4.5...8.5).contains(avgW), "avg wickets \(avgW)")
-        XCTAssertTrue((10...22).contains(ballsPerSix), "balls per six \(ballsPerSix)")
+        func sixRate(_ batter: Player, _ bowler: Player, over: Int, pitch: Pitch = .indianFlat) -> (Double, Double) {
+            var engine = MatchEngine(rng: SeededRNG(seed: 3))
+            var sixes = 0, wkts = 0
+            let card = InningsCard(teamId: 0)
+            for _ in 0..<40_000 {
+                let (o, _, _) = engine.ball(batter: batter, bowler: bowler, over: over, maxOvers: 20, card: card,
+                                            target: nil, maxWickets: 10, pitch: pitch)
+                if o == 6 { sixes += 1 }
+                if o == -1 { wkts += 1 }
+            }
+            return (Double(sixes) / 400, Double(wkts) / 400)   // per 100 balls
+        }
+        let plain = make("plain", bat: 70, bowl: 10)
+        let spinner = make("spinner", bat: 10, bowl: 70, type: .spin)
+        let pacer = make("pacer", bat: 10, bowl: 70)
+        let basher = make("basher", bat: 70, bowl: 10, traits: [.spinBasher])
+        XCTAssertGreaterThan(sixRate(basher, spinner, over: 10).0, sixRate(plain, spinner, over: 10).0 * 1.2)
+        XCTAssertEqual(sixRate(basher, pacer, over: 10).0, sixRate(plain, pacer, over: 10).0, accuracy: 0.01)
+
+        let finisher = make("fin", bat: 70, bowl: 10, traits: [.finisher])
+        XCTAssertGreaterThan(sixRate(finisher, pacer, over: 18).0, sixRate(plain, pacer, over: 18).0 * 1.2)
+
+        let swing = make("swing", bat: 10, bowl: 70, traits: [.newBallSwing])
+        let ppEng = sixRate(plain, swing, over: 1, pitch: .englishSeam).1
+        let ppInd = sixRate(plain, swing, over: 1, pitch: .indianFlat).1
+        XCTAssertGreaterThan(ppEng, ppInd * 1.3, "swing is deadlier in England")
+        XCTAssertGreaterThan(sixRate(plain, swing, over: 1).1, sixRate(plain, pacer, over: 1).1 * 1.2)
+
+        let mystery = make("mystery", bat: 10, bowl: 70, type: .spin, traits: [.mysterySpin])
+        XCTAssertGreaterThan(sixRate(plain, mystery, over: 10).1, sixRate(plain, spinner, over: 10).1 * 1.15)
+        XCTAssertLessThan(sixRate(basher, mystery, over: 10).1, sixRate(plain, mystery, over: 10).1, "spin bashers read mystery spin")
+        print("legends in data:", players.filter(\.isLegend).count)
     }
 
     func testSeasonAndPlayoffs() {
@@ -151,7 +218,7 @@ final class EngineTests: XCTestCase {
             var results: [MatchResult] = []
             for f in fixtures {
                 var log: [BallEvent] = []
-                results.append(engine.play(sides[f.home]!, sides[f.away]!, stage: .league, log: &log))
+                results.append(engine.play(sides[f.home]!, sides[f.away]!, stage: .league, pitch: .indianFlat, log: &log))
             }
             let table = SeasonEngine.table(teamIds: teams.map(\.id), results: results)
             XCTAssertEqual(table.reduce(0) { $0 + $1.played }, fixtures.count * 2)
@@ -162,7 +229,7 @@ final class EngineTests: XCTestCase {
             var stages: [Stage] = []
             while let f = SeasonEngine.nextPlayoff(table: table, playoffResults: playoff, nextId: 100 + playoff.count) {
                 var log: [BallEvent] = []
-                playoff.append(engine.play(sides[f.home]!, sides[f.away]!, stage: f.stage, log: &log))
+                playoff.append(engine.play(sides[f.home]!, sides[f.away]!, stage: f.stage, pitch: .aussieBounce, log: &log))
                 stages.append(f.stage)
                 XCTAssertLessThan(stages.count, 6)
             }
@@ -185,13 +252,20 @@ final class EngineTests: XCTestCase {
 final class GameFlowTests: XCTestCase {
     func testFullGameWithHumansAndCPUs() throws {
         let book = PlayerBook(EngineTests.players)
-        for humans in [3, 5] {
+        for humans in [3, 4] {
             var g = GameState.newSetup(seed: UInt64(humans))
+            if humans == 4 { g.teams = Array(g.teams.prefix(4)) }   // 4 humans, no CPU
             for i in g.teams.indices { g.teams[i].isCPU = i >= humans }
             g.startAuction(book: book)
             XCTAssertEqual(g.phase, .auction)
 
-            // Humans bid on the first few lots, then everyone else is simulated.
+            XCTAssertEqual(g.auction.queue.count, 11 * g.teams.count + 12)
+            // Skip one lot: CPUs settle it instantly.
+            let skipped = g.skipLot(book: book)
+            XCTAssertNotNil(skipped)
+            XCTAssertNil(g.hammer())
+            g.nextLot(book: book)
+            // Humans bid on the next few lots, then everyone else is simulated.
             for lot in 0..<6 {
                 let human = lot % humans
                 XCTAssertTrue(g.bid(teamId: human, book: book))
@@ -205,8 +279,8 @@ final class GameFlowTests: XCTestCase {
             g.simRestOfAuction(book: book)
             XCTAssertEqual(g.phase, .squads)
             for t in g.teams {
-                XCTAssertGreaterThanOrEqual(t.squad.count, g.rules.minSquad)
-                XCTAssertEqual(t.xi.count, 11)
+                XCTAssertEqual(t.squad.count, 11)
+                XCTAssertEqual(Set(t.xi), Set(t.squad))
                 XCTAssertGreaterThanOrEqual(t.purse, 0)
             }
 
@@ -223,6 +297,11 @@ final class GameFlowTests: XCTestCase {
             XCTAssertNotNil(g.championId)
             g.finishSeason()
             XCTAssertEqual(g.phase, .champion)
+            g.reopenSeason()
+            XCTAssertEqual(g.phase, .season)
+            XCTAssertNil(g.nextFixture)
+            g.finishSeason()
+            XCTAssertTrue(Set(g.fixtures.map(\.pitch)).count > 1, "mixed venues")
             XCTAssertEqual(g.results.last?.stage, .final)
             let a = g.awards()
             XCTAssertNotNil(a.orangeCap); XCTAssertNotNil(a.purpleCap); XCTAssertNotNil(a.mvp)

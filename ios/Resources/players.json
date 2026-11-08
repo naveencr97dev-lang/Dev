@@ -10,7 +10,12 @@
   "rating": 82,
   "bat": 14,
   "bowl": 79,
-  "line": "158 M · 187 wkts · Econ 7.34"
+  "line": "158 M · 187 wkts · Econ 7.34",
+  "bowlType": "pace",
+  "traits": [
+   "deathSpecialist",
+   "economical"
+  ]
  },
  {
   "id": "p_622",
@@ -23,7 +28,11 @@
   "rating": 81,
   "bat": 82,
   "bowl": 10,
-  "line": "179 M · 4581 runs · SR 149"
+  "line": "179 M · 4581 runs · SR 149",
+  "bowlType": "pace",
+  "traits": [
+   "threeSixty"
+  ]
  },
  {
   "id": "p_101",
@@ -36,7 +45,12 @@
   "rating": 64,
   "bat": 14,
   "bowl": 61,
-  "line": "97 M · 111 wkts · Econ 9.19"
+  "line": "97 M · 111 wkts · Econ 9.19",
+  "bowlType": "pace",
+  "traits": [
+   "deathSpecialist",
+   "newBallSwing"
+  ]
  },
  {
   "id": "p_102",
@@ -49,7 +63,11 @@
   "rating": 75,
   "bat": 60,
   "bowl": 67,
-  "line": "177 M · 2089 runs · SR 134 · 139 wkts · Econ 7.43"
+  "line": "177 M · 2089 runs · SR 134 · 139 wkts · Econ 7.43",
+  "bowlType": "spin",
+  "traits": [
+   "economical"
+  ]
  },
  {
   "id": "p_103",
@@ -62,7 +80,12 @@
   "rating": 78,
   "bat": 14,
   "bowl": 74,
-  "line": "206 M · 226 wkts · Econ 7.71"
+  "line": "206 M · 226 wkts · Econ 7.71",
+  "bowlType": "pace",
+  "traits": [
+   "newBallSwing",
+   "economical"
+  ]
  },
  {
   "id": "p_104",
@@ -75,7 +98,11 @@
   "rating": 80,
   "bat": 68,
   "bowl": 55,
-  "line": "162 M · 2955 runs · SR 146 · 82 wkts · Econ 9.36"
+  "line": "162 M · 2955 runs · SR 146 · 82 wkts · Econ 9.36",
+  "bowlType": "pace",
+  "traits": [
+   "finisher"
+  ]
  },
  {
   "id": "p_105",
@@ -88,7 +115,12 @@
   "rating": 88,
   "bat": 93,
   "bowl": 4,
-  "line": "64 M · 2104 runs · SR 167"
+  "line": "64 M · 2104 runs · SR 167",
+  "bowlType": "pace",
+  "traits": [
+   "spinBasher",
+   "powerHitter"
+  ]
  },
  {
   "id": "p_106",
@@ -101,7 +133,9 @@
   "rating": 77,
   "bat": 77,
   "bowl": 4,
-  "line": "134 M · 3600 runs · SR 144"
+  "line": "134 M · 3600 runs · SR 144",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_107",
@@ -114,7 +148,12 @@
   "rating": 72,
   "bat": 14,
   "bowl": 71,
-  "line": "68 M · 84 wkts · Econ 8.22"
+  "line": "68 M · 84 wkts · Econ 8.22",
+  "bowlType": "pace",
+  "traits": [
+   "expressPace",
+   "deathSpecialist"
+  ]
  },
  {
   "id": "p_108",
@@ -127,7 +166,12 @@
   "rating": 88,
   "bat": 89,
   "bowl": 4,
-  "line": "138 M · 4646 runs · SR 150"
+  "line": "138 M · 4646 runs · SR 150",
+  "bowlType": "pace",
+  "traits": [
+   "powerplayBlitz",
+   "chaseMaster"
+  ]
  },
  {
   "id": "p_109",
@@ -140,7 +184,12 @@
   "rating": 72,
   "bat": 14,
   "bowl": 71,
-  "line": "52 M · 72 wkts · Econ 8.62"
+  "line": "52 M · 72 wkts · Econ 8.62",
+  "bowlType": "pace",
+  "traits": [
+   "economical",
+   "newBallSwing"
+  ]
  },
  {
   "id": "p_110",
@@ -153,7 +202,11 @@
   "rating": 76,
   "bat": 14,
   "bowl": 73,
-  "line": "101 M · 148 wkts · Econ 8.80"
+  "line": "101 M · 148 wkts · Econ 8.80",
+  "bowlType": "pace",
+  "traits": [
+   "wicketTaker"
+  ]
  },
  {
   "id": "p_111",
@@ -166,7 +219,11 @@
   "rating": 87,
   "bat": 90,
   "bowl": 4,
-  "line": "160 M · 5815 runs · SR 139"
+  "line": "160 M · 5815 runs · SR 139",
+  "bowlType": "pace",
+  "traits": [
+   "anchor"
+  ]
  },
  {
   "id": "p_112",
@@ -179,7 +236,11 @@
   "rating": 75,
   "bat": 14,
   "bowl": 69,
-  "line": "111 M · 112 wkts · Econ 8.29"
+  "line": "111 M · 112 wkts · Econ 8.29",
+  "bowlType": "spin",
+  "traits": [
+   "wicketTaker"
+  ]
  },
  {
   "id": "p_114",
@@ -192,7 +253,9 @@
   "rating": 48,
   "bat": 39,
   "bowl": 46,
-  "line": "49 M · 192 runs · SR 110 · 45 wkts · Econ 9.63"
+  "line": "49 M · 192 runs · SR 110 · 45 wkts · Econ 9.63",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_116",
@@ -205,7 +268,11 @@
   "rating": 76,
   "bat": 73,
   "bowl": 58,
-  "line": "68 M · 1855 runs · SR 149 · 37 wkts · Econ 8.52"
+  "line": "68 M · 1855 runs · SR 149 · 37 wkts · Econ 8.52",
+  "bowlType": "pace",
+  "traits": [
+   "paceBasher"
+  ]
  },
  {
   "id": "p_117",
@@ -218,7 +285,12 @@
   "rating": 69,
   "bat": 14,
   "bowl": 68,
-  "line": "58 M · 76 wkts · Econ 8.82"
+  "line": "58 M · 76 wkts · Econ 8.82",
+  "bowlType": "pace",
+  "traits": [
+   "newBallSwing",
+   "deathSpecialist"
+  ]
  },
  {
   "id": "p_118",
@@ -231,7 +303,11 @@
   "rating": 68,
   "bat": 14,
   "bowl": 65,
-  "line": "132 M · 145 wkts · Econ 8.67"
+  "line": "132 M · 145 wkts · Econ 8.67",
+  "bowlType": "pace",
+  "traits": [
+   "newBallSwing"
+  ]
  },
  {
   "id": "p_119",
@@ -244,7 +320,11 @@
   "rating": 65,
   "bat": 14,
   "bowl": 62,
-  "line": "125 M · 128 wkts · Econ 8.78"
+  "line": "125 M · 128 wkts · Econ 8.78",
+  "bowlType": "pace",
+  "traits": [
+   "newBallSwing"
+  ]
  },
  {
   "id": "p_120",
@@ -257,7 +337,12 @@
   "rating": 76,
   "bat": 80,
   "bowl": 4,
-  "line": "277 M · 5439 runs · SR 137"
+  "line": "277 M · 5439 runs · SR 137",
+  "bowlType": "pace",
+  "traits": [
+   "finisher",
+   "chaseMaster"
+  ]
  },
  {
   "id": "p_121",
@@ -270,7 +355,12 @@
   "rating": 81,
   "bat": 83,
   "bowl": 4,
-  "line": "104 M · 2527 runs · SR 164"
+  "line": "104 M · 2527 runs · SR 164",
+  "bowlType": "pace",
+  "traits": [
+   "powerHitter",
+   "spinBasher"
+  ]
  },
  {
   "id": "p_122",
@@ -283,7 +373,11 @@
   "rating": 70,
   "bat": 14,
   "bowl": 70,
-  "line": "51 M · 61 wkts · Econ 8.17"
+  "line": "51 M · 61 wkts · Econ 8.17",
+  "bowlType": "spin",
+  "traits": [
+   "mysterySpin"
+  ]
  },
  {
   "id": "p_123",
@@ -296,7 +390,11 @@
   "rating": 64,
   "bat": 14,
   "bowl": 62,
-  "line": "80 M · 87 wkts · Econ 8.89"
+  "line": "80 M · 87 wkts · Econ 8.89",
+  "bowlType": "pace",
+  "traits": [
+   "economical"
+  ]
  },
  {
   "id": "p_124",
@@ -309,7 +407,11 @@
   "rating": 83,
   "bat": 87,
   "bowl": 4,
-  "line": "40 M · 1258 runs · SR 174"
+  "line": "40 M · 1258 runs · SR 174",
+  "bowlType": "pace",
+  "traits": [
+   "powerplayBlitz"
+  ]
  },
  {
   "id": "p_125",
@@ -322,7 +424,12 @@
   "rating": 82,
   "bat": 14,
   "bowl": 79,
-  "line": "153 M · 179 wkts · Econ 7.28"
+  "line": "153 M · 179 wkts · Econ 7.28",
+  "bowlType": "spin",
+  "traits": [
+   "mysterySpin",
+   "economical"
+  ]
  },
  {
   "id": "p_126",
@@ -335,7 +442,11 @@
   "rating": 73,
   "bat": 59,
   "bowl": 63,
-  "line": "267 M · 3526 runs · SR 131 · 180 wkts · Econ 7.71"
+  "line": "267 M · 3526 runs · SR 131 · 180 wkts · Econ 7.71",
+  "bowlType": "spin",
+  "traits": [
+   "economical"
+  ]
  },
  {
   "id": "p_127",
@@ -348,7 +459,11 @@
   "rating": 70,
   "bat": 76,
   "bowl": 10,
-  "line": "73 M · 1394 runs · SR 146"
+  "line": "73 M · 1394 runs · SR 146",
+  "bowlType": "pace",
+  "traits": [
+   "finisher"
+  ]
  },
  {
   "id": "p_128",
@@ -361,7 +476,11 @@
   "rating": 81,
   "bat": 81,
   "bowl": 4,
-  "line": "139 M · 3865 runs · SR 147"
+  "line": "139 M · 3865 runs · SR 147",
+  "bowlType": "pace",
+  "traits": [
+   "spinBasher"
+  ]
  },
  {
   "id": "p_129",
@@ -374,7 +493,12 @@
   "rating": 75,
   "bat": 74,
   "bowl": 10,
-  "line": "281 M · 7329 runs · SR 133"
+  "line": "281 M · 7329 runs · SR 133",
+  "bowlType": "pace",
+  "traits": [
+   "powerplayBlitz",
+   "powerHitter"
+  ]
  },
  {
   "id": "p_130",
@@ -387,7 +511,11 @@
   "rating": 80,
   "bat": 82,
   "bowl": 10,
-  "line": "85 M · 2839 runs · SR 136"
+  "line": "85 M · 2839 runs · SR 136",
+  "bowlType": "pace",
+  "traits": [
+   "anchor"
+  ]
  },
  {
   "id": "p_132",
@@ -400,7 +528,11 @@
   "rating": 79,
   "bat": 79,
   "bowl": 4,
-  "line": "190 M · 5181 runs · SR 141"
+  "line": "190 M · 5181 runs · SR 141",
+  "bowlType": "pace",
+  "traits": [
+   "spinBasher"
+  ]
  },
  {
   "id": "p_134",
@@ -413,7 +545,11 @@
   "rating": 55,
   "bat": 61,
   "bowl": 31,
-  "line": "92 M · 2129 runs · SR 145 · 6 wkts · Econ 10.79"
+  "line": "92 M · 2129 runs · SR 145 · 6 wkts · Econ 10.79",
+  "bowlType": "pace",
+  "traits": [
+   "spinBasher"
+  ]
  },
  {
   "id": "p_135",
@@ -426,7 +562,12 @@
   "rating": 80,
   "bat": 81,
   "bowl": 10,
-  "line": "147 M · 4229 runs · SR 137"
+  "line": "147 M · 4229 runs · SR 137",
+  "bowlType": "pace",
+  "traits": [
+   "spinBasher",
+   "anchor"
+  ]
  },
  {
   "id": "p_136",
@@ -439,7 +580,11 @@
   "rating": 86,
   "bat": 87,
   "bowl": 10,
-  "line": "134 M · 4598 runs · SR 142"
+  "line": "134 M · 4598 runs · SR 142",
+  "bowlType": "pace",
+  "traits": [
+   "anchor"
+  ]
  },
  {
   "id": "p_137",
@@ -452,7 +597,13 @@
   "rating": 88,
   "bat": 69,
   "bowl": 79,
-  "line": "201 M · 1820 runs · SR 165 · 207 wkts · Econ 6.79"
+  "line": "201 M · 1820 runs · SR 165 · 207 wkts · Econ 6.79",
+  "bowlType": "spin",
+  "traits": [
+   "powerplayBlitz",
+   "mysterySpin",
+   "economical"
+  ]
  },
  {
   "id": "p_138",
@@ -465,7 +616,12 @@
   "rating": 75,
   "bat": 83,
   "bowl": 10,
-  "line": "66 M · 1151 runs · SR 177"
+  "line": "66 M · 1151 runs · SR 177",
+  "bowlType": "pace",
+  "traits": [
+   "finisher",
+   "powerHitter"
+  ]
  },
  {
   "id": "p_139",
@@ -478,7 +634,12 @@
   "rating": 85,
   "bat": 86,
   "bowl": 10,
-  "line": "53 M · 1556 runs · SR 170"
+  "line": "53 M · 1556 runs · SR 170",
+  "bowlType": "pace",
+  "traits": [
+   "powerplayBlitz",
+   "paceBasher"
+  ]
  },
  {
   "id": "p_140",
@@ -491,7 +652,11 @@
   "rating": 71,
   "bat": 14,
   "bowl": 68,
-  "line": "124 M · 145 wkts · Econ 8.49"
+  "line": "124 M · 145 wkts · Econ 8.49",
+  "bowlType": "pace",
+  "traits": [
+   "newBallSwing"
+  ]
  },
  {
   "id": "p_141",
@@ -504,7 +669,11 @@
   "rating": 76,
   "bat": 14,
   "bowl": 74,
-  "line": "95 M · 111 wkts · Econ 7.72"
+  "line": "95 M · 111 wkts · Econ 7.72",
+  "bowlType": "spin",
+  "traits": [
+   "mysterySpin"
+  ]
  },
  {
   "id": "p_142",
@@ -517,7 +686,12 @@
   "rating": 86,
   "bat": 86,
   "bowl": 10,
-  "line": "282 M · 9336 runs · SR 135"
+  "line": "282 M · 9336 runs · SR 135",
+  "bowlType": "pace",
+  "traits": [
+   "anchor",
+   "chaseMaster"
+  ]
  },
  {
   "id": "p_144",
@@ -530,7 +704,11 @@
   "rating": 82,
   "bat": 83,
   "bowl": 10,
-  "line": "82 M · 2593 runs · SR 153"
+  "line": "82 M · 2593 runs · SR 153",
+  "bowlType": "pace",
+  "traits": [
+   "powerplayBlitz"
+  ]
  },
  {
   "id": "p_145",
@@ -543,7 +721,11 @@
   "rating": 79,
   "bat": 14,
   "bowl": 75,
-  "line": "189 M · 233 wkts · Econ 8.05"
+  "line": "189 M · 233 wkts · Econ 8.05",
+  "bowlType": "spin",
+  "traits": [
+   "wicketTaker"
+  ]
  },
  {
   "id": "p_100",
@@ -556,7 +738,9 @@
   "rating": 68,
   "bat": 71,
   "bowl": 10,
-  "line": "69 M · 1671 runs · SR 136"
+  "line": "69 M · 1671 runs · SR 136",
+  "bowlType": "spin",
+  "traits": []
  },
  {
   "id": "p_113",
@@ -569,7 +753,11 @@
   "rating": 56,
   "bat": 14,
   "bowl": 56,
-  "line": "52 M · 52 wkts · Econ 9.21"
+  "line": "52 M · 52 wkts · Econ 9.21",
+  "bowlType": "pace",
+  "traits": [
+   "expressPace"
+  ]
  },
  {
   "id": "p_115",
@@ -582,7 +770,9 @@
   "rating": 62,
   "bat": 61,
   "bowl": 43,
-  "line": "123 M · 2242 runs · SR 148 · 46 wkts · Econ 9.93"
+  "line": "123 M · 2242 runs · SR 148 · 46 wkts · Econ 9.93",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_131",
@@ -595,7 +785,11 @@
   "rating": 66,
   "bat": 59,
   "bowl": 53,
-  "line": "64 M · 997 runs · SR 136 · 59 wkts · Econ 9.74"
+  "line": "64 M · 997 runs · SR 136 · 59 wkts · Econ 9.74",
+  "bowlType": "pace",
+  "traits": [
+   "newBallSwing"
+  ]
  },
  {
   "id": "p_133",
@@ -608,7 +802,11 @@
   "rating": 65,
   "bat": 70,
   "bowl": 10,
-  "line": "94 M · 1560 runs · SR 149"
+  "line": "94 M · 1560 runs · SR 149",
+  "bowlType": "pace",
+  "traits": [
+   "finisher"
+  ]
  },
  {
   "id": "p_143",
@@ -621,7 +819,9 @@
   "rating": 56,
   "bat": 57,
   "bowl": 41,
-  "line": "28 M · 602 runs · SR 159 · 10 wkts · Econ 9.86"
+  "line": "28 M · 602 runs · SR 159 · 10 wkts · Econ 9.86",
+  "bowlType": "spin",
+  "traits": []
  },
  {
   "id": "p_271",
@@ -634,7 +834,9 @@
   "rating": 65,
   "bat": 69,
   "bowl": 42,
-  "line": "43 M · 1029 runs · SR 151 · 23 wkts · Econ 9.44"
+  "line": "43 M · 1029 runs · SR 151 · 23 wkts · Econ 9.44",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_272",
@@ -647,7 +849,12 @@
   "rating": 75,
   "bat": 79,
   "bowl": 10,
-  "line": "152 M · 3288 runs · SR 140"
+  "line": "152 M · 3288 runs · SR 140",
+  "bowlType": "pace",
+  "traits": [
+   "finisher",
+   "chaseMaster"
+  ]
  },
  {
   "id": "p_279",
@@ -660,7 +867,11 @@
   "rating": 63,
   "bat": 65,
   "bowl": 46,
-  "line": "51 M · 1066 runs · SR 155 · 13 wkts · Econ 9.02"
+  "line": "51 M · 1066 runs · SR 155 · 13 wkts · Econ 9.02",
+  "bowlType": "spin",
+  "traits": [
+   "powerHitter"
+  ]
  },
  {
   "id": "p_282",
@@ -673,7 +884,11 @@
   "rating": 53,
   "bat": 37,
   "bowl": 60,
-  "line": "37 M · 81 runs · SR 92 · 46 wkts · Econ 8.41"
+  "line": "37 M · 81 runs · SR 92 · 46 wkts · Econ 8.41",
+  "bowlType": "spin",
+  "traits": [
+   "wicketTaker"
+  ]
  },
  {
   "id": "p_289",
@@ -686,7 +901,11 @@
   "rating": 76,
   "bat": 76,
   "bowl": 4,
-  "line": "118 M · 3441 runs · SR 135"
+  "line": "118 M · 3441 runs · SR 135",
+  "bowlType": "pace",
+  "traits": [
+   "powerplayBlitz"
+  ]
  },
  {
   "id": "p_146",
@@ -699,7 +918,11 @@
   "rating": 77,
   "bat": 77,
   "bowl": 50,
-  "line": "92 M · 2379 runs · SR 171 · 11 wkts · Econ 9.04"
+  "line": "92 M · 2379 runs · SR 171 · 11 wkts · Econ 9.04",
+  "bowlType": "spin",
+  "traits": [
+   "powerplayBlitz"
+  ]
  },
  {
   "id": "p_150",
@@ -712,7 +935,9 @@
   "rating": 71,
   "bat": 76,
   "bowl": 4,
-  "line": "57 M · 1195 runs · SR 154"
+  "line": "57 M · 1195 runs · SR 154",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_158",
@@ -725,7 +950,11 @@
   "rating": 83,
   "bat": 85,
   "bowl": 10,
-  "line": "57 M · 1612 runs · SR 164"
+  "line": "57 M · 1612 runs · SR 164",
+  "bowlType": "pace",
+  "traits": [
+   "spinBasher"
+  ]
  },
  {
   "id": "p_159",
@@ -738,7 +967,9 @@
   "rating": 56,
   "bat": 59,
   "bowl": 37,
-  "line": "97 M · 1875 runs · SR 144 · 9 wkts · Econ 9.69"
+  "line": "97 M · 1875 runs · SR 144 · 9 wkts · Econ 9.69",
+  "bowlType": "spin",
+  "traits": []
  },
  {
   "id": "p_162",
@@ -751,7 +982,11 @@
   "rating": 85,
   "bat": 92,
   "bowl": 10,
-  "line": "57 M · 2515 runs · SR 149"
+  "line": "57 M · 2515 runs · SR 149",
+  "bowlType": "pace",
+  "traits": [
+   "anchor"
+  ]
  },
  {
   "id": "p_166",
@@ -764,7 +999,11 @@
   "rating": 78,
   "bat": 81,
   "bowl": 10,
-  "line": "68 M · 1858 runs · SR 145"
+  "line": "68 M · 1858 runs · SR 145",
+  "bowlType": "pace",
+  "traits": [
+   "chaseMaster"
+  ]
  },
  {
   "id": "p_167",
@@ -777,7 +1016,11 @@
   "rating": 74,
   "bat": 82,
   "bowl": 10,
-  "line": "47 M · 980 runs · SR 151"
+  "line": "47 M · 980 runs · SR 151",
+  "bowlType": "pace",
+  "traits": [
+   "finisher"
+  ]
  },
  {
   "id": "p_296",
@@ -790,7 +1033,11 @@
   "rating": 69,
   "bat": 14,
   "bowl": 70,
-  "line": "33 M · 47 wkts · Econ 8.66"
+  "line": "33 M · 47 wkts · Econ 8.66",
+  "bowlType": "pace",
+  "traits": [
+   "deathSpecialist"
+  ]
  },
  {
   "id": "p_304",
@@ -803,7 +1050,11 @@
   "rating": 65,
   "bat": 14,
   "bowl": 63,
-  "line": "86 M · 83 wkts · Econ 8.36"
+  "line": "86 M · 83 wkts · Econ 8.36",
+  "bowlType": "spin",
+  "traits": [
+   "wicketTaker"
+  ]
  },
  {
   "id": "p_172",
@@ -816,7 +1067,9 @@
   "rating": 57,
   "bat": 60,
   "bowl": 10,
-  "line": "27 M · 606 runs · SR 146"
+  "line": "27 M · 606 runs · SR 146",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_216",
@@ -829,7 +1082,11 @@
   "rating": 52,
   "bat": 57,
   "bowl": 42,
-  "line": "32 M · 564 runs · SR 169 · 0 wkts"
+  "line": "32 M · 564 runs · SR 169 · 0 wkts",
+  "bowlType": "pace",
+  "traits": [
+   "finisher"
+  ]
  },
  {
   "id": "p_254",
@@ -842,7 +1099,11 @@
   "rating": 56,
   "bat": 60,
   "bowl": 39,
-  "line": "54 M · 905 runs · SR 162 · 5 wkts · Econ 9.33"
+  "line": "54 M · 905 runs · SR 162 · 5 wkts · Econ 9.33",
+  "bowlType": "pace",
+  "traits": [
+   "finisher"
+  ]
  },
  {
   "id": "p_264",
@@ -855,7 +1116,11 @@
   "rating": 77,
   "bat": 78,
   "bowl": 10,
-  "line": "23 M · 1028 runs · SR 229"
+  "line": "23 M · 1028 runs · SR 229",
+  "bowlType": "pace",
+  "traits": [
+   "powerplayBlitz"
+  ]
  },
  {
   "id": "p_193",
@@ -868,7 +1133,9 @@
   "rating": 61,
   "bat": 66,
   "bowl": 4,
-  "line": "71 M · 1107 runs · SR 152"
+  "line": "71 M · 1107 runs · SR 152",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_196",
@@ -881,7 +1148,9 @@
   "rating": 52,
   "bat": 57,
   "bowl": 34,
-  "line": "42 M · 787 runs · SR 145 · 13 wkts · Econ 10.65"
+  "line": "42 M · 787 runs · SR 145 · 13 wkts · Econ 10.65",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_240",
@@ -894,7 +1163,9 @@
   "rating": 68,
   "bat": 73,
   "bowl": 10,
-  "line": "37 M · 710 runs · SR 164"
+  "line": "37 M · 710 runs · SR 164",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_281",
@@ -907,7 +1178,9 @@
   "rating": 54,
   "bat": 61,
   "bowl": 31,
-  "line": "68 M · 1677 runs · SR 142 · 3 wkts · Econ 10.59"
+  "line": "68 M · 1677 runs · SR 142 · 3 wkts · Econ 10.59",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_285",
@@ -920,7 +1193,9 @@
   "rating": 54,
   "bat": 55,
   "bowl": 4,
-  "line": "11 M · 349 runs · SR 214"
+  "line": "11 M · 349 runs · SR 214",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_147",
@@ -933,7 +1208,9 @@
   "rating": 62,
   "bat": 14,
   "bowl": 60,
-  "line": "82 M · 93 wkts · Econ 9.28"
+  "line": "82 M · 93 wkts · Econ 9.28",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_148",
@@ -946,7 +1223,9 @@
   "rating": 45,
   "bat": 43,
   "bowl": 42,
-  "line": "20 M · 151 runs · SR 150 · 15 wkts · Econ 9.63"
+  "line": "20 M · 151 runs · SR 150 · 15 wkts · Econ 9.63",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_149",
@@ -959,7 +1238,11 @@
   "rating": 65,
   "bat": 14,
   "bowl": 63,
-  "line": "103 M · 96 wkts · Econ 8.30"
+  "line": "103 M · 96 wkts · Econ 8.30",
+  "bowlType": "pace",
+  "traits": [
+   "newBallSwing"
+  ]
  },
  {
   "id": "p_151",
@@ -972,7 +1255,9 @@
   "rating": 26,
   "bat": 36,
   "bowl": 10,
-  "line": "14 M · 132 runs · SR 121"
+  "line": "14 M · 132 runs · SR 121",
+  "bowlType": "spin",
+  "traits": []
  },
  {
   "id": "p_152",
@@ -985,7 +1270,11 @@
   "rating": 70,
   "bat": 14,
   "bowl": 67,
-  "line": "123 M · 151 wkts · Econ 8.92"
+  "line": "123 M · 151 wkts · Econ 8.92",
+  "bowlType": "pace",
+  "traits": [
+   "deathSpecialist"
+  ]
  },
  {
   "id": "p_153",
@@ -998,7 +1287,9 @@
   "rating": 66,
   "bat": 14,
   "bowl": 64,
-  "line": "76 M · 91 wkts · Econ 8.96"
+  "line": "76 M · 91 wkts · Econ 8.96",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_154",
@@ -1011,7 +1302,9 @@
   "rating": 72,
   "bat": 59,
   "bowl": 64,
-  "line": "158 M · 1982 runs · SR 134 · 107 wkts · Econ 7.57"
+  "line": "158 M · 1982 runs · SR 134 · 107 wkts · Econ 7.57",
+  "bowlType": "spin",
+  "traits": []
  },
  {
   "id": "p_155",
@@ -1024,7 +1317,11 @@
   "rating": 28,
   "bat": 14,
   "bowl": 36,
-  "line": "10 M · 9 wkts · Econ 10.15"
+  "line": "10 M · 9 wkts · Econ 10.15",
+  "bowlType": "pace",
+  "traits": [
+   "expressPace"
+  ]
  },
  {
   "id": "p_156",
@@ -1037,7 +1334,9 @@
   "rating": 54,
   "bat": 42,
   "bowl": 59,
-  "line": "35 M · 136 runs · SR 111 · 30 wkts · Econ 7.51"
+  "line": "35 M · 136 runs · SR 111 · 30 wkts · Econ 7.51",
+  "bowlType": "spin",
+  "traits": []
  },
  {
   "id": "p_157",
@@ -1050,7 +1349,9 @@
   "rating": 64,
   "bat": 14,
   "bowl": 62,
-  "line": "78 M · 90 wkts · Econ 8.99"
+  "line": "78 M · 90 wkts · Econ 8.99",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_160",
@@ -1063,7 +1364,9 @@
   "rating": 44,
   "bat": 50,
   "bowl": 30,
-  "line": "33 M · 268 runs · SR 175 · 17 wkts · Econ 11.77"
+  "line": "33 M · 268 runs · SR 175 · 17 wkts · Econ 11.77",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_161",
@@ -1076,7 +1379,9 @@
   "rating": 53,
   "bat": 60,
   "bowl": 10,
-  "line": "39 M · 555 runs · SR 142"
+  "line": "39 M · 555 runs · SR 142",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_164",
@@ -1089,7 +1394,9 @@
   "rating": 54,
   "bat": 59,
   "bowl": 10,
-  "line": "31 M · 520 runs · SR 143"
+  "line": "31 M · 520 runs · SR 143",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_165",
@@ -1102,7 +1409,11 @@
   "rating": 58,
   "bat": 14,
   "bowl": 56,
-  "line": "74 M · 73 wkts · Econ 9.19"
+  "line": "74 M · 73 wkts · Econ 9.19",
+  "bowlType": "pace",
+  "traits": [
+   "deathSpecialist"
+  ]
  },
  {
   "id": "p_168",
@@ -1115,7 +1426,9 @@
   "rating": 62,
   "bat": 54,
   "bowl": 56,
-  "line": "83 M · 888 runs · SR 135 · 40 wkts · Econ 7.77"
+  "line": "83 M · 888 runs · SR 135 · 40 wkts · Econ 7.77",
+  "bowlType": "spin",
+  "traits": []
  },
  {
   "id": "p_292",
@@ -1128,7 +1441,11 @@
   "rating": 64,
   "bat": 14,
   "bowl": 63,
-  "line": "49 M · 61 wkts · Econ 9.09"
+  "line": "49 M · 61 wkts · Econ 9.09",
+  "bowlType": "pace",
+  "traits": [
+   "expressPace"
+  ]
  },
  {
   "id": "p_300",
@@ -1141,7 +1458,9 @@
   "rating": 37,
   "bat": 14,
   "bowl": 44,
-  "line": "8 M · 9 wkts · Econ 8.30"
+  "line": "8 M · 9 wkts · Econ 8.30",
+  "bowlType": "spin",
+  "traits": []
  },
  {
   "id": "p_301",
@@ -1154,7 +1473,9 @@
   "rating": 61,
   "bat": 14,
   "bowl": 62,
-  "line": "38 M · 36 wkts · Econ 8.27"
+  "line": "38 M · 36 wkts · Econ 8.27",
+  "bowlType": "spin",
+  "traits": []
  },
  {
   "id": "p_303",
@@ -1167,7 +1488,9 @@
   "rating": 68,
   "bat": 14,
   "bowl": 67,
-  "line": "80 M · 75 wkts · Econ 7.78"
+  "line": "80 M · 75 wkts · Econ 7.78",
+  "bowlType": "spin",
+  "traits": []
  },
  {
   "id": "p_174",
@@ -1180,7 +1503,9 @@
   "rating": 29,
   "bat": 35,
   "bowl": 33,
-  "line": "9 M · 163 runs · SR 141 · 0 wkts"
+  "line": "9 M · 163 runs · SR 141 · 0 wkts",
+  "bowlType": "spin",
+  "traits": []
  },
  {
   "id": "p_180",
@@ -1193,7 +1518,9 @@
   "rating": 49,
   "bat": 14,
   "bowl": 46,
-  "line": "42 M · 42 wkts · Econ 10.59"
+  "line": "42 M · 42 wkts · Econ 10.59",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_183",
@@ -1206,7 +1533,9 @@
   "rating": 71,
   "bat": 72,
   "bowl": 10,
-  "line": "127 M · 3078 runs · SR 138"
+  "line": "127 M · 3078 runs · SR 138",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_185",
@@ -1219,7 +1548,9 @@
   "rating": 59,
   "bat": 53,
   "bowl": 51,
-  "line": "124 M · 1302 runs · SR 138 · 32 wkts · Econ 7.91"
+  "line": "124 M · 1302 runs · SR 138 · 32 wkts · Econ 7.91",
+  "bowlType": "spin",
+  "traits": []
  },
  {
   "id": "p_186",
@@ -1232,7 +1563,9 @@
   "rating": 75,
   "bat": 74,
   "bowl": 4,
-  "line": "26 M · 836 runs · SR 168"
+  "line": "26 M · 836 runs · SR 168",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_220",
@@ -1245,7 +1578,9 @@
   "rating": 43,
   "bat": 14,
   "bowl": 47,
-  "line": "23 M · 19 wkts · Econ 9.08"
+  "line": "23 M · 19 wkts · Econ 9.08",
+  "bowlType": "spin",
+  "traits": []
  },
  {
   "id": "p_241",
@@ -1258,7 +1593,9 @@
   "rating": 57,
   "bat": 63,
   "bowl": 10,
-  "line": "45 M · 784 runs · SR 140"
+  "line": "45 M · 784 runs · SR 140",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_245",
@@ -1271,7 +1608,11 @@
   "rating": 77,
   "bat": 77,
   "bowl": 10,
-  "line": "31 M · 909 runs · SR 193"
+  "line": "31 M · 909 runs · SR 193",
+  "bowlType": "pace",
+  "traits": [
+   "powerplayBlitz"
+  ]
  },
  {
   "id": "p_188",
@@ -1284,7 +1625,9 @@
   "rating": 72,
   "bat": 72,
   "bowl": 10,
-  "line": "212 M · 5367 runs · SR 126"
+  "line": "212 M · 5367 runs · SR 126",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_189",
@@ -1297,7 +1640,9 @@
   "rating": 67,
   "bat": 68,
   "bowl": 10,
-  "line": "90 M · 2270 runs · SR 133"
+  "line": "90 M · 2270 runs · SR 133",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_190",
@@ -1310,7 +1655,9 @@
   "rating": 60,
   "bat": 14,
   "bowl": 59,
-  "line": "33 M · 40 wkts · Econ 9.51"
+  "line": "33 M · 40 wkts · Econ 9.51",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_198",
@@ -1323,7 +1670,11 @@
   "rating": 72,
   "bat": 14,
   "bowl": 69,
-  "line": "142 M · 151 wkts · Econ 8.16"
+  "line": "142 M · 151 wkts · Econ 8.16",
+  "bowlType": "pace",
+  "traits": [
+   "deathSpecialist"
+  ]
  },
  {
   "id": "p_199",
@@ -1336,7 +1687,9 @@
   "rating": 47,
   "bat": 45,
   "bowl": 38,
-  "line": "63 M · 603 runs · SR 123 · 27 wkts · Econ 9.79"
+  "line": "63 M · 603 runs · SR 123 · 27 wkts · Econ 9.79",
+  "bowlType": "spin",
+  "traits": []
  },
  {
   "id": "p_203",
@@ -1349,7 +1702,9 @@
   "rating": 51,
   "bat": 14,
   "bowl": 51,
-  "line": "43 M · 41 wkts · Econ 9.58"
+  "line": "43 M · 41 wkts · Econ 9.58",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_219",
@@ -1362,7 +1717,9 @@
   "rating": 58,
   "bat": 59,
   "bowl": 10,
-  "line": "13 M · 441 runs · SR 184"
+  "line": "13 M · 441 runs · SR 184",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_253",
@@ -1375,7 +1732,9 @@
   "rating": 43,
   "bat": 47,
   "bowl": 39,
-  "line": "25 M · 424 runs · SR 145 · 0 wkts"
+  "line": "25 M · 424 runs · SR 145 · 0 wkts",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_275",
@@ -1388,7 +1747,9 @@
   "rating": 69,
   "bat": 70,
   "bowl": 10,
-  "line": "79 M · 1892 runs · SR 147"
+  "line": "79 M · 1892 runs · SR 147",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_276",
@@ -1401,7 +1762,9 @@
   "rating": 52,
   "bat": 59,
   "bowl": 10,
-  "line": "58 M · 746 runs · SR 137"
+  "line": "58 M · 746 runs · SR 137",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_280",
@@ -1414,7 +1777,9 @@
   "rating": 51,
   "bat": 49,
   "bowl": 49,
-  "line": "18 M · 413 runs · SR 144 · 0 wkts · Econ 3.50"
+  "line": "18 M · 413 runs · SR 144 · 0 wkts · Econ 3.50",
+  "bowlType": "spin",
+  "traits": []
  },
  {
   "id": "p_163",
@@ -1427,7 +1792,9 @@
   "rating": 60,
   "bat": 48,
   "bowl": 53,
-  "line": "114 M · 349 runs · SR 133 · 119 wkts · Econ 9.57"
+  "line": "114 M · 349 runs · SR 133 · 119 wkts · Econ 9.57",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_291",
@@ -1440,7 +1807,9 @@
   "rating": 29,
   "bat": 14,
   "bowl": 33,
-  "line": "14 M · 10 wkts · Econ 11.83"
+  "line": "14 M · 10 wkts · Econ 11.83",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_181",
@@ -1453,7 +1822,9 @@
   "rating": 43,
   "bat": 14,
   "bowl": 47,
-  "line": "18 M · 21 wkts · Econ 9.67"
+  "line": "18 M · 21 wkts · Econ 9.67",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_218",
@@ -1466,7 +1837,9 @@
   "rating": 61,
   "bat": 66,
   "bowl": 10,
-  "line": "66 M · 1178 runs · SR 141"
+  "line": "66 M · 1178 runs · SR 141",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_243",
@@ -1479,7 +1852,11 @@
   "rating": 78,
   "bat": 79,
   "bowl": 4,
-  "line": "66 M · 1865 runs · SR 157"
+  "line": "66 M · 1865 runs · SR 157",
+  "bowlType": "pace",
+  "traits": [
+   "powerplayBlitz"
+  ]
  },
  {
   "id": "p_195",
@@ -1492,7 +1869,9 @@
   "rating": 66,
   "bat": 68,
   "bowl": 10,
-  "line": "180 M · 4012 runs · SR 122"
+  "line": "180 M · 4012 runs · SR 122",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_197",
@@ -1505,7 +1884,9 @@
   "rating": 56,
   "bat": 14,
   "bowl": 58,
-  "line": "28 M · 33 wkts · Econ 8.99"
+  "line": "28 M · 33 wkts · Econ 8.99",
+  "bowlType": "spin",
+  "traits": []
  },
  {
   "id": "p_200",
@@ -1518,7 +1899,9 @@
   "rating": 52,
   "bat": 59,
   "bowl": 10,
-  "line": "58 M · 746 runs · SR 137"
+  "line": "58 M · 746 runs · SR 137",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_201",
@@ -1531,7 +1914,9 @@
   "rating": 51,
   "bat": 14,
   "bowl": 49,
-  "line": "53 M · 55 wkts · Econ 10.11"
+  "line": "53 M · 55 wkts · Econ 10.11",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_202",
@@ -1544,7 +1929,11 @@
   "rating": 50,
   "bat": 14,
   "bowl": 52,
-  "line": "26 M · 29 wkts · Econ 9.40"
+  "line": "26 M · 29 wkts · Econ 9.40",
+  "bowlType": "pace",
+  "traits": [
+   "expressPace"
+  ]
  },
  {
   "id": "p_206",
@@ -1557,7 +1946,9 @@
   "rating": 62,
   "bat": 66,
   "bowl": 4,
-  "line": "36 M · 769 runs · SR 145"
+  "line": "36 M · 769 runs · SR 145",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_226",
@@ -1570,7 +1961,9 @@
   "rating": 55,
   "bat": 45,
   "bowl": 55,
-  "line": "51 M · 249 runs · SR 121 · 37 wkts · Econ 8.00"
+  "line": "51 M · 249 runs · SR 121 · 37 wkts · Econ 8.00",
+  "bowlType": "spin",
+  "traits": []
  },
  {
   "id": "p_237",
@@ -1583,7 +1976,9 @@
   "rating": 64,
   "bat": 14,
   "bowl": 66,
-  "line": "31 M · 38 wkts · Econ 8.41"
+  "line": "31 M · 38 wkts · Econ 8.41",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_250",
@@ -1596,7 +1991,9 @@
   "rating": 42,
   "bat": 46,
   "bowl": 31,
-  "line": "38 M · 299 runs · SR 146 · 7 wkts · Econ 10.07"
+  "line": "38 M · 299 runs · SR 146 · 7 wkts · Econ 10.07",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_268",
@@ -1609,7 +2006,9 @@
   "rating": 46,
   "bat": 14,
   "bowl": 47,
-  "line": "22 M · 27 wkts · Econ 10.60"
+  "line": "22 M · 27 wkts · Econ 10.60",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_295",
@@ -1622,7 +2021,9 @@
   "rating": 31,
   "bat": 14,
   "bowl": 39,
-  "line": "6 M · 9 wkts · Econ 10.96"
+  "line": "6 M · 9 wkts · Econ 10.96",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_209",
@@ -1635,7 +2036,9 @@
   "rating": 71,
   "bat": 74,
   "bowl": 10,
-  "line": "35 M · 885 runs · SR 146"
+  "line": "35 M · 885 runs · SR 146",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_235",
@@ -1648,7 +2051,9 @@
   "rating": 53,
   "bat": 14,
   "bowl": 53,
-  "line": "40 M · 37 wkts · Econ 9.16"
+  "line": "40 M · 37 wkts · Econ 9.16",
+  "bowlType": "spin",
+  "traits": []
  },
  {
   "id": "p_259",
@@ -1661,7 +2066,9 @@
   "rating": 49,
   "bat": 14,
   "bowl": 50,
-  "line": "39 M · 27 wkts · Econ 8.89"
+  "line": "39 M · 27 wkts · Econ 8.89",
+  "bowlType": "spin",
+  "traits": []
  },
  {
   "id": "p_260",
@@ -1674,7 +2081,9 @@
   "rating": 30,
   "bat": 32,
   "bowl": 35,
-  "line": "14 M · 51 runs · SR 113 · 7 wkts · Econ 8.93"
+  "line": "14 M · 51 runs · SR 113 · 7 wkts · Econ 8.93",
+  "bowlType": "spin",
+  "traits": []
  },
  {
   "id": "p_262",
@@ -1687,7 +2096,9 @@
   "rating": 41,
   "bat": 46,
   "bowl": 4,
-  "line": "10 M · 197 runs · SR 205"
+  "line": "10 M · 197 runs · SR 205",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_297",
@@ -1700,7 +2111,9 @@
   "rating": 20,
   "bat": 14,
   "bowl": 29,
-  "line": "9 M · 4 wkts · Econ 11.52"
+  "line": "9 M · 4 wkts · Econ 11.52",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_169",
@@ -1713,7 +2126,9 @@
   "rating": 38,
   "bat": 14,
   "bowl": 44,
-  "line": "11 M · 15 wkts · Econ 10.02"
+  "line": "11 M · 15 wkts · Econ 10.02",
+  "bowlType": "spin",
+  "traits": []
  },
  {
   "id": "p_170",
@@ -1726,7 +2141,9 @@
   "rating": 20,
   "bat": 21,
   "bowl": 22,
-  "line": "0 M · 0 wkts"
+  "line": "0 M · 0 wkts",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_171",
@@ -1739,7 +2156,9 @@
   "rating": 45,
   "bat": 41,
   "bowl": 44,
-  "line": "9 M · 97 runs · SR 154 · 13 wkts · Econ 9.20"
+  "line": "9 M · 97 runs · SR 154 · 13 wkts · Econ 9.20",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_173",
@@ -1752,7 +2171,9 @@
   "rating": 33,
   "bat": 14,
   "bowl": 38,
-  "line": "20 M · 13 wkts · Econ 9.70"
+  "line": "20 M · 13 wkts · Econ 9.70",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_175",
@@ -1765,7 +2186,9 @@
   "rating": 47,
   "bat": 44,
   "bowl": 44,
-  "line": "13 M · 151 runs · SR 162 · 14 wkts · Econ 9.76"
+  "line": "13 M · 151 runs · SR 162 · 14 wkts · Econ 9.76",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_176",
@@ -1778,7 +2201,9 @@
   "rating": 62,
   "bat": 14,
   "bowl": 60,
-  "line": "116 M · 114 wkts · Econ 8.94"
+  "line": "116 M · 114 wkts · Econ 8.94",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_177",
@@ -1791,7 +2216,9 @@
   "rating": 28,
   "bat": 33,
   "bowl": 33,
-  "line": "6 M · 92 runs · SR 133 · 2 wkts · Econ 8.60"
+  "line": "6 M · 92 runs · SR 133 · 2 wkts · Econ 8.60",
+  "bowlType": "spin",
+  "traits": []
  },
  {
   "id": "p_178",
@@ -1804,7 +2231,9 @@
   "rating": 20,
   "bat": 28,
   "bowl": 10,
-  "line": "1 M · 14 runs · SR 117"
+  "line": "1 M · 14 runs · SR 117",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_179",
@@ -1817,7 +2246,9 @@
   "rating": 20,
   "bat": 26,
   "bowl": 10,
-  "line": "1 M · 0 runs"
+  "line": "1 M · 0 runs",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_182",
@@ -1830,7 +2261,9 @@
   "rating": 47,
   "bat": 14,
   "bowl": 51,
-  "line": "17 M · 19 wkts · Econ 8.67"
+  "line": "17 M · 19 wkts · Econ 8.67",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_184",
@@ -1843,7 +2276,9 @@
   "rating": 32,
   "bat": 14,
   "bowl": 40,
-  "line": "8 M · 9 wkts · Econ 9.43"
+  "line": "8 M · 9 wkts · Econ 9.43",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_187",
@@ -1856,7 +2291,9 @@
   "rating": 25,
   "bat": 14,
   "bowl": 31,
-  "line": "13 M · 7 wkts · Econ 11.13"
+  "line": "13 M · 7 wkts · Econ 11.13",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_191",
@@ -1869,7 +2306,9 @@
   "rating": 62,
   "bat": 14,
   "bowl": 60,
-  "line": "117 M · 96 wkts · Econ 8.38"
+  "line": "117 M · 96 wkts · Econ 8.38",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_192",
@@ -1882,7 +2321,9 @@
   "rating": 38,
   "bat": 35,
   "bowl": 46,
-  "line": "20 M · 40 runs · SR 111 · 8 wkts · Econ 6.85"
+  "line": "20 M · 40 runs · SR 111 · 8 wkts · Econ 6.85",
+  "bowlType": "spin",
+  "traits": []
  },
  {
   "id": "p_194",
@@ -1895,7 +2336,9 @@
   "rating": 59,
   "bat": 62,
   "bowl": 10,
-  "line": "86 M · 1712 runs · SR 131"
+  "line": "86 M · 1712 runs · SR 131",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_204",
@@ -1908,7 +2351,9 @@
   "rating": 33,
   "bat": 46,
   "bowl": 18,
-  "line": "71 M · 857 runs · SR 149 · 2 wkts · Econ 13.16"
+  "line": "71 M · 857 runs · SR 149 · 2 wkts · Econ 13.16",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_205",
@@ -1921,7 +2366,9 @@
   "rating": 20,
   "bat": 14,
   "bowl": 31,
-  "line": "3 M · 3 wkts · Econ 12.62"
+  "line": "3 M · 3 wkts · Econ 12.62",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_207",
@@ -1934,7 +2381,9 @@
   "rating": 20,
   "bat": 21,
   "bowl": 22,
-  "line": "0 M · 0 runs · 0 wkts"
+  "line": "0 M · 0 runs · 0 wkts",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_208",
@@ -1947,7 +2396,9 @@
   "rating": 35,
   "bat": 14,
   "bowl": 41,
-  "line": "12 M · 13 wkts · Econ 9.86"
+  "line": "12 M · 13 wkts · Econ 9.86",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_210",
@@ -1960,7 +2411,9 @@
   "rating": 50,
   "bat": 56,
   "bowl": 10,
-  "line": "24 M · 315 runs · SR 161"
+  "line": "24 M · 315 runs · SR 161",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_211",
@@ -1973,7 +2426,9 @@
   "rating": 49,
   "bat": 14,
   "bowl": 51,
-  "line": "25 M · 31 wkts · Econ 9.97"
+  "line": "25 M · 31 wkts · Econ 9.97",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_212",
@@ -1986,7 +2441,9 @@
   "rating": 37,
   "bat": 44,
   "bowl": 4,
-  "line": "24 M · 318 runs · SR 119"
+  "line": "24 M · 318 runs · SR 119",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_213",
@@ -1999,7 +2456,9 @@
   "rating": 40,
   "bat": 37,
   "bowl": 42,
-  "line": "25 M · 78 runs · SR 122 · 15 wkts · Econ 8.90"
+  "line": "25 M · 78 runs · SR 122 · 15 wkts · Econ 8.90",
+  "bowlType": "spin",
+  "traits": []
  },
  {
   "id": "p_214",
@@ -2012,7 +2471,9 @@
   "rating": 24,
   "bat": 30,
   "bowl": 32,
-  "line": "6 M · 18 runs · SR 129 · 4 wkts · Econ 9.28"
+  "line": "6 M · 18 runs · SR 129 · 4 wkts · Econ 9.28",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_215",
@@ -2025,7 +2486,9 @@
   "rating": 20,
   "bat": 24,
   "bowl": 26,
-  "line": "4 M · 26 runs · SR 79 · 0 wkts"
+  "line": "4 M · 26 runs · SR 79 · 0 wkts",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_217",
@@ -2038,7 +2501,9 @@
   "rating": 39,
   "bat": 14,
   "bowl": 44,
-  "line": "10 M · 17 wkts · Econ 10.95"
+  "line": "10 M · 17 wkts · Econ 10.95",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_221",
@@ -2051,7 +2516,9 @@
   "rating": 29,
   "bat": 41,
   "bowl": 24,
-  "line": "18 M · 326 runs · SR 171 · 1 wkts · Econ 13.67"
+  "line": "18 M · 326 runs · SR 171 · 1 wkts · Econ 13.67",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_222",
@@ -2064,7 +2531,9 @@
   "rating": 63,
   "bat": 14,
   "bowl": 62,
-  "line": "22 M · 33 wkts · Econ 9.20"
+  "line": "22 M · 33 wkts · Econ 9.20",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_223",
@@ -2077,7 +2546,9 @@
   "rating": 23,
   "bat": 14,
   "bowl": 34,
-  "line": "8 M · 4 wkts · Econ 9.26"
+  "line": "8 M · 4 wkts · Econ 9.26",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_224",
@@ -2090,7 +2561,9 @@
   "rating": 20,
   "bat": 14,
   "bowl": 24,
-  "line": "1 M · 0 wkts · Econ 14.00"
+  "line": "1 M · 0 wkts · Econ 14.00",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_225",
@@ -2103,7 +2576,9 @@
   "rating": 20,
   "bat": 24,
   "bowl": 10,
-  "line": "0 M · 0 runs"
+  "line": "0 M · 0 runs",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_227",
@@ -2116,7 +2591,9 @@
   "rating": 35,
   "bat": 14,
   "bowl": 41,
-  "line": "11 M · 13 wkts · Econ 10.19"
+  "line": "11 M · 13 wkts · Econ 10.19",
+  "bowlType": "spin",
+  "traits": []
  },
  {
   "id": "p_228",
@@ -2129,7 +2606,9 @@
   "rating": 31,
   "bat": 41,
   "bowl": 10,
-  "line": "9 M · 92 runs · SR 133"
+  "line": "9 M · 92 runs · SR 133",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_229",
@@ -2142,7 +2621,9 @@
   "rating": 20,
   "bat": 27,
   "bowl": 4,
-  "line": "5 M · 21 runs · SR 100"
+  "line": "5 M · 21 runs · SR 100",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_230",
@@ -2155,7 +2636,9 @@
   "rating": 20,
   "bat": 14,
   "bowl": 29,
-  "line": "4 M · 2 wkts · Econ 13.00"
+  "line": "4 M · 2 wkts · Econ 13.00",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_231",
@@ -2168,7 +2651,9 @@
   "rating": 20,
   "bat": 23,
   "bowl": 24,
-  "line": "2 M · 7 runs · SR 88"
+  "line": "2 M · 7 runs · SR 88",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_232",
@@ -2181,7 +2666,9 @@
   "rating": 33,
   "bat": 14,
   "bowl": 41,
-  "line": "9 M · 9 wkts · Econ 9.13"
+  "line": "9 M · 9 wkts · Econ 9.13",
+  "bowlType": "spin",
+  "traits": []
  },
  {
   "id": "p_233",
@@ -2194,7 +2681,9 @@
   "rating": 24,
   "bat": 36,
   "bowl": 10,
-  "line": "5 M · 21 runs · SR 175"
+  "line": "5 M · 21 runs · SR 175",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_234",
@@ -2207,7 +2696,9 @@
   "rating": 20,
   "bat": 14,
   "bowl": 28,
-  "line": "5 M · 2 wkts · Econ 11.75"
+  "line": "5 M · 2 wkts · Econ 11.75",
+  "bowlType": "spin",
+  "traits": []
  },
  {
   "id": "p_236",
@@ -2220,7 +2711,9 @@
   "rating": 35,
   "bat": 14,
   "bowl": 33,
-  "line": "27 M · 18 wkts · Econ 11.06"
+  "line": "27 M · 18 wkts · Econ 11.06",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_238",
@@ -2233,7 +2726,9 @@
   "rating": 46,
   "bat": 14,
   "bowl": 49,
-  "line": "24 M · 25 wkts · Econ 9.58"
+  "line": "24 M · 25 wkts · Econ 9.58",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_239",
@@ -2246,7 +2741,9 @@
   "rating": 20,
   "bat": 23,
   "bowl": 24,
-  "line": "1 M · 0 runs · 1 wkts · Econ 13.50"
+  "line": "1 M · 0 runs · 1 wkts · Econ 13.50",
+  "bowlType": "spin",
+  "traits": []
  },
  {
   "id": "p_242",
@@ -2259,7 +2756,9 @@
   "rating": 21,
   "bat": 30,
   "bowl": 30,
-  "line": "8 M · 63 runs · SR 126 · 0 wkts"
+  "line": "8 M · 63 runs · SR 126 · 0 wkts",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_244",
@@ -2272,7 +2771,9 @@
   "rating": 44,
   "bat": 14,
   "bowl": 48,
-  "line": "20 M · 19 wkts · Econ 9.14"
+  "line": "20 M · 19 wkts · Econ 9.14",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_246",
@@ -2285,7 +2786,9 @@
   "rating": 20,
   "bat": 24,
   "bowl": 10,
-  "line": "0 M · 0 runs"
+  "line": "0 M · 0 runs",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_247",
@@ -2298,7 +2801,9 @@
   "rating": 20,
   "bat": 14,
   "bowl": 31,
-  "line": "6 M · 1 wkts · Econ 8.67"
+  "line": "6 M · 1 wkts · Econ 8.67",
+  "bowlType": "spin",
+  "traits": []
  },
  {
   "id": "p_248",
@@ -2311,7 +2816,9 @@
   "rating": 20,
   "bat": 26,
   "bowl": 23,
-  "line": "8 M · 35 runs · SR 109 · 2 wkts · Econ 12.50"
+  "line": "8 M · 35 runs · SR 109 · 2 wkts · Econ 12.50",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_249",
@@ -2324,7 +2831,9 @@
   "rating": 20,
   "bat": 26,
   "bowl": 28,
-  "line": "1 M · 0 runs · 1 wkts · Econ 8.00"
+  "line": "1 M · 0 runs · 1 wkts · Econ 8.00",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_251",
@@ -2337,7 +2846,9 @@
   "rating": 46,
   "bat": 14,
   "bowl": 48,
-  "line": "25 M · 29 wkts · Econ 10.01"
+  "line": "25 M · 29 wkts · Econ 10.01",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_252",
@@ -2350,7 +2861,9 @@
   "rating": 20,
   "bat": 25,
   "bowl": 4,
-  "line": "4 M · 12 runs · SR 63"
+  "line": "4 M · 12 runs · SR 63",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_255",
@@ -2363,7 +2876,9 @@
   "rating": 65,
   "bat": 14,
   "bowl": 65,
-  "line": "52 M · 52 wkts · Econ 8.17"
+  "line": "52 M · 52 wkts · Econ 8.17",
+  "bowlType": "spin",
+  "traits": []
  },
  {
   "id": "p_256",
@@ -2376,7 +2891,9 @@
   "rating": 43,
   "bat": 50,
   "bowl": 10,
-  "line": "19 M · 220 runs · SR 154"
+  "line": "19 M · 220 runs · SR 154",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_257",
@@ -2389,7 +2906,9 @@
   "rating": 20,
   "bat": 27,
   "bowl": 10,
-  "line": "6 M · 19 runs · SR 76"
+  "line": "6 M · 19 runs · SR 76",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_258",
@@ -2402,7 +2921,9 @@
   "rating": 23,
   "bat": 34,
   "bowl": 24,
-  "line": "12 M · 165 runs · SR 163 · 0 wkts · Econ 13.33"
+  "line": "12 M · 165 runs · SR 163 · 0 wkts · Econ 13.33",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_261",
@@ -2415,7 +2936,9 @@
   "rating": 20,
   "bat": 26,
   "bowl": 10,
-  "line": "1 M · 0 runs"
+  "line": "1 M · 0 runs",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_263",
@@ -2428,7 +2951,9 @@
   "rating": 54,
   "bat": 14,
   "bowl": 53,
-  "line": "43 M · 47 wkts · Econ 9.74"
+  "line": "43 M · 47 wkts · Econ 9.74",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_265",
@@ -2441,7 +2966,9 @@
   "rating": 46,
   "bat": 46,
   "bowl": 41,
-  "line": "19 M · 157 runs · SR 176 · 13 wkts · Econ 9.77"
+  "line": "19 M · 157 runs · SR 176 · 13 wkts · Econ 9.77",
+  "bowlType": "spin",
+  "traits": []
  },
  {
   "id": "p_266",
@@ -2454,7 +2981,9 @@
   "rating": 20,
   "bat": 30,
   "bowl": 4,
-  "line": "7 M · 71 runs · SR 109"
+  "line": "7 M · 71 runs · SR 109",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_267",
@@ -2467,7 +2996,9 @@
   "rating": 43,
   "bat": 14,
   "bowl": 43,
-  "line": "26 M · 26 wkts · Econ 10.47"
+  "line": "26 M · 26 wkts · Econ 10.47",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_269",
@@ -2480,7 +3011,9 @@
   "rating": 23,
   "bat": 30,
   "bowl": 30,
-  "line": "9 M · 8 wkts · Econ 11.00"
+  "line": "9 M · 8 wkts · Econ 11.00",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_270",
@@ -2493,7 +3026,9 @@
   "rating": 24,
   "bat": 14,
   "bowl": 34,
-  "line": "10 M · 6 wkts · Econ 9.84"
+  "line": "10 M · 6 wkts · Econ 9.84",
+  "bowlType": "spin",
+  "traits": []
  },
  {
   "id": "p_284",
@@ -2506,7 +3041,9 @@
   "rating": 20,
   "bat": 22,
   "bowl": 4,
-  "line": "0 M · 0 runs"
+  "line": "0 M · 0 runs",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_294",
@@ -2519,7 +3056,9 @@
   "rating": 36,
   "bat": 14,
   "bowl": 41,
-  "line": "14 M · 15 wkts · Econ 10.37"
+  "line": "14 M · 15 wkts · Econ 10.37",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_298",
@@ -2532,7 +3071,9 @@
   "rating": 55,
   "bat": 14,
   "bowl": 57,
-  "line": "32 M · 30 wkts · Econ 8.71"
+  "line": "32 M · 30 wkts · Econ 8.71",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_299",
@@ -2545,7 +3086,9 @@
   "rating": 25,
   "bat": 14,
   "bowl": 33,
-  "line": "12 M · 7 wkts · Econ 10.33"
+  "line": "12 M · 7 wkts · Econ 10.33",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_308",
@@ -2558,7 +3101,9 @@
   "rating": 25,
   "bat": 36,
   "bowl": 10,
-  "line": "9 M · 139 runs · SR 121"
+  "line": "9 M · 139 runs · SR 121",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_309",
@@ -2571,7 +3116,9 @@
   "rating": 42,
   "bat": 47,
   "bowl": 10,
-  "line": "10 M · 260 runs · SR 147"
+  "line": "10 M · 260 runs · SR 147",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_310",
@@ -2584,7 +3131,9 @@
   "rating": 20,
   "bat": 27,
   "bowl": 10,
-  "line": "4 M · 16 runs · SR 70"
+  "line": "4 M · 16 runs · SR 70",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_311",
@@ -2597,7 +3146,9 @@
   "rating": 20,
   "bat": 28,
   "bowl": 25,
-  "line": "5 M · 14 runs · SR 350 · 0 wkts · Econ 11.46"
+  "line": "5 M · 14 runs · SR 350 · 0 wkts · Econ 11.46",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_314",
@@ -2610,7 +3161,9 @@
   "rating": 49,
   "bat": 52,
   "bowl": 40,
-  "line": "40 M · 527 runs · SR 141 · 1 wkts · Econ 8.47"
+  "line": "40 M · 527 runs · SR 141 · 1 wkts · Econ 8.47",
+  "bowlType": "spin",
+  "traits": []
  },
  {
   "id": "p_315",
@@ -2623,7 +3176,9 @@
   "rating": 20,
   "bat": 29,
   "bowl": 25,
-  "line": "6 M · 90 runs · SR 134 · 0 wkts · Econ 12.50"
+  "line": "6 M · 90 runs · SR 134 · 0 wkts · Econ 12.50",
+  "bowlType": "spin",
+  "traits": []
  },
  {
   "id": "p_317",
@@ -2636,7 +3191,9 @@
   "rating": 20,
   "bat": 27,
   "bowl": 28,
-  "line": "6 M · 25 runs · SR 119 · 0 wkts"
+  "line": "6 M · 25 runs · SR 119 · 0 wkts",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_318",
@@ -2649,7 +3206,9 @@
   "rating": 30,
   "bat": 33,
   "bowl": 35,
-  "line": "13 M · 53 runs · SR 115 · 9 wkts · Econ 9.62"
+  "line": "13 M · 53 runs · SR 115 · 9 wkts · Econ 9.62",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_320",
@@ -2662,7 +3221,9 @@
   "rating": 53,
   "bat": 53,
   "bowl": 42,
-  "line": "78 M · 1233 runs · SR 130 · 9 wkts · Econ 8.67"
+  "line": "78 M · 1233 runs · SR 130 · 9 wkts · Econ 8.67",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_321",
@@ -2675,7 +3236,9 @@
   "rating": 45,
   "bat": 48,
   "bowl": 4,
-  "line": "11 M · 295 runs · SR 137"
+  "line": "11 M · 295 runs · SR 137",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_322",
@@ -2688,7 +3251,9 @@
   "rating": 37,
   "bat": 44,
   "bowl": 4,
-  "line": "10 M · 170 runs · SR 142"
+  "line": "10 M · 170 runs · SR 142",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_324",
@@ -2701,7 +3266,9 @@
   "rating": 20,
   "bat": 22,
   "bowl": 4,
-  "line": "0 M · 0 runs"
+  "line": "0 M · 0 runs",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_327",
@@ -2714,7 +3281,9 @@
   "rating": 44,
   "bat": 14,
   "bowl": 48,
-  "line": "17 M · 23 wkts · Econ 10.06"
+  "line": "17 M · 23 wkts · Econ 10.06",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_328",
@@ -2727,7 +3296,9 @@
   "rating": 25,
   "bat": 14,
   "bowl": 35,
-  "line": "6 M · 6 wkts · Econ 10.86"
+  "line": "6 M · 6 wkts · Econ 10.86",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_329",
@@ -2740,7 +3311,9 @@
   "rating": 47,
   "bat": 14,
   "bowl": 47,
-  "line": "34 M · 33 wkts · Econ 9.98"
+  "line": "34 M · 33 wkts · Econ 9.98",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_330",
@@ -2753,7 +3326,9 @@
   "rating": 20,
   "bat": 14,
   "bowl": 24,
-  "line": "0 M · 0 wkts"
+  "line": "0 M · 0 wkts",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_332",
@@ -2766,7 +3341,9 @@
   "rating": 30,
   "bat": 14,
   "bowl": 37,
-  "line": "14 M · 11 wkts · Econ 10.00"
+  "line": "14 M · 11 wkts · Econ 10.00",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_333",
@@ -2779,7 +3356,9 @@
   "rating": 20,
   "bat": 14,
   "bowl": 30,
-  "line": "2 M · 2 wkts · Econ 10.58"
+  "line": "2 M · 2 wkts · Econ 10.58",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_334",
@@ -2792,7 +3371,9 @@
   "rating": 20,
   "bat": 14,
   "bowl": 24,
-  "line": "0 M · 0 wkts"
+  "line": "0 M · 0 wkts",
+  "bowlType": "spin",
+  "traits": []
  },
  {
   "id": "p_335",
@@ -2805,7 +3386,9 @@
   "rating": 20,
   "bat": 14,
   "bowl": 24,
-  "line": "0 M · 0 wkts"
+  "line": "0 M · 0 wkts",
+  "bowlType": "spin",
+  "traits": []
  },
  {
   "id": "p_336",
@@ -2818,7 +3401,9 @@
   "rating": 26,
   "bat": 14,
   "bowl": 37,
-  "line": "2 M · 2 wkts · Econ 6.33"
+  "line": "2 M · 2 wkts · Econ 6.33",
+  "bowlType": "spin",
+  "traits": []
  },
  {
   "id": "p_338",
@@ -2831,7 +3416,9 @@
   "rating": 29,
   "bat": 14,
   "bowl": 38,
-  "line": "5 M · 6 wkts · Econ 9.08"
+  "line": "5 M · 6 wkts · Econ 9.08",
+  "bowlType": "spin",
+  "traits": []
  },
  {
   "id": "p_340",
@@ -2844,7 +3431,9 @@
   "rating": 33,
   "bat": 14,
   "bowl": 41,
-  "line": "8 M · 9 wkts · Econ 9.30"
+  "line": "8 M · 9 wkts · Econ 9.30",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_343",
@@ -2857,7 +3446,9 @@
   "rating": 46,
   "bat": 50,
   "bowl": 10,
-  "line": "10 M · 278 runs · SR 159"
+  "line": "10 M · 278 runs · SR 159",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_344",
@@ -2870,7 +3461,9 @@
   "rating": 67,
   "bat": 69,
   "bowl": 10,
-  "line": "100 M · 2291 runs · SR 138"
+  "line": "100 M · 2291 runs · SR 138",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_349",
@@ -2883,7 +3476,9 @@
   "rating": 20,
   "bat": 24,
   "bowl": 25,
-  "line": "1 M · 0 runs · 1 wkts · Econ 12.75"
+  "line": "1 M · 0 runs · 1 wkts · Econ 12.75",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_351",
@@ -2896,7 +3491,9 @@
   "rating": 30,
   "bat": 39,
   "bowl": 26,
-  "line": "15 M · 351 runs · SR 131 · 1 wkts · Econ 12.12"
+  "line": "15 M · 351 runs · SR 131 · 1 wkts · Econ 12.12",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_352",
@@ -2909,7 +3506,9 @@
   "rating": 20,
   "bat": 21,
   "bowl": 22,
-  "line": "0 M · 0 runs · 0 wkts"
+  "line": "0 M · 0 runs · 0 wkts",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_353",
@@ -2922,7 +3521,9 @@
   "rating": 65,
   "bat": 50,
   "bowl": 63,
-  "line": "57 M · 324 runs · SR 123 · 70 wkts · Econ 8.58"
+  "line": "57 M · 324 runs · SR 123 · 70 wkts · Econ 8.58",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_354",
@@ -2935,7 +3536,9 @@
   "rating": 29,
   "bat": 35,
   "bowl": 32,
-  "line": "9 M · 177 runs · SR 124 · 0 wkts · Econ 8.93"
+  "line": "9 M · 177 runs · SR 124 · 0 wkts · Econ 8.93",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_357",
@@ -2948,7 +3551,9 @@
   "rating": 20,
   "bat": 21,
   "bowl": 22,
-  "line": "0 M · 0 runs · 0 wkts"
+  "line": "0 M · 0 runs · 0 wkts",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_359",
@@ -2961,7 +3566,9 @@
   "rating": 20,
   "bat": 22,
   "bowl": 4,
-  "line": "0 M · 0 runs"
+  "line": "0 M · 0 runs",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_360",
@@ -2974,7 +3581,9 @@
   "rating": 66,
   "bat": 65,
   "bowl": 4,
-  "line": "17 M · 544 runs · SR 173"
+  "line": "17 M · 544 runs · SR 173",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_364",
@@ -2987,7 +3596,9 @@
   "rating": 20,
   "bat": 29,
   "bowl": 4,
-  "line": "6 M · 45 runs · SR 110"
+  "line": "6 M · 45 runs · SR 110",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_365",
@@ -3000,7 +3611,9 @@
   "rating": 20,
   "bat": 25,
   "bowl": 4,
-  "line": "2 M · 18 runs · SR 90"
+  "line": "2 M · 18 runs · SR 90",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_366",
@@ -3013,7 +3626,9 @@
   "rating": 26,
   "bat": 14,
   "bowl": 35,
-  "line": "11 M · 7 wkts · Econ 9.73"
+  "line": "11 M · 7 wkts · Econ 9.73",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_368",
@@ -3026,7 +3641,9 @@
   "rating": 37,
   "bat": 14,
   "bowl": 43,
-  "line": "12 M · 14 wkts · Econ 9.63"
+  "line": "12 M · 14 wkts · Econ 9.63",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_369",
@@ -3039,7 +3656,9 @@
   "rating": 37,
   "bat": 14,
   "bowl": 42,
-  "line": "15 M · 16 wkts · Econ 10.12"
+  "line": "15 M · 16 wkts · Econ 10.12",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_370",
@@ -3052,7 +3671,9 @@
   "rating": 69,
   "bat": 14,
   "bowl": 71,
-  "line": "28 M · 42 wkts · Econ 8.41"
+  "line": "28 M · 42 wkts · Econ 8.41",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_371",
@@ -3065,7 +3686,11 @@
   "rating": 68,
   "bat": 14,
   "bowl": 67,
-  "line": "60 M · 65 wkts · Econ 8.13"
+  "line": "60 M · 65 wkts · Econ 8.13",
+  "bowlType": "pace",
+  "traits": [
+   "deathSpecialist"
+  ]
  },
  {
   "id": "p_373",
@@ -3078,7 +3703,9 @@
   "rating": 67,
   "bat": 14,
   "bowl": 64,
-  "line": "148 M · 144 wkts · Econ 8.49"
+  "line": "148 M · 144 wkts · Econ 8.49",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_382",
@@ -3091,7 +3718,9 @@
   "rating": 20,
   "bat": 25,
   "bowl": 10,
-  "line": "2 M · 2 runs · SR 40"
+  "line": "2 M · 2 runs · SR 40",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_387",
@@ -3104,7 +3733,9 @@
   "rating": 20,
   "bat": 21,
   "bowl": 22,
-  "line": "0 M · 0 runs · 0 wkts"
+  "line": "0 M · 0 runs · 0 wkts",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_390",
@@ -3117,7 +3748,9 @@
   "rating": 25,
   "bat": 29,
   "bowl": 32,
-  "line": "10 M · 5 runs · SR 100 · 9 wkts · Econ 10.15"
+  "line": "10 M · 5 runs · SR 100 · 9 wkts · Econ 10.15",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_391",
@@ -3130,7 +3763,9 @@
   "rating": 20,
   "bat": 23,
   "bowl": 24,
-  "line": "1 M · 0 runs · 0 wkts"
+  "line": "1 M · 0 runs · 0 wkts",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_393",
@@ -3143,7 +3778,9 @@
   "rating": 20,
   "bat": 21,
   "bowl": 22,
-  "line": "0 M · 0 runs · 0 wkts"
+  "line": "0 M · 0 runs · 0 wkts",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_395",
@@ -3156,7 +3793,9 @@
   "rating": 20,
   "bat": 21,
   "bowl": 22,
-  "line": "0 M · 0 runs · 0 wkts"
+  "line": "0 M · 0 runs · 0 wkts",
+  "bowlType": "spin",
+  "traits": []
  },
  {
   "id": "p_398",
@@ -3169,7 +3808,9 @@
   "rating": 20,
   "bat": 24,
   "bowl": 4,
-  "line": "1 M · 0 runs"
+  "line": "1 M · 0 runs",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_400",
@@ -3182,7 +3823,9 @@
   "rating": 20,
   "bat": 28,
   "bowl": 4,
-  "line": "1 M · 4 runs · SR 200"
+  "line": "1 M · 4 runs · SR 200",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_402",
@@ -3195,7 +3838,9 @@
   "rating": 39,
   "bat": 46,
   "bowl": 4,
-  "line": "14 M · 156 runs · SR 159"
+  "line": "14 M · 156 runs · SR 159",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_403",
@@ -3208,7 +3853,9 @@
   "rating": 20,
   "bat": 27,
   "bowl": 4,
-  "line": "3 M · 18 runs · SR 120"
+  "line": "3 M · 18 runs · SR 120",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_404",
@@ -3221,7 +3868,9 @@
   "rating": 20,
   "bat": 22,
   "bowl": 4,
-  "line": "0 M · 0 runs"
+  "line": "0 M · 0 runs",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_406",
@@ -3234,7 +3883,9 @@
   "rating": 20,
   "bat": 14,
   "bowl": 24,
-  "line": "0 M · 0 wkts"
+  "line": "0 M · 0 wkts",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_407",
@@ -3247,7 +3898,9 @@
   "rating": 20,
   "bat": 14,
   "bowl": 24,
-  "line": "0 M · 0 wkts"
+  "line": "0 M · 0 wkts",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_408",
@@ -3260,7 +3913,9 @@
   "rating": 20,
   "bat": 14,
   "bowl": 24,
-  "line": "0 M · 0 wkts"
+  "line": "0 M · 0 wkts",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_410",
@@ -3273,7 +3928,9 @@
   "rating": 41,
   "bat": 14,
   "bowl": 46,
-  "line": "11 M · 15 wkts · Econ 9.45"
+  "line": "11 M · 15 wkts · Econ 9.45",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_413",
@@ -3286,7 +3943,9 @@
   "rating": 20,
   "bat": 14,
   "bowl": 24,
-  "line": "0 M · 0 wkts"
+  "line": "0 M · 0 wkts",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_901",
@@ -3299,7 +3958,9 @@
   "rating": 20,
   "bat": 14,
   "bowl": 31,
-  "line": "3 M · 2 wkts · Econ 9.33"
+  "line": "3 M · 2 wkts · Econ 9.33",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_902",
@@ -3312,7 +3973,9 @@
   "rating": 20,
   "bat": 21,
   "bowl": 22,
-  "line": "0 M · 0 runs · 0 wkts"
+  "line": "0 M · 0 runs · 0 wkts",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_903",
@@ -3325,7 +3988,9 @@
   "rating": 20,
   "bat": 14,
   "bowl": 24,
-  "line": "0 M · 0 wkts"
+  "line": "0 M · 0 wkts",
+  "bowlType": "spin",
+  "traits": []
  },
  {
   "id": "p_904",
@@ -3338,7 +4003,9 @@
   "rating": 20,
   "bat": 32,
   "bowl": 10,
-  "line": "4 M · 46 runs · SR 139"
+  "line": "4 M · 46 runs · SR 139",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_906",
@@ -3351,7 +4018,9 @@
   "rating": 24,
   "bat": 14,
   "bowl": 32,
-  "line": "9 M · 6 wkts · Econ 11.01"
+  "line": "9 M · 6 wkts · Econ 11.01",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_907",
@@ -3364,7 +4033,9 @@
   "rating": 20,
   "bat": 14,
   "bowl": 24,
-  "line": "0 M · 0 wkts"
+  "line": "0 M · 0 wkts",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_908",
@@ -3377,7 +4048,9 @@
   "rating": 21,
   "bat": 14,
   "bowl": 33,
-  "line": "2 M · 4 wkts · Econ 10.71"
+  "line": "2 M · 4 wkts · Econ 10.71",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_909",
@@ -3390,7 +4063,9 @@
   "rating": 46,
   "bat": 14,
   "bowl": 48,
-  "line": "34 M · 23 wkts · Econ 8.97"
+  "line": "34 M · 23 wkts · Econ 8.97",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_910",
@@ -3403,7 +4078,9 @@
   "rating": 20,
   "bat": 22,
   "bowl": 4,
-  "line": "0 M · 0 runs"
+  "line": "0 M · 0 runs",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_911",
@@ -3416,7 +4093,9 @@
   "rating": 20,
   "bat": 29,
   "bowl": 30,
-  "line": "3 M · 31 runs · SR 148 · 1 wkts · Econ 8.92"
+  "line": "3 M · 31 runs · SR 148 · 1 wkts · Econ 8.92",
+  "bowlType": "spin",
+  "traits": []
  },
  {
   "id": "p_912",
@@ -3429,7 +4108,9 @@
   "rating": 26,
   "bat": 14,
   "bowl": 37,
-  "line": "2 M · 2 wkts · Econ 6.50"
+  "line": "2 M · 2 wkts · Econ 6.50",
+  "bowlType": "spin",
+  "traits": []
  },
  {
   "id": "p_913",
@@ -3442,7 +4123,9 @@
   "rating": 41,
   "bat": 47,
   "bowl": 38,
-  "line": "14 M · 491 runs · SR 163 · 0 wkts"
+  "line": "14 M · 491 runs · SR 163 · 0 wkts",
+  "bowlType": "spin",
+  "traits": []
  },
  {
   "id": "p_914",
@@ -3455,7 +4138,9 @@
   "rating": 20,
   "bat": 26,
   "bowl": 28,
-  "line": "5 M · 23 runs · SR 70 · 2 wkts · Econ 8.54"
+  "line": "5 M · 23 runs · SR 70 · 2 wkts · Econ 8.54",
+  "bowlType": "spin",
+  "traits": []
  },
  {
   "id": "p_915",
@@ -3468,7 +4153,9 @@
   "rating": 22,
   "bat": 25,
   "bowl": 33,
-  "line": "13 M · 2 runs · SR 50 · 14 wkts · Econ 9.89"
+  "line": "13 M · 2 runs · SR 50 · 14 wkts · Econ 9.89",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_916",
@@ -3481,7 +4168,9 @@
   "rating": 20,
   "bat": 24,
   "bowl": 10,
-  "line": "0 M · 0 runs"
+  "line": "0 M · 0 runs",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_917",
@@ -3494,7 +4183,9 @@
   "rating": 20,
   "bat": 14,
   "bowl": 24,
-  "line": "0 M · 0 wkts"
+  "line": "0 M · 0 wkts",
+  "bowlType": "spin",
+  "traits": []
  },
  {
   "id": "p_918",
@@ -3507,7 +4198,9 @@
   "rating": 20,
   "bat": 14,
   "bowl": 30,
-  "line": "3 M · 2 wkts · Econ 9.71"
+  "line": "3 M · 2 wkts · Econ 9.71",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_919",
@@ -3520,7 +4213,9 @@
   "rating": 34,
   "bat": 14,
   "bowl": 40,
-  "line": "7 M · 14 wkts · Econ 11.73"
+  "line": "7 M · 14 wkts · Econ 11.73",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_920",
@@ -3533,7 +4228,9 @@
   "rating": 20,
   "bat": 14,
   "bowl": 30,
-  "line": "2 M · 2 wkts · Econ 14.00"
+  "line": "2 M · 2 wkts · Econ 14.00",
+  "bowlType": "pace",
+  "traits": []
  },
  {
   "id": "p_921",
@@ -3546,6 +4243,8 @@
   "rating": 20,
   "bat": 21,
   "bowl": 22,
-  "line": "0 M · 0 runs · 0 wkts"
+  "line": "0 M · 0 runs · 0 wkts",
+  "bowlType": "pace",
+  "traits": []
  }
 ]

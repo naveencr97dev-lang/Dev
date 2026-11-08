@@ -2,7 +2,7 @@ import SwiftUI
 
 /// A confetti burst for the champion screen and big sales.
 struct ConfettiView: View {
-    var colors: [Color] = Palette.teamColors.map { Color(hex: $0) } + [Palette.gold]
+    var colors: [Color] = Palette.teamColors.map { Color(hex: $0) } + [Palette.accent]
     var count = 60
     @State private var animate = false
 

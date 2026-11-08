@@ -26,24 +26,84 @@ struct AuctionState: Codable, Hashable {
 }
 
 enum AuctionEngine {
-    static let poolOrder = ["Marquee", "Batters", "All-rounders", "Wicket-keepers", "Bowlers", "Uncapped"]
-
     // MARK: Setup
 
-    static func buildQueue(players: [Player], teamCount: Int, rules: Rules, rng: inout SeededRNG) -> [String] {
-        var chosen = players
-        if rules.poolSize == .quick {
-            let target = min(players.count, teamCount * 17)
-            chosen = Array(players.sorted { $0.rating > $1.rating }.prefix(target))
+    /// Players per role in the auction: one XI per team (4 BAT, 1 WK, 2 AR, 4 BOWL)
+    /// plus 12 extras for choice (4 BAT + 1 WK, 2 AR, 5 BOWL).
+    static func poolSize(teams n: Int) -> [Role: Int] {
+        [.BAT: 4 * n + 4, .WK: n + 1, .AR: 2 * n + 2, .BOWL: 4 * n + 5]
+    }
+
+    /// Picks the auction pool (legends first, then a random mix of the best of the rest)
+    /// and orders it: Marquee, Batters & Keepers, All-rounders, Bowlers.
+    static func buildQueue(players: [Player], teamCount n: Int, rules: Rules, rng: inout SeededRNG) -> [String] {
+        let overseasCap = 3 * n + 2
+        var overseas = 0
+        var chosen: [Player] = []
+        for (role, count) in poolSize(teams: n).sorted(by: { $0.key.rawValue < $1.key.rawValue }) {
+            let ofRole = players.filter { $0.role == role }.sorted { $0.rating > $1.rating }
+            let legends = ofRole.filter(\.isLegend).shuffled(using: &rng)
+            let rest = Array(ofRole.filter { !$0.isLegend }.prefix(count * 2)).shuffled(using: &rng)
+                .sorted { $0.rating > $1.rating }
+            var picked: [Player] = []
+            // Legends take at most ~60% of a role so there are always bargains.
+            for p in legends where picked.count < max(1, count * 6 / 10) {
+                if p.overseas && overseas >= overseasCap { continue }
+                picked.append(p); overseas += p.overseas ? 1 : 0
+            }
+            var pool = rest
+            while picked.count < count, !pool.isEmpty {
+                // Bias towards better players without making it deterministic.
+                let i = min(pool.count - 1, Int(pow(rng.unit(), 1.6) * Double(pool.count)))
+                let p = pool.remove(at: i)
+                if p.overseas && overseas >= overseasCap { continue }
+                picked.append(p); overseas += p.overseas ? 1 : 0
+            }
+            chosen += picked
         }
-        var queue: [String] = []
-        for pool in poolOrder {
-            queue += chosen.filter { $0.pool == pool }.shuffled(using: &rng).map(\.id)
+        let marquee = Set(chosen.sorted { $0.rating > $1.rating }.prefix(2 * n).map(\.id))
+        var queue = chosen.filter { marquee.contains($0.id) }.shuffled(using: &rng).map(\.id)
+        for roles in [[Role.BAT, .WK], [.AR], [.BOWL]] {
+            queue += chosen.filter { !marquee.contains($0.id) && roles.contains($0.role) }.shuffled(using: &rng).map(\.id)
         }
-        // Anything in an unknown pool goes last.
-        let known = Set(queue)
-        queue += chosen.filter { !known.contains($0.id) }.map(\.id)
         return queue
+    }
+
+    /// Label for where a lot sits in the auction.
+    static func setName(for p: Player, index: Int, teamCount n: Int) -> String {
+        if index < 2 * n { return "Marquee" }
+        switch p.role {
+        case .BAT, .WK: return "Batters & Keepers"
+        case .AR: return "All-rounders"
+        case .BOWL: return "Bowlers"
+        }
+    }
+
+    /// What a squad still lacks for a balanced XI.
+    struct Needs: Hashable {
+        var keeper = 0
+        var bowlers = 0
+        var batters = 0
+        var total: Int { keeper + bowlers + batters }
+
+        var summary: String {
+            var parts: [String] = []
+            if keeper > 0 { parts.append("WK") }
+            if batters > 0 { parts.append("\(batters) bat") }
+            if bowlers > 0 { parts.append("\(bowlers) bowl") }
+            return parts.isEmpty ? "Balanced" : "Needs " + parts.joined(separator: " · ")
+        }
+
+        func filledBy(_ p: Player) -> Bool {
+            (keeper > 0 && p.role == .WK) || (bowlers > 0 && p.isBowlingOption) || (batters > 0 && p.isTopOrderBat)
+        }
+    }
+
+    static func needs(_ team: Franchise, players: [String: Player]) -> Needs {
+        let squad = team.squad.compactMap { players[$0] }
+        return Needs(keeper: squad.contains { $0.role == .WK } ? 0 : 1,
+                     bowlers: max(0, 5 - squad.filter(\.isBowlingOption).count),
+                     batters: max(0, 4 - squad.filter(\.isTopOrderBat).count))
     }
 
     // MARK: Bidding rules
@@ -106,23 +166,19 @@ enum AuctionEngine {
     static func cpuLimit(team: Franchise, player p: Player, rules: Rules, players: [String: Player], rng: inout SeededRNG) -> Int {
         let squad = team.squad.compactMap { players[$0] }
         var v = fairValue(p, rules: rules)
+        if p.isLegend { v *= 1.15 }
 
-        let wks = squad.filter { $0.role == .WK }.count
-        let bowlers = squad.filter(\.isBowlingOption).count
-        let bats = squad.filter(\.isTopOrderBat).count
-        var fillsNeed = false
-        if p.role == .WK && wks == 0 { v *= 1.4; fillsNeed = true }
-        if p.isBowlingOption && bowlers < 6 { v *= 1.25; fillsNeed = true }
-        if p.isTopOrderBat && bats < 5 { v *= 1.2; fillsNeed = true }
-        if team.squad.count >= rules.maxSquad - 2 { v *= 0.6 }
-        if squad.count >= 15 && !fillsNeed { v *= 0.7 }
-        if p.overseas && squad.filter(\.overseas).count >= 6 { v *= 0.6 }
+        let need = needs(team, players: players)
+        let slotsLeft = rules.maxSquad - squad.count
+        if need.filledBy(p) { v *= 1.3 }
+        else if need.total >= slotsLeft { v *= 0.2 }      // must spend the last slots on needs
+        else if need.total >= slotsLeft - 1 { v *= 0.6 }
+        if p.overseas && squad.filter(\.overseas).count >= rules.maxOverseasXI - 1 { v *= 0.7 }
 
         v *= team.personality * rng.range(0.8, 1.25)
 
         // Budget pacing: don't blow the purse on one player early on.
-        let slotsLeft = Double(max(1, 16 - squad.count))
-        v = min(v, Double(team.purse) / slotsLeft * 2.6)
+        v = min(v, Double(team.purse) / Double(max(1, slotsLeft)) * 2.6)
         v = max(v, Double(p.base) * (p.rating >= 45 ? 1.0 : 0.0))
         return min(Int(v), maxAffordable(team, rules: rules))
     }

@@ -10,7 +10,7 @@ struct AuctionXIApp: App {
             RootView()
                 .environmentObject(store)
                 .preferredColorScheme(.dark)
-                .tint(Palette.gold)
+                .tint(Palette.accent)
         }
         .onChange(of: scenePhase) { phase in
             if phase != .active {

@@ -66,63 +66,70 @@ struct MatchView: View {
 
     // MARK: Live ticker
 
+    @Environment(\.verticalSizeClass) private var vSize
+
     private func live(_ r: MatchResult) -> some View {
         let current = shown > 0 ? log[shown - 1] : nil
         let inningsNow = current?.innings ?? 0
         let thisOver = log[..<shown].filter { $0.innings == inningsNow && $0.over == (current?.over ?? 0) }
-        let recent = log[..<shown].suffix(7).reversed()
+        let recent = Array(log[..<shown].suffix(8).reversed())
 
-        return ScrollView {
-            VStack(spacing: DS.Space.md) {
-                scoreLine(r.innings[0], live: inningsNow == 0 ? current : nil, finalCard: inningsNow > 0, target: nil)
-                if inningsNow == 1 {
-                    scoreLine(r.innings[1], live: current, finalCard: false, target: r.innings[0].runs + 1)
-                } else if let t = store.team(r.innings[1].teamId) {
-                    HStack {
-                        TeamBadge(team: t, size: 30)
-                        Text("\(t.name) — yet to bat").foregroundStyle(.secondary)
-                        Spacer()
-                    }
-                    .padding(.horizontal, DS.Space.sm)
-                }
-
-                if let e = current {
-                    BigCall(event: e).id(shown)
-                }
-
-                VStack(alignment: .leading, spacing: DS.Space.sm) {
-                    SectionLabel(text: "This over")
-                    HStack(spacing: 6) {
-                        ForEach(Array(thisOver.enumerated()), id: \.offset) { _, e in
-                            BallChip(label: e.label)
-                        }
-                        Spacer()
-                    }
-                }
-
-                VStack(alignment: .leading, spacing: DS.Space.sm) {
-                    SectionLabel(text: "Commentary")
-                    AppCard(padding: DS.Space.md) {
-                        VStack(alignment: .leading, spacing: 8) {
-                            ForEach(Array(recent.enumerated()), id: \.offset) { _, e in
-                                HStack(alignment: .top, spacing: 8) {
-                                    Text(overString(e)).font(.caption.monospacedDigit()).foregroundStyle(.secondary).frame(width: 34, alignment: .leading)
-                                    Text(e.text).font(.subheadline)
-                                        .foregroundStyle(e.label == "W" ? Palette.wicket : (e.label == "6" ? Palette.six : (e.label == "4" ? Palette.four : Color.primary)))
-                                }
-                            }
-                        }
-                    }
-                }
-
-                Picker("Speed", selection: $speed) {
-                    Text("1×").tag(1)
-                    Text("2×").tag(2)
-                    Text("4×").tag(4)
-                }
-                .pickerStyle(.segmented)
+        let board = VStack(spacing: DS.Space.md) {
+            ScoreBug(result: r, event: current)
+            if let e = current {
+                CreaseCard(event: e, battingTeam: store.team(r.innings[e.innings].teamId))
             }
-            .padding(DS.Space.lg)
+            ZStack {
+                if let e = current { BigCall(event: e).id(shown) }
+            }
+            .frame(height: 50)
+            VStack(alignment: .leading, spacing: DS.Space.sm) {
+                SectionLabel(text: "This over")
+                HStack(spacing: 6) {
+                    ForEach(Array(thisOver.enumerated()), id: \.offset) { i, e in
+                        BallChip(label: e.label)
+                            .transition(.scale.combined(with: .opacity))
+                    }
+                    Spacer()
+                }
+                .animation(.spring(response: 0.3, dampingFraction: 0.6), value: thisOver.count)
+            }
+        }
+        let feed = VStack(alignment: .leading, spacing: DS.Space.sm) {
+            SectionLabel(text: "Commentary")
+            AppCard(padding: DS.Space.md) {
+                VStack(alignment: .leading, spacing: 8) {
+                    ForEach(Array(recent.enumerated()), id: \.offset) { i, e in
+                        HStack(alignment: .top, spacing: 8) {
+                            Text(overString(e)).font(.score(13)).foregroundStyle(Palette.muted).frame(width: 34, alignment: .leading)
+                            Text(e.text).font(.subheadline.weight(i == 0 ? .semibold : .regular))
+                                .foregroundStyle(e.label == "W" ? Palette.wicket : (e.label == "6" ? Palette.six : (e.label == "4" ? Palette.four : Color.white)))
+                        }
+                        .opacity(i == 0 ? 1 : 0.7)
+                    }
+                }
+            }
+            Picker("Speed", selection: $speed) {
+                Text("1×").tag(1)
+                Text("2×").tag(2)
+                Text("4×").tag(4)
+            }
+            .pickerStyle(.segmented)
+        }
+
+        return Group {
+            if vSize == .compact {
+                HStack(alignment: .top, spacing: DS.Space.lg) {
+                    ScrollView { board.padding(.vertical, DS.Space.sm) }
+                    ScrollView { feed.padding(.vertical, DS.Space.sm) }
+                }
+                .padding(.horizontal, DS.Space.lg)
+            } else {
+                ScrollView {
+                    VStack(spacing: DS.Space.md) { board; feed }
+                        .padding(DS.Space.lg)
+                }
+            }
         }
     }
 
@@ -130,31 +137,101 @@ struct MatchView: View {
         let balls = e.over * 6 + e.ballInOver
         return "\(balls / 6).\(balls % 6)"
     }
+}
 
-    private func scoreLine(_ inn: InningsCard, live e: BallEvent?, finalCard: Bool, target: Int?) -> some View {
-        let team = store.team(inn.teamId)
-        let runs = finalCard ? inn.runs : (e?.score ?? 0)
-        let wkts = finalCard ? inn.wickets : (e?.wickets ?? 0)
-        let balls = finalCard ? inn.balls : (e.map { $0.over * 6 + $0.ballInOver } ?? 0)
-        return AppCard(tint: team.map { Color(hex: $0.colorHex) }) {
-            VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    if let team { TeamBadge(team: team, size: 36) }
-                    Text(team?.name ?? "").font(.headline)
-                    Spacer()
-                    VStack(alignment: .trailing, spacing: 0) {
-                        Text("\(runs)/\(wkts)").font(.display(30, weight: .heavy)).monospacedDigit()
-                        Text("\(balls / 6).\(balls % 6) ov").font(.caption.monospacedDigit()).foregroundStyle(.secondary)
-                    }
+/// TV-style score strip: batting team, score, overs, chase equation.
+struct ScoreBug: View {
+    @EnvironmentObject var store: GameStore
+    let result: MatchResult
+    let event: BallEvent?
+
+    var body: some View {
+        let inn = event?.innings ?? 0
+        let batting = store.team(result.innings[min(inn, 1)].teamId)
+        let bowling = store.team(result.innings[min(inn, 1) == 0 ? 1 : 0].teamId)
+        let balls = event.map { $0.over * 6 + $0.ballInOver } ?? 0
+        VStack(spacing: 0) {
+            HStack(spacing: 0) {
+                HStack(spacing: 8) {
+                    if let batting { TeamBadge(team: batting, size: 34) }
+                    Text(batting?.short ?? "").font(.display(24))
                 }
-                if let target {
-                    let need = max(0, target - runs)
-                    let left = 120 - balls
-                    Text(need == 0 ? "Target reached!" : "Need \(need) from \(left) ball\(left == 1 ? "" : "s") · RRR \(left > 0 ? String(format: "%.1f", Double(need) * 6 / Double(left)) : "–")")
-                        .font(.subheadline.weight(.semibold)).foregroundStyle(Palette.gold)
+                .padding(.horizontal, 12).padding(.vertical, 8)
+                .background(Color(hex: batting?.colorHex ?? "#333333"))
+                HStack(spacing: 6) {
+                    Text("\(event?.score ?? 0)-\(event?.wickets ?? 0)").font(.score(30))
+                        .contentTransition(.numericText())
+                        .animation(.spring(response: 0.25), value: event?.score)
+                    Text("\(balls / 6).\(balls % 6)").font(.score(16, weight: .semibold)).foregroundStyle(Palette.muted)
                 }
+                .padding(.horizontal, 12)
+                Spacer(minLength: 4)
+                Text("v \(bowling?.short ?? "")").font(.display(16, weight: .heavy)).foregroundStyle(Palette.muted)
+                    .padding(.trailing, 12)
             }
+            .background(Palette.surface)
+            HStack {
+                Text("\(result.pitch.icon) \(result.pitch.label.uppercased())").font(.display(12, weight: .heavy))
+                Spacer()
+                Text(equation(inn: inn, balls: balls)).font(.display(13, weight: .heavy))
+            }
+            .foregroundStyle(Palette.ink)
+            .padding(.horizontal, 12).padding(.vertical, 4)
+            .background(Palette.accent)
         }
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous).stroke(Palette.stroke))
+    }
+
+    private func equation(inn: Int, balls: Int) -> String {
+        if inn == 0 {
+            let rr = balls > 0 ? Double(event?.score ?? 0) * 6 / Double(balls) : 0
+            return "RUN RATE \(String(format: "%.2f", rr))"
+        }
+        let target = result.innings[0].runs + 1
+        let need = max(0, target - (event?.score ?? 0))
+        let left = 120 - balls
+        if need == 0 { return "TARGET REACHED" }
+        return "NEED \(need) OFF \(left) · TARGET \(target)"
+    }
+}
+
+/// The two batters at the crease and the current bowler, like a broadcast lower third.
+struct CreaseCard: View {
+    let event: BallEvent
+    let battingTeam: Franchise?
+
+    var body: some View {
+        VStack(spacing: 0) {
+            ForEach(Array(event.batters.enumerated()), id: \.offset) { _, b in
+                HStack(spacing: 8) {
+                    Rectangle().fill(b.onStrike ? Palette.accent : Color.clear).frame(width: 4, height: 22)
+                    Text(b.name.uppercased() + (b.onStrike ? " *" : ""))
+                        .font(.display(18, weight: b.onStrike ? .black : .heavy)).lineLimit(1)
+                    Spacer()
+                    Text("\(b.runs)").font(.score(22))
+                        .contentTransition(.numericText())
+                    Text("(\(b.balls))").font(.score(14, weight: .regular)).foregroundStyle(Palette.muted).frame(width: 40, alignment: .leading)
+                    Text("\(b.fours)×4 \(b.sixes)×6").font(.score(12, weight: .regular)).foregroundStyle(Palette.muted).frame(width: 62, alignment: .trailing)
+                }
+                .padding(.vertical, 6).padding(.trailing, 12)
+            }
+            Rectangle().fill(Palette.stroke).frame(height: 1)
+            HStack(spacing: 8) {
+                Image(systemName: "figure.cricket").foregroundStyle(Palette.muted).frame(width: 18)
+                Text(event.bowler.name.uppercased()).font(.display(17, weight: .heavy)).lineLimit(1)
+                Spacer()
+                Text("\(event.bowler.overs)-\(event.bowler.runs)-\(event.bowler.wickets)").font(.score(20))
+                let econ = event.bowler.balls > 0 ? Double(event.bowler.runs) * 6 / Double(event.bowler.balls) : 0
+                Text("ECON \(String(format: "%.1f", econ))").font(.score(12, weight: .regular)).foregroundStyle(Palette.muted)
+                    .frame(width: 62, alignment: .trailing)
+            }
+            .padding(.vertical, 8).padding(.horizontal, 12)
+        }
+        .background(Palette.surface)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous).stroke(Palette.stroke))
+        .animation(.spring(response: 0.3), value: event.batters.map(\.runs))
     }
 }
 
@@ -252,18 +329,20 @@ struct MatchResultContent: View {
         return AppCard(tint: w.map { Color(hex: $0.colorHex) }) {
             VStack(alignment: .leading, spacing: 8) {
                 if result.stage != .league {
-                    Text(result.stage.label.uppercased()).font(.caption.weight(.heavy)).foregroundStyle(Palette.gold)
+                    Text(result.stage.label.uppercased()).font(.caption.weight(.heavy)).foregroundStyle(Palette.accent)
                 }
                 HStack(spacing: 12) {
                     if let w { TeamBadge(team: w, size: 50) }
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(w?.name ?? "").font(.display(22))
-                        Text(result.margin).font(.headline).foregroundStyle(Palette.gold)
+                        Text(w?.name.uppercased() ?? "").font(.display(26))
+                        Text(result.margin.uppercased()).font(.display(17, weight: .heavy)).foregroundStyle(Palette.accent)
                     }
                 }
                 Divider().overlay(Color.white.opacity(0.2))
                 Label("Player of the Match: \(result.potmName)", systemImage: "star.fill").font(.subheadline.weight(.semibold))
                 Text("\(store.team(result.tossWinner)?.short ?? "") won the toss · \(store.team(result.innings[0].teamId)?.short ?? "") batted first")
+                    .font(.caption).foregroundStyle(.secondary)
+                Text("\(result.pitch.icon) \(result.pitch.label) — \(result.pitch.blurb)")
                     .font(.caption).foregroundStyle(.secondary)
             }
         }
@@ -311,9 +390,10 @@ struct InningsCardView: View {
         VStack(alignment: .leading, spacing: DS.Space.sm) {
             HStack {
                 if let team { TeamBadge(team: team, size: 28) }
-                Text(team?.name ?? "").font(.headline)
+                Text(team?.name.uppercased() ?? "").font(.display(18, weight: .heavy))
                 Spacer()
-                Text("\(innings.score) (\(innings.overs))").font(.display(20)).monospacedDigit()
+                Text(innings.score).font(.score(24))
+                Text("(\(innings.overs))").font(.score(14, weight: .regular)).foregroundStyle(Palette.muted)
             }
             AppCard(padding: DS.Space.md) {
                 VStack(spacing: 8) {

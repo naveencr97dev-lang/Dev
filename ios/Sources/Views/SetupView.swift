@@ -30,22 +30,29 @@ struct SetupView: View {
                 Text("3–10 franchises. Tap 👤/🤖 to switch a team between a player and the computer, tap the badge to change colour, swipe to remove.")
             }
 
-            Section("Rules") {
+            Section {
                 Picker("Purse", selection: $rules.purse) {
                     Text("₹80 Cr").tag(8000)
                     Text("₹100 Cr").tag(10_000)
                     Text("₹120 Cr").tag(12_000)
                 }
-                Picker("Auction", selection: $rules.poolSize) {
-                    Text("Quick").tag(PoolSize.quick)
-                    Text("Full · 273 players").tag(PoolSize.full)
-                }
                 Picker("Bid timer", selection: $rules.bidSeconds) {
                     Text("5 s").tag(5.0)
                     Text("8 s").tag(8.0)
                     Text("12 s").tag(12.0)
+                    Text("30 s").tag(30.0)
+                }
+                Picker("Pitches", selection: $rules.pitchMode) {
+                    Text("🎲 Mixed venues").tag(PitchMode.mixed)
+                    ForEach(Pitch.allCases) { p in
+                        Text("\(p.icon) \(p.label)").tag(PitchMode.fixed(p))
+                    }
                 }
                 Toggle("Play each team twice", isOn: $rules.doubleRoundRobin)
+            } header: {
+                Text("Rules")
+            } footer: {
+                Text(pitchFooter)
             }
 
             Section {
@@ -57,11 +64,10 @@ struct SetupView: View {
                     .listRowBackground(Color.clear)
                     .listRowInsets(EdgeInsets())
             } footer: {
-                Text("Squads: 11–18 players, max 8 overseas (4 in the XI).")
+                Text("Every team buys exactly 11 (max 4 overseas). The pool has one XI per team plus 12 extras — \(teams.count * 11 + 12) players. The auction ends when every XI is full.")
             }
         }
-        .scrollContentBackground(.hidden)
-        .background(AppBackground())
+        .darkList()
         .navigationTitle("New Game")
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) { Button("Cancel") { store.reset() } }
@@ -72,6 +78,13 @@ struct SetupView: View {
                 teams = g.teams
                 rules = g.rules
             }
+        }
+    }
+
+    private var pitchFooter: String {
+        switch rules.pitchMode {
+        case .mixed: return "Every match gets a random pitch: " + Pitch.allCases.map(\.icon).joined(separator: " ")
+        case .fixed(let p): return "\(p.icon) \(p.blurb)"
         }
     }
 
@@ -119,7 +132,7 @@ struct TeamSetupRow: View {
                 Text(team.isCPU ? "🤖 CPU" : "👤 Human")
                     .font(.caption.weight(.bold))
                     .padding(.horizontal, 10).padding(.vertical, 6)
-                    .background(Capsule().fill(team.isCPU ? Color.white.opacity(0.1) : Palette.gold.opacity(0.25)))
+                    .background(Capsule().fill(team.isCPU ? Color.white.opacity(0.1) : Palette.accent.opacity(0.25)))
             }
             .buttonStyle(.plain)
         }

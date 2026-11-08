@@ -50,7 +50,7 @@ struct SeasonView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Menu {
-                        Button { showSquads = true } label: { Label("Squads & Playing XI", systemImage: "person.3") }
+                        Button { showSquads = true } label: { Label("Squads & batting order", systemImage: "person.3") }
                         QuitMenuItem(confirm: $confirmQuit)
                     } label: { Image(systemName: "ellipsis.circle") }
                 }
@@ -94,8 +94,16 @@ struct SeasonView: View {
                 } else if let champ = g.championId.flatMap({ g.team($0) }) {
                     AppCard(tint: Color(hex: champ.colorHex)) {
                         VStack(alignment: .leading, spacing: DS.Space.md) {
-                            Text("🏆 \(champ.name) are the champions!").font(.display(22))
-                            Button("Trophy ceremony") { store.finishSeason() }
+                            HStack(spacing: 12) {
+                                TeamBadge(team: champ, size: 48)
+                                VStack(alignment: .leading) {
+                                    Text("CHAMPIONS").font(.display(14, weight: .heavy)).foregroundStyle(Palette.accent)
+                                    Text(champ.name.uppercased()).font(.display(26))
+                                }
+                            }
+                            Text("Season complete — browse every result, the table and stats below.")
+                                .font(.subheadline).foregroundStyle(Palette.muted)
+                            Button("🏆 Trophy & awards") { store.finishSeason() }
                                 .buttonStyle(PrimaryButtonStyle())
                         }
                     }
@@ -111,13 +119,14 @@ struct SeasonView: View {
                 if !g.results.isEmpty {
                     SectionLabel(text: "Results")
                     VStack(spacing: DS.Space.sm) {
-                        ForEach(g.results.reversed()) { r in
+                        ForEach(Array(g.results.reversed().enumerated()), id: \.element.id) { i, r in
                             Button { path.append(.result(r.id)) } label: { ResultRow(result: r) }
                                 .buttonStyle(.plain)
+                                .staggered(i)
                         }
                     }
                 } else {
-                    Text("Tip: open ••• → Squads & Playing XI to change your line-up between matches.")
+                    Text("Tip: open ••• → Squads & batting order to shuffle your line-up between matches.")
                         .font(.footnote).foregroundStyle(.secondary)
                 }
             }
@@ -139,12 +148,19 @@ struct NextMatchCard: View {
     let quick: () -> Void
 
     var body: some View {
-        AppCard(tint: fixture.stage == .final ? Palette.gold : nil) {
+        AppCard(tint: fixture.stage == .final ? Palette.accent : nil) {
             VStack(spacing: DS.Space.md) {
-                Text(number.uppercased()).font(.caption.weight(.heavy)).foregroundStyle(Palette.gold)
+                HStack {
+                    Text(number.uppercased()).font(.display(16, weight: .heavy)).foregroundStyle(Palette.accent)
+                    Spacer()
+                    Text("\(fixture.pitch.icon) \(fixture.pitch.label.uppercased())").font(.display(14, weight: .heavy))
+                        .foregroundStyle(Palette.muted)
+                }
+                Text(fixture.pitch.blurb).font(.caption).foregroundStyle(Palette.muted)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
                 HStack {
                     side(fixture.home)
-                    Text("vs").font(.display(18)).foregroundStyle(.secondary)
+                    Text("VS").font(.display(28)).foregroundStyle(Palette.accent)
                     side(fixture.away)
                 }
                 Button("Play match ▶︎", action: play).buttonStyle(PrimaryButtonStyle())
@@ -156,8 +172,8 @@ struct NextMatchCard: View {
     private func side(_ id: Int) -> some View {
         VStack(spacing: 6) {
             if let t = store.team(id) {
-                TeamBadge(team: t, size: 58)
-                Text(t.name).font(.subheadline.weight(.semibold)).multilineTextAlignment(.center).lineLimit(2)
+                TeamBadge(team: t, size: 64)
+                Text(t.name.uppercased()).font(.display(17, weight: .heavy)).multilineTextAlignment(.center).lineLimit(2)
                 Text(t.isCPU ? "CPU" : "Human").font(.caption2).foregroundStyle(.secondary)
             }
         }
@@ -172,8 +188,12 @@ struct ResultRow: View {
     var body: some View {
         AppCard(padding: DS.Space.md) {
             VStack(alignment: .leading, spacing: 6) {
-                if result.stage != .league {
-                    Text(result.stage.label.uppercased()).font(.caption2.weight(.heavy)).foregroundStyle(Palette.gold)
+                HStack {
+                    if result.stage != .league {
+                        Text(result.stage.label.uppercased()).font(.display(13, weight: .heavy)).foregroundStyle(Palette.accent)
+                    }
+                    Spacer()
+                    Text(result.pitch.icon).font(.caption)
                 }
                 ForEach(result.innings.prefix(2), id: \.teamId) { inn in
                     if let t = store.team(inn.teamId) {
@@ -181,7 +201,8 @@ struct ResultRow: View {
                             TeamBadge(team: t, size: 24)
                             Text(t.name).font(.subheadline.weight(inn.teamId == result.winnerId ? .bold : .regular))
                             Spacer()
-                            Text("\(inn.score) (\(inn.overs))").font(.subheadline.monospacedDigit().weight(.semibold))
+                            Text("\(inn.score)").font(.score(18))
+                            Text("(\(inn.overs))").font(.score(13, weight: .regular)).foregroundStyle(Palette.muted)
                         }
                     }
                 }
@@ -221,7 +242,7 @@ struct PlayoffBracket: View {
         } label: {
             HStack {
                 Text(stage.label).font(.caption.weight(.bold)).frame(width: 86, alignment: .leading)
-                    .foregroundStyle(stage == .final ? Palette.gold : .primary)
+                    .foregroundStyle(stage == .final ? Palette.accent : .primary)
                 if let f, let a = g.team(f.home), let b = g.team(f.away) {
                     Text(a.short).fontWeight(r?.winnerId == a.id ? Font.Weight.heavy : Font.Weight.regular)
                     Text("v").foregroundStyle(.secondary)
@@ -269,7 +290,7 @@ struct PointsTableView: View {
                                 HStack(spacing: 8) {
                                     TeamBadge(team: t, size: 24)
                                     Text(t.short).fontWeight(.semibold)
-                                    if !t.isCPU { Image(systemName: "person.fill").font(.caption2).foregroundStyle(Palette.gold) }
+                                    if !t.isCPU { Image(systemName: "person.fill").font(.caption2).foregroundStyle(Palette.accent) }
                                 }
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 Text("\(row.played)").frame(width: 24)
@@ -281,7 +302,7 @@ struct PointsTableView: View {
                             }
                             .font(.subheadline.monospacedDigit())
                             if i == cutoff - 1 && table.count > cutoff {
-                                Rectangle().fill(Palette.gold.opacity(0.5)).frame(height: 1)
+                                Rectangle().fill(Palette.accent.opacity(0.5)).frame(height: 1)
                             }
                         }
                     }
