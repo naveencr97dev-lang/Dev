@@ -224,9 +224,9 @@ struct CreaseCard: View {
                     Text(b.name.uppercased() + (b.onStrike ? " *" : ""))
                         .font(.display(18, weight: b.onStrike ? .black : .heavy)).lineLimit(1).minimumScaleFactor(0.6)
                     Spacer()
-                    Text("\(b.runs)").font(.score(22))
+                    Text("\(b.runs)").font(.score(22)).lineLimit(1).fixedSize()
                         .contentTransition(.numericText())
-                    Text("(\(b.balls))").font(.score(14, weight: .regular)).foregroundStyle(Palette.muted).frame(width: 40, alignment: .leading)
+                    Text("(\(b.balls))").font(.score(14, weight: .regular)).foregroundStyle(Palette.muted).lineLimit(1).minimumScaleFactor(0.7).frame(width: 44, alignment: .leading)
                     Text("\(b.fours)×4 \(b.sixes)×6").font(.score(12, weight: .regular)).foregroundStyle(Palette.muted)
                         .lineLimit(1).minimumScaleFactor(0.6).frame(width: 52, alignment: .trailing)
                 }
@@ -439,8 +439,8 @@ struct InningsCardView: View {
                 VStack(spacing: 8) {
                     HStack {
                         Text("Batter").frame(maxWidth: .infinity, alignment: .leading)
-                        Text("R").frame(width: 34, alignment: .trailing)
-                        Text("B").frame(width: 30, alignment: .trailing)
+                        Text("R").frame(width: 42, alignment: .trailing)
+                        Text("B").frame(width: 36, alignment: .trailing)
                         Text("4s").frame(width: 26, alignment: .trailing)
                         Text("6s").frame(width: 26, alignment: .trailing)
                     }
@@ -452,10 +452,10 @@ struct InningsCardView: View {
                                 Text(b.dismissal ?? "not out").font(.caption2).foregroundStyle(b.dismissal == nil ? Palette.four : Color.secondary).lineLimit(1)
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            Text("\(b.runs)").fontWeight(.bold).frame(width: 34, alignment: .trailing)
-                            Text("\(b.balls)").frame(width: 30, alignment: .trailing)
-                            Text("\(b.fours)").frame(width: 26, alignment: .trailing)
-                            Text("\(b.sixes)").frame(width: 26, alignment: .trailing)
+                            Text("\(b.runs)").fontWeight(.bold).lineLimit(1).minimumScaleFactor(0.7).frame(width: 42, alignment: .trailing)
+                            Text("\(b.balls)").lineLimit(1).minimumScaleFactor(0.7).frame(width: 36, alignment: .trailing)
+                            Text("\(b.fours)").lineLimit(1).minimumScaleFactor(0.7).frame(width: 26, alignment: .trailing)
+                            Text("\(b.sixes)").lineLimit(1).minimumScaleFactor(0.7).frame(width: 26, alignment: .trailing)
                         }
                         .font(.subheadline.monospacedDigit())
                     }
@@ -476,19 +476,19 @@ struct InningsCardView: View {
                 VStack(spacing: 8) {
                     HStack {
                         Text("Bowler").frame(maxWidth: .infinity, alignment: .leading)
-                        Text("O").frame(width: 32, alignment: .trailing)
-                        Text("R").frame(width: 32, alignment: .trailing)
+                        Text("O").frame(width: 34, alignment: .trailing)
+                        Text("R").frame(width: 34, alignment: .trailing)
                         Text("W").frame(width: 26, alignment: .trailing)
-                        Text("Econ").frame(width: 40, alignment: .trailing)
+                        Text("Econ").frame(width: 42, alignment: .trailing)
                     }
                     .font(.caption.weight(.bold)).foregroundStyle(.secondary)
                     ForEach(innings.bowlers.filter { $0.balls > 0 }) { bw in
                         HStack {
                             Text(bw.name).font(.subheadline.weight(.semibold)).lineLimit(1).frame(maxWidth: .infinity, alignment: .leading)
-                            Text(bw.overs).frame(width: 32, alignment: .trailing)
-                            Text("\(bw.runs)").frame(width: 32, alignment: .trailing)
-                            Text("\(bw.wickets)").fontWeight(.bold).frame(width: 26, alignment: .trailing)
-                            Text(String(format: "%.1f", bw.economy)).frame(width: 40, alignment: .trailing)
+                            Text(bw.overs).lineLimit(1).minimumScaleFactor(0.7).frame(width: 34, alignment: .trailing)
+                            Text("\(bw.runs)").lineLimit(1).minimumScaleFactor(0.7).frame(width: 34, alignment: .trailing)
+                            Text("\(bw.wickets)").fontWeight(.bold).lineLimit(1).frame(width: 26, alignment: .trailing)
+                            Text(String(format: "%.1f", bw.economy)).lineLimit(1).minimumScaleFactor(0.7).frame(width: 42, alignment: .trailing)
                         }
                         .font(.subheadline.monospacedDigit())
                     }
