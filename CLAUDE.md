@@ -16,8 +16,9 @@ it off for a session, or `/ultracave` for maximum compression.
 
 ## Handoff: where things stand
 
-- Auction XI lives on branch `claude/beautiful-keller-qgp1vc` (root commit, separate from
-  Streaklet on `claude/reverse-engineer-repo-rnfy93`; both apps use `ios/`).
+- Auction XI lives on branch `claude/gracious-davinci-yq0yej` (continued from
+  `claude/beautiful-keller-qgp1vc`, which holds the same history up to `e505be7`). Streaklet is on
+  `claude/reverse-engineer-repo-rnfy93`; both apps use `ios/`.
 - Build: no Mac. Codemagic builds an unsigned IPA (workflow in `codemagic.yaml`) → the user
   signs and installs it with Signulous. SwiftUI can't be compiled here: parse-check with
   `swiftc -parse` and unit-test the engine with `swift test` (Swift toolchain for Linux:
