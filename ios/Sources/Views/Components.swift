@@ -171,15 +171,19 @@ extension View {
 struct SpeedPicker: View {
     @Binding var speed: Double
     let options: [Double]
+    /// Optional custom labels, one per option.
+    var labels: [String]? = nil
 
     var body: some View {
         Picker("Speed", selection: $speed) {
-            ForEach(options, id: \.self) { Text(SpeedPicker.label($0)).tag($0) }
+            ForEach(Array(options.enumerated()), id: \.offset) { i, v in
+                Text(labels.map { $0[i] } ?? SpeedPicker.label(v)).tag(v)
+            }
         }
         .pickerStyle(.segmented)
         .onAppear {
-            // A remembered speed that this control doesn't offer falls back to 1×.
-            if !options.contains(speed) { speed = 1 }
+            // A remembered speed this control doesn't offer falls back to the first option.
+            if !options.contains(speed), let first = options.first { speed = first }
         }
     }
 

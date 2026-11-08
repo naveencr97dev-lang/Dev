@@ -43,8 +43,8 @@ Franchise names are fictional; the app is not affiliated with any real league.
    🦘 Aussie Bouncer (pace) · 🏜️ Dusty Turner (spin) · 🌴 Caribbean Slow (low and slow).
    Captains pick the five bowlers that suit the pitch.
 5. **Season**: matches play live with a TV-style score strip: both batters' runs (balls, 4s, 6s),
-   the bowler's figures, the chase equation, this over and commentary. Speeds ¼× ½× 1× 2× 4×
-   (½× default, remembered). You can also skip to
+   the bowler's figures, the chase equation, this over and commentary. Speeds 1× (about 2 balls a second, default) 2× 4×
+   (remembered). You can also skip to
    the scorecard. Points table with NRR, plus Orange and Purple Cap leaderboards. Batting order
    can be changed between matches.
    After every match a **highlights reel** plays: up to 12 key moments (wickets,

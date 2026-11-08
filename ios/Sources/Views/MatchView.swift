@@ -10,8 +10,11 @@ struct MatchView: View {
     @State private var log: [BallEvent] = []
     @State private var shown = 0
     @State private var finished = false
-    /// Balls per tick (a tick is 0.06 s). Remembered between matches.
-    @AppStorage("matchSpeed") private var speed: Double = 0.5
+    /// Balls per tick (a tick is 0.06 s). 1× = 0.125 (~2 balls a second, ~2 min a match).
+    /// Remembered between matches.
+    @AppStorage("matchSpeedV2") private var speed: Double = MatchView.speeds[0].value
+
+    static let speeds: [(label: String, value: Double)] = [("1×", 0.125), ("2×", 0.3), ("4×", 0.6)]
     @State private var carry: Double = 0
     @State private var showReel = false
     @Environment(\.dismiss) private var dismiss
@@ -122,7 +125,8 @@ struct MatchView: View {
                     }
                 }
             }
-            SpeedPicker(speed: $speed, options: [0.25, 0.5, 1, 2, 4])
+            SpeedPicker(speed: $speed, options: MatchView.speeds.map(\.value),
+                        labels: MatchView.speeds.map(\.label))
         }
 
         return Group {
