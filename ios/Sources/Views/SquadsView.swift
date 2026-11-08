@@ -134,6 +134,10 @@ struct TeamDetailView: View {
                             NavigationLink { BattingOrderView(teamId: teamId) } label: {
                                 Label("Change batting order", systemImage: "arrow.up.arrow.down.circle.fill").foregroundStyle(Palette.accent)
                             }
+                            NavigationLink { BowlingPlanView(teamId: teamId) } label: {
+                                Label(t.bowlingOrder.isEmpty ? "Bowling plan · Auto per pitch" : "Bowling plan · Custom",
+                                      systemImage: "figure.cricket").foregroundStyle(Palette.accent)
+                            }
                         }
                         ForEach(Array(t.xi.enumerated()), id: \.element) { i, pid in
                             if let p = store.player(pid) {
@@ -189,11 +193,11 @@ struct BattingOrderView: View {
                 }
                 .onMove { order.move(fromOffsets: $0, toOffset: $1) }
             } footer: {
-                Text("Drag ≡ to reorder. Big number = batting strength. ✓ means the player's trait suits that slot (e.g. 🚀 Powerplay Blitz opening, 🏁 Finisher at 5–7). Your five best bowlers for the pitch bowl automatically.")
+                Text("Drag ≡ to reorder. Big number = batting strength. ✓ = batting in their best slot (+6), ~ = close (+2), ⚠︎ = out of position (−4 to −9). Best order puts strong batters high and everyone near their slot.")
             }
             .listRowBackground(Palette.surface)
             Section {
-                Button("Reset to best order") {
+                Button("✨ Best order") {
                     order = TeamSelector.battingOrder(order.compactMap { store.player($0) }).map(\.id)
                     Haptics.tap()
                 }
@@ -229,47 +233,15 @@ func strengthColor(_ v: Int) -> Color {
     }
 }
 
-enum BattingSlot {
-    case opener, topOrder, finisher, tail
-
-    init(position i: Int) {
-        switch i {
-        case 0, 1: self = .opener
-        case 2, 3: self = .topOrder
-        case 4, 5, 6: self = .finisher
-        default: self = .tail
-        }
-    }
-
-    var label: String {
-        switch self {
-        case .opener: return "OPENER"
-        case .topOrder: return "TOP ORDER"
-        case .finisher: return "FINISHER"
-        case .tail: return "TAIL"
-        }
-    }
-
-    /// Batting traits that shine in this slot.
-    var suits: [Trait] {
-        switch self {
-        case .opener: return [.powerplayBlitz, .anchor, .paceBasher]
-        case .topOrder: return [.anchor, .spinBasher, .threeSixty, .chaseMaster]
-        case .finisher: return [.finisher, .powerHitter, .spinBasher, .chaseMaster]
-        case .tail: return []
-        }
-    }
-}
-
 /// One row of the batting order: slot, name, traits, and a big clear strength reading.
 struct BattingSlotRow: View {
     let position: Int
     let player: Player
 
     var body: some View {
-        let slot = BattingSlot(position: position)
+        let slot = BatSlot(position: position)
         let batTraits = player.traits.filter(\.isBatting)
-        let fits = batTraits.contains { slot.suits.contains($0) }
+        let fit = player.slot.fit(position: position)
         let color = strengthColor(player.bat)
         HStack(spacing: 12) {
             VStack(spacing: 0) {
@@ -286,12 +258,8 @@ struct BattingSlotRow: View {
                 }
                 HStack(spacing: 6) {
                     RoleChip(role: player.role)
-                    ForEach(batTraits, id: \.self) { t in
-                        Text("\(t.icon) \(t.label)").font(.caption2.weight(.semibold))
-                            .foregroundStyle(slot.suits.contains(t) ? Palette.accent : Palette.muted)
-                            .lineLimit(1)
-                    }
-                    if fits { Image(systemName: "checkmark.circle.fill").font(.caption).foregroundStyle(Palette.accent) }
+                    FitBadge(fit: fit, preferred: player.slot)
+                    Text(batTraits.map(\.icon).joined()).font(.caption2).lineLimit(1)
                 }
                 // Strength bar.
                 GeometryReader { geo in
@@ -340,5 +308,138 @@ struct LineupSummary: View {
             Text(label).font(.display(11, weight: .heavy)).foregroundStyle(Palette.muted)
         }
         .frame(maxWidth: .infinity)
+    }
+}
+
+/// ✓ in slot, ~ near, ⚠︎ out of position.
+struct FitBadge: View {
+    let fit: Int
+    let preferred: BatSlot
+
+    var body: some View {
+        let icon = fit >= 6 ? "✓" : (fit > 0 ? "~" : "⚠︎")
+        let color = fit >= 6 ? Palette.accent : (fit > 0 ? Palette.four : Color.orange)
+        Text(fit >= 6 ? "\(icon) \(preferred.label)" : "\(icon) prefers \(preferred.label.lowercased())")
+            .font(.caption2.weight(.bold))
+            .foregroundStyle(color)
+            .lineLimit(1)
+    }
+}
+
+/// Pick the five bowlers and who takes the new ball and the death overs.
+struct BowlingPlanView: View {
+    @EnvironmentObject var store: GameStore
+    @Environment(\.dismiss) private var dismiss
+    let teamId: Int
+    @State private var order: [String] = []
+
+    private static let slotInfo: [(String, BowlPhase?)] = [
+        ("NEW BALL + DEATH", nil), ("NEW BALL + DEATH", nil),
+        ("MIDDLE OVERS", .middle), ("MIDDLE OVERS", .middle), ("MIDDLE + 1 DEATH", .middle),
+    ]
+
+    var body: some View {
+        let players = order.compactMap { store.player($0) }
+        List {
+            Section {
+                ForEach(Array(order.enumerated()), id: \.element) { i, pid in
+                    if let p = store.player(pid) {
+                        BowlingSlotRow(index: i, player: p)
+                    }
+                }
+                .onMove { order.move(fromOffsets: $0, toOffset: $1) }
+            } header: {
+                Text("Top 5 bowl · drag to set the plan")
+            } footer: {
+                Text("Slots 1–2 bowl overs 1–4 and the death (15–20): swing (🌪️) and death specialists (☠️ 🐢) gain there, spinners lose. Slots 3–5 bowl the middle: spinners and 🧱 gain. Pace/spin also gains or loses with the pitch. Auto lets the captain pick the best five for each pitch.")
+            }
+            .listRowBackground(Palette.surface)
+            Section {
+                Button("✨ Auto — captain picks per pitch") {
+                    store.setBowlingOrder(teamId: teamId, ids: [])
+                    Haptics.success()
+                    dismiss()
+                }
+                Text("Attack strength: \(attackStrength(players))").font(.subheadline).foregroundStyle(Palette.muted)
+            }
+            .listRowBackground(Palette.surface)
+        }
+        .environment(\.editMode, .constant(.active))
+        .darkList()
+        .navigationTitle("Bowling plan")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button("Save") {
+                    store.setBowlingOrder(teamId: teamId, ids: Array(order.prefix(5)))
+                    Haptics.success()
+                    dismiss()
+                }
+            }
+        }
+        .onAppear {
+            guard order.isEmpty, let t = store.team(teamId) else { return }
+            let squad = t.squad.compactMap { store.player($0) }
+            let plan = t.bowlingOrder.count == 5 ? t.bowlingOrder.compactMap { store.player($0) } : MatchEngine.autoAttack(squad, pitch: nil)
+            let rest = squad.filter { p in !plan.contains(p) }.sorted { $0.bowl > $1.bowl }
+            order = (plan + rest).map(\.id)
+        }
+    }
+
+    private func attackStrength(_ players: [Player]) -> Int {
+        let five = players.prefix(5)
+        guard !five.isEmpty else { return 0 }
+        var total = 0
+        for (i, p) in five.enumerated() {
+            let fit = i < 2
+                ? (MatchEngine.phaseFit(p, .powerplay, pitch: nil) + MatchEngine.phaseFit(p, .death, pitch: nil)) / 2
+                : MatchEngine.phaseFit(p, .middle, pitch: nil)
+            total += p.bowl + fit
+        }
+        return total / five.count
+    }
+
+    struct BowlingSlotRow: View {
+        let index: Int
+        let player: Player
+
+        var body: some View {
+            let bowling = index < 5
+            let fit = index < 2
+                ? MatchEngine.phaseFit(player, .powerplay, pitch: nil) + MatchEngine.phaseFit(player, .death, pitch: nil)
+                : MatchEngine.phaseFit(player, .middle, pitch: nil)
+            let overs = index < 5 ? MatchEngine.overs(forSlot: index).map(String.init).joined(separator: ", ") : ""
+            HStack(spacing: 12) {
+                VStack(spacing: 0) {
+                    Text(bowling ? "\(index + 1)" : "–").font(.display(26)).foregroundStyle(bowling ? .white : Palette.muted)
+                    Text(bowling ? BowlingPlanView.slotInfo[index].0 : "NOT BOWLING")
+                        .font(.display(8, weight: .heavy)).foregroundStyle(Palette.muted)
+                        .multilineTextAlignment(.center).lineLimit(2).minimumScaleFactor(0.7)
+                }
+                .frame(width: 58)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(player.name).font(.body.weight(.semibold)).lineLimit(1).minimumScaleFactor(0.7)
+                    HStack(spacing: 6) {
+                        Chip(text: player.bowlType == .spin ? "Spin" : "Pace")
+                        Text(player.traits.filter(\.isBowling).map(\.icon).joined()).font(.caption2)
+                        if bowling {
+                            Text(fit > 3 ? "✓ suits slot" : (fit < 0 ? "⚠︎ poor fit" : "ok"))
+                                .font(.caption2.weight(.bold))
+                                .foregroundStyle(fit > 3 ? Palette.accent : (fit < 0 ? Color.orange : Palette.muted))
+                        }
+                    }
+                    if bowling {
+                        Text("Overs \(overs)").font(.caption2).foregroundStyle(Palette.muted)
+                    }
+                }
+                Spacer(minLength: 4)
+                VStack(alignment: .trailing, spacing: 0) {
+                    Text("\(player.bowl)").font(.display(30)).foregroundStyle(bowling ? strengthColor(player.bowl) : Palette.muted)
+                    Text("BOWL").font(.display(10, weight: .heavy)).foregroundStyle(Palette.muted)
+                }
+            }
+            .opacity(bowling ? 1 : 0.6)
+            .padding(.vertical, 3)
+        }
     }
 }

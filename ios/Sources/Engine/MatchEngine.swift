@@ -144,11 +144,17 @@ struct MatchEngine {
     struct Side {
         let teamId: Int
         let xi: [Player]   // batting order
+        /// Custom bowling plan (5 bowlers); nil = captain picks for the pitch.
+        var attack: [Player]? = nil
     }
+
+    /// Playoff match: Big-Match players lift.
+    var bigGame = false
 
     /// Simulates a full T20 between two XIs.
     mutating func play(_ a: Side, _ b: Side, stage: Stage, pitch: Pitch, log: inout [BallEvent]) -> MatchResult {
         moments = []
+        bigGame = stage != .league
         let tossWinner = rng.unit() < 0.5 ? a : b
         let other = tossWinner.teamId == a.teamId ? b : a
         // Captains bowl first more often when the pitch helps bowlers early.
@@ -219,9 +225,39 @@ struct MatchEngine {
     /// Bowling plan for 20 overs: five bowlers x 4 overs, best two up front and at the death.
     static let overPlan = [0, 1, 0, 1, 2, 3, 4, 2, 3, 4, 2, 3, 4, 2, 1, 3, 0, 4, 0, 1]
 
-    /// Bowling skill on this pitch.
+    /// Bowling skill on this pitch (type suits the surface, home conditions).
     static func effectiveBowl(_ p: Player, pitch: Pitch) -> Int {
-        p.bowl >= 25 ? p.bowl + pitch.bonus(for: p.bowlType) : p.bowl
+        p.bowl >= 25 ? p.bowl + pitch.bonus(for: p.bowlType) + pitch.homeBonus(p) : p.bowl
+    }
+
+    /// Overs each plan slot bowls (1-based), from `overPlan`.
+    static func overs(forSlot slot: Int) -> [Int] {
+        overPlan.enumerated().filter { $0.element == slot }.map { $0.offset + 1 }
+    }
+
+    /// Skill adjustment for a bowler in a phase: swing up front, specialists at the death,
+    /// spin through the middle.
+    static func phaseFit(_ p: Player, _ phase: BowlPhase, pitch: Pitch?) -> Int {
+        let spin = p.bowlType == .spin
+        switch phase {
+        case .powerplay:
+            return (p.has(.newBallSwing) ? 6 : 0) + (spin && pitch != .dustyTurner ? -4 : 0)
+        case .middle:
+            return (spin ? 3 : 0) + (p.has(.middleOversBoss) ? 4 : 0) + (!spin && pitch == .dustyTurner ? -3 : 0)
+        case .death:
+            return (p.has(.deathSpecialist) ? 6 : 0) + (p.has(.slowerBallMaster) ? 3 : 0) + (spin ? -5 : 0)
+        }
+    }
+
+    /// Captain's choice: best five for the pitch, with the new-ball/death slots (overs 1-4 and 15-20)
+    /// going to the bowlers who suit those phases best.
+    static func autoAttack(_ xi: [Player], pitch: Pitch?) -> [Player] {
+        let eff = { (p: Player) in pitch.map { effectiveBowl(p, pitch: $0) } ?? p.bowl }
+        let five = Array(xi.sorted { eff($0) > eff($1) }.prefix(5))
+        let edge = { (p: Player) in eff(p) + phaseFit(p, .powerplay, pitch: pitch) + phaseFit(p, .death, pitch: pitch) }
+        let ends = Array(five.sorted { edge($0) > edge($1) }.prefix(2))
+        let middle = five.filter { p in !ends.contains(p) }.sorted { eff($0) + phaseFit($0, .middle, pitch: pitch) > eff($1) + phaseFit($1, .middle, pitch: pitch) }
+        return ends + middle
     }
 
     mutating func innings(batting: Side, bowling: Side, target: Int?, maxOvers: Int, index: Int, pitch: Pitch,
@@ -229,14 +265,13 @@ struct MatchEngine {
         var card = InningsCard(teamId: batting.teamId)
         card.maxBalls = maxOvers * 6
         card.batters = batting.xi.map { BatterCard(id: $0.id, name: $0.name) }
-        // Captains pick the attack that suits the pitch; new-ball swing bowlers open.
-        var attack = Array(bowling.xi.sorted { MatchEngine.effectiveBowl($0, pitch: pitch) > MatchEngine.effectiveBowl($1, pitch: pitch) }
-            .prefix(maxOvers == 20 ? 5 : 1))
-        if maxOvers == 20, let swinger = attack.firstIndex(where: { $0.has(.newBallSwing) }), swinger > 1 {
-            attack.swapAt(1, swinger)
-        }
-        if maxOvers == 20, let death = attack.firstIndex(where: { $0.has(.deathSpecialist) }), death > 1 {
-            attack.swapAt(0, death)   // slot 0 bowls overs 1, 3, 17 and 19
+        let attack: [Player]
+        if maxOvers == 20, let plan = bowling.attack, plan.count == 5 {
+            attack = plan
+        } else if maxOvers == 20 {
+            attack = MatchEngine.autoAttack(bowling.xi, pitch: pitch)
+        } else {
+            attack = Array(bowling.xi.sorted { MatchEngine.effectiveBowl($0, pitch: pitch) > MatchEngine.effectiveBowl($1, pitch: pitch) }.prefix(1))
         }
         card.bowlers = attack.map { BowlerCard(id: $0.id, name: $0.name) }
         let maxWickets = max(1, batting.xi.count - 1)
@@ -283,7 +318,8 @@ struct MatchEngine {
 
                 let batter = batting.xi[striker]
                 let (outcome, batTrait, bowlTrait) = ball(batter: batter, bowler: bowler, over: over, maxOvers: maxOvers,
-                                                          card: card, target: target, maxWickets: maxWickets, pitch: pitch)
+                                                          card: card, target: target, maxWickets: maxWickets, pitch: pitch,
+                                                          position: striker)
                 legal += 1
                 card.balls += 1
                 card.bowlers[bi].balls += 1
@@ -373,7 +409,7 @@ struct MatchEngine {
 
     /// Returns runs (0,1,2,3,4,6) or -1 for a wicket, plus the traits that shaped the ball.
     mutating func ball(batter: Player, bowler: Player, over: Int, maxOvers: Int, card: InningsCard,
-                       target: Int?, maxWickets: Int, pitch: Pitch) -> (Int, Trait?, Trait?) {
+                       target: Int?, maxWickets: Int, pitch: Pitch, position: Int = 3) -> (Int, Trait?, Trait?) {
         // Weights for [0, 1, 2, 3, 4, 6, W] by phase.
         var w: [Double]
         let powerplay = over < 6 && maxOvers == 20
@@ -399,7 +435,17 @@ struct MatchEngine {
         if batter.has(.spinBasher) && spin { batSkill += 18; batTrait = .spinBasher }
         if batter.has(.paceBasher) && !spin { batSkill += 18; batTrait = .paceBasher }
         if batter.has(.threeSixty) { batSkill += 10; batTrait = .threeSixty }
-        let bowlSkill = Double(MatchEngine.effectiveBowl(bowler, pitch: pitch))
+        // Conditions, batting position and bowling phase.
+        batSkill += Double(pitch.homeBonus(batter))
+        if maxOvers == 20 { batSkill += Double(batter.slot.fit(position: position)) }
+        var bowlSkill = Double(MatchEngine.effectiveBowl(bowler, pitch: pitch))
+        if maxOvers == 20 {
+            bowlSkill += Double(MatchEngine.phaseFit(bowler, powerplay ? .powerplay : (death ? .death : .middle), pitch: pitch))
+        }
+        if bigGame {
+            if batter.has(.bigMatch) { batSkill += 8; batTrait = .bigMatch }
+            if bowler.has(.bigMatch) { bowlSkill += 8; bowlTrait = .bigMatch }
+        }
         let d = max(-1.6, min(1.6, (batSkill - bowlSkill) / 50))
         let boost = exp(0.42 * d)
         w[0] /= boost
@@ -414,14 +460,34 @@ struct MatchEngine {
         if batter.has(.finisher) && death { w[4] *= 1.25; w[5] *= 1.4; w[6] *= 0.85; batTrait = .finisher }
         if batter.has(.powerplayBlitz) && powerplay { w[4] *= 1.35; w[5] *= 1.3; w[6] *= 1.05; batTrait = .powerplayBlitz }
         if batter.has(.chaseMaster) && chasing { w[6] *= 0.8; w[4] *= 1.1; w[5] *= 1.1; batTrait = batTrait ?? .chaseMaster }
+        if batter.has(.flatTrackBully) {
+            if pitch == .indianFlat || pitch == .aussieBounce { w[4] *= 1.15; w[5] *= 1.2; batTrait = batTrait ?? .flatTrackBully }
+            else if pitch == .englishSeam || pitch == .dustyTurner { w[6] *= 1.15 }
+        }
+        if batter.has(.technician) && (pitch == .englishSeam || pitch == .dustyTurner) { w[6] *= 0.8; batTrait = batTrait ?? .technician }
+        let shortBallThreat = !spin && (pitch == .aussieBounce || bowler.has(.expressPace) || bowler.has(.bounceMerchant))
+        if batter.has(.shortBallKing) && shortBallThreat { w[4] *= 1.2; w[5] *= 1.25; w[6] *= 0.85; batTrait = .shortBallKing }
 
         // Bowling traits.
         let readsSpin = batter.has(.spinBasher) || batter.has(.threeSixty)
         if bowler.has(.mysterySpin) && !readsSpin { w[6] *= 1.3; w[0] *= 1.1; bowlTrait = .mysterySpin }
         if bowler.has(.newBallSwing) && powerplay {
-            let m = pitch.swings ? 1.6 : 1.35
+            var m = pitch.swings ? 1.6 : 1.35
+            if batter.has(.technician) { m = 1 + (m - 1) * 0.5 }
             w[6] *= m; w[4] *= 0.85; bowlTrait = .newBallSwing
         }
+        if bowler.has(.slowerBallMaster) && (death || pitch == .caribbeanSlow || pitch == .dustyTurner) {
+            w[5] *= batter.has(.powerHitter) ? 0.7 : 0.8; w[6] *= 1.15; bowlTrait = bowlTrait ?? .slowerBallMaster
+        }
+        if bowler.has(.bounceMerchant) && !batter.has(.shortBallKing) {
+            let bouncy = pitch == .aussieBounce
+            w[6] *= bouncy ? 1.3 : 1.1; w[4] *= 0.92
+            bowlTrait = bouncy ? .bounceMerchant : (bowlTrait ?? .bounceMerchant)
+        }
+        if bowler.has(.turnerTerror) && (pitch == .dustyTurner || pitch == .caribbeanSlow) && !readsSpin {
+            w[6] *= batter.has(.technician) ? 1.15 : 1.35; w[0] *= 1.1; bowlTrait = .turnerTerror
+        }
+        if bowler.has(.middleOversBoss) && !powerplay && !death { w[4] *= 0.8; w[5] *= 0.8; w[6] *= 1.1; bowlTrait = bowlTrait ?? .middleOversBoss }
         if bowler.has(.deathSpecialist) && death { w[4] *= 0.8; w[5] *= 0.7; w[6] *= 1.15; bowlTrait = .deathSpecialist }
         if bowler.has(.economical) { w[4] *= 0.85; w[5] *= 0.85; w[1] *= 1.05; bowlTrait = bowlTrait ?? .economical }
         if bowler.has(.wicketTaker) { w[6] *= 1.25; w[4] *= 1.08; w[5] *= 1.08; bowlTrait = bowlTrait ?? .wicketTaker }

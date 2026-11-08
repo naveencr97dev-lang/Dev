@@ -124,6 +124,12 @@ struct GameState: Codable {
         teams[i].xi = ids
     }
 
+    /// Five bowlers in plan order, or empty for the captain's pick per pitch.
+    mutating func setBowlingOrder(teamId: Int, ids: [String]) {
+        guard let i = teams.firstIndex(where: { $0.id == teamId }) else { return }
+        teams[i].bowlingOrder = ids.count == 5 ? ids : []
+    }
+
     // MARK: Season
 
     mutating func startSeason() {
@@ -161,7 +167,10 @@ struct GameState: Codable {
         if xi.count != 11 {
             xi = TeamSelector.autoXI(squad: t.squad.compactMap { book[$0] }, rules: rules).compactMap { book[$0] }
         }
-        return MatchEngine.Side(teamId: teamId, xi: xi)
+        let ids = Set(xi.map(\.id))
+        let plan = t.bowlingOrder.compactMap { book[$0] }
+        let attack = plan.count == 5 && Set(plan.map(\.id)).count == 5 && plan.allSatisfy { ids.contains($0.id) } ? plan : nil
+        return MatchEngine.Side(teamId: teamId, xi: xi, attack: attack)
     }
 
     /// Plays a fixture, records the result and schedules playoffs / crowns the champion.

@@ -106,7 +106,8 @@ struct PlayerRow: View {
                 HStack(spacing: 5) {
                     Text(player.name).font(.body.weight(.semibold)).lineLimit(1)
                     if player.overseas { Image(systemName: "airplane").font(.caption2).foregroundStyle(Palette.muted) }
-                    if player.isLegend { Text(player.traits.map(\.icon).joined()).font(.caption) }
+                    if player.legend { Text("★").font(.caption).foregroundStyle(Palette.accent) }
+                    if !player.traits.isEmpty { Text(player.traits.map(\.icon).joined()).font(.caption) }
                 }
                 HStack(spacing: 6) {
                     RoleChip(role: player.role)

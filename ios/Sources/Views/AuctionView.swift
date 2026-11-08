@@ -329,6 +329,15 @@ struct PlayerCard: View {
                     RatingBar(label: "BAT", value: player.bat, color: Color(hex: "#F59E0B"))
                     RatingBar(label: "BOWL", value: player.bowl, color: Color(hex: "#F43F5E"))
                     TraitChips(traits: player.traits, showBlurb: !compact)
+                    let thrives = Pitch.favoured(by: player)
+                    HStack(spacing: 6) {
+                        Text("BATS \(player.slot.label)").font(.display(12, weight: .heavy)).foregroundStyle(Palette.muted)
+                        if !thrives.isEmpty {
+                            Text("· THRIVES ON").font(.display(12, weight: .heavy)).foregroundStyle(Palette.muted)
+                            Text(thrives.map(\.icon).joined(separator: " ")).font(.caption)
+                        }
+                    }
+                    .lineLimit(1).minimumScaleFactor(0.7)
                     if !compact {
                         Text(player.line).font(.footnote).foregroundStyle(Palette.muted)
                     }
@@ -352,8 +361,11 @@ extension PlayerCard {
     @ViewBuilder func chips(full: Bool) -> some View {
         HStack(spacing: 6) {
             if player.overseas { Chip(text: full ? "✈︎ Overseas" : "✈︎", color: Color(hex: "#1E3A8A")) }
-            if player.pool == "Uncapped" && full { Chip(text: "Uncapped") }
-            if player.isLegend { Chip(text: full ? "★ Legend" : "★", color: Palette.accent, textColor: Palette.ink) }
+            if player.legend {
+                Chip(text: full ? "★ IPL Legend" : "★", color: Palette.accent, textColor: Palette.ink)
+            } else if full {
+                Chip(text: "Current star")
+            }
             if player.bowl >= 40 { Chip(text: player.bowlType == .spin ? "Spin" : "Pace") }
         }
         .fixedSize()

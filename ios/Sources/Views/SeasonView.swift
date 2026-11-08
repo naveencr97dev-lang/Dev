@@ -176,6 +176,9 @@ struct NextMatchCard: View {
             if let t = store.team(id) {
                 TeamBadge(team: t, size: 64)
                 Text(t.name.uppercased()).font(.display(17, weight: .heavy)).multilineTextAlignment(.center).lineLimit(2)
+                let suited = t.squad.compactMap { store.player($0) }.filter { Pitch.favoured(by: $0).contains(fixture.pitch) }.count
+                Text("\(fixture.pitch.icon) \(suited) suited").font(.caption2.weight(.bold))
+                    .foregroundStyle(suited >= 4 ? Palette.accent : Palette.muted)
                 Text(t.isCPU ? "CPU" : "Human").font(.caption2).foregroundStyle(.secondary)
             }
         }

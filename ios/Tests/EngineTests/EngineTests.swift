@@ -35,7 +35,9 @@ final class EngineTests: XCTestCase {
     }
 
     func testPlayerData() {
-        XCTAssertEqual(players.count, 273)
+        XCTAssertEqual(players.count, 172)
+        XCTAssertGreaterThan(players.filter(\.legend).count, 40)
+        XCTAssertTrue(players.allSatisfy { $0.rating >= 70 }, "no weak players")
         XCTAssertEqual(Set(players.map(\.id)).count, players.count)
     }
 
@@ -102,9 +104,9 @@ final class EngineTests: XCTestCase {
         XCTAssertTrue(AuctionEngine.placeBid(&state, teamId: 1, teams: teams, rules: crore, players: byId))
         XCTAssertEqual(state.currentBid, p.base + 100, "next bid jumps by ₹1 Cr")
         XCTAssertFalse(AuctionEngine.placeBid(&state, teamId: 1, teams: teams, rules: rules, players: byId), "can't outbid yourself")
-        // Reserve: a team with 1 Cr and an empty squad can't bid more than 1 Cr - 10 * 30 L.
+        // Reserve: a team with 1 Cr and an empty squad can't bid more than 1 Cr - 10 * 50 L.
         teams[1].purse = 100
-        XCTAssertEqual(AuctionEngine.maxAffordable(teams[1], rules: rules), -200)
+        XCTAssertEqual(AuctionEngine.maxAffordable(teams[1], rules: rules), -400)
         XCTAssertFalse(AuctionEngine.canBid(teams[1], on: p, amount: p.base, rules: rules, players: byId))
         // Overseas: max 4 in an 11-man squad.
         var t = teams[2]
@@ -180,7 +182,7 @@ final class EngineTests: XCTestCase {
     func testTraitsMatter() {
         func make(_ name: String, bat: Int, bowl: Int, type: BowlType = .pace, traits: [Trait] = []) -> Player {
             Player(id: name, name: name, role: .BAT, overseas: false, country: "", base: 30, pool: "", rating: 70,
-                   bat: bat, bowl: bowl, line: "", bowlType: type, traits: traits)
+                   bat: bat, bowl: bowl, line: "", bowlType: type, traits: traits, slot: .middle, legend: false)
         }
         func sixRate(_ batter: Player, _ bowler: Player, over: Int, pitch: Pitch = .indianFlat) -> (Double, Double) {
             var engine = MatchEngine(rng: SeededRNG(seed: 3))
@@ -213,7 +215,50 @@ final class EngineTests: XCTestCase {
         let mystery = make("mystery", bat: 10, bowl: 70, type: .spin, traits: [.mysterySpin])
         XCTAssertGreaterThan(sixRate(plain, mystery, over: 10).1, sixRate(plain, spinner, over: 10).1 * 1.15)
         XCTAssertLessThan(sixRate(basher, mystery, over: 10).1, sixRate(plain, mystery, over: 10).1, "spin bashers read mystery spin")
-        print("legends in data:", players.filter(\.isLegend).count)
+        // Condition traits.
+        let bully = make("bully", bat: 70, bowl: 10, traits: [.flatTrackBully])
+        XCTAssertGreaterThan(sixRate(bully, pacer, over: 10, pitch: .indianFlat).0, sixRate(plain, pacer, over: 10, pitch: .indianFlat).0 * 1.1)
+        XCTAssertGreaterThan(sixRate(bully, pacer, over: 10, pitch: .englishSeam).1, sixRate(plain, pacer, over: 10, pitch: .englishSeam).1)
+        let terror = make("terror", bat: 10, bowl: 70, type: .spin, traits: [.turnerTerror])
+        XCTAssertGreaterThan(sixRate(plain, terror, over: 10, pitch: .dustyTurner).1, sixRate(plain, spinner, over: 10, pitch: .dustyTurner).1 * 1.2)
+        let tech = make("tech", bat: 70, bowl: 10, traits: [.technician])
+        XCTAssertLessThan(sixRate(tech, swing, over: 1, pitch: .englishSeam).1, sixRate(plain, swing, over: 1, pitch: .englishSeam).1 * 0.85)
+    }
+
+    func testBattingOrderAndBowlingPlanMatter() {
+        let teams = runAuction(teams: 4, rules: Rules(), seed: 11)
+        let squad = teams[0].squad.compactMap { byId[$0] }
+        let best = TeamSelector.battingOrder(squad)
+        XCTAssertGreaterThan(TeamSelector.orderScore(best), TeamSelector.orderScore(Array(best.reversed())))
+        XCTAssertNotEqual(best.first?.slot, .lower, "a tail-ender shouldn't open")
+
+        // Same XI, best order vs reversed order, many games against the same opponent.
+        let opp = MatchEngine.Side(teamId: 1, xi: TeamSelector.battingOrder(teams[1].squad.compactMap { byId[$0] }))
+        func runs(_ order: [Player]) -> Double {
+            var engine = MatchEngine(rng: SeededRNG(seed: 99))
+            var total = 0
+            for _ in 0..<400 {
+                var log: [BallEvent] = []
+                let r = engine.play(MatchEngine.Side(teamId: 0, xi: order), opp, stage: .league, pitch: .indianFlat, log: &log)
+                total += r.innings.first { $0.teamId == 0 }!.runs
+            }
+            return Double(total) / 400
+        }
+        let good = runs(best), bad = runs(Array(best.reversed()))
+        print(String(format: "batting order: best %.1f vs reversed %.1f", good, bad))
+        XCTAssertGreaterThan(good, bad + 5)
+
+        // Phase fit: a death specialist gains at the death, a spinner loses there.
+        let bumrah = byId["jasprit-bumrah"]!, chahal = byId["yuzvendra-chahal"]!
+        XCTAssertGreaterThan(MatchEngine.phaseFit(bumrah, .death, pitch: .indianFlat), MatchEngine.phaseFit(chahal, .death, pitch: .indianFlat))
+        // Auto plan gives the new-ball/death slots to pace or swing, not the best middle-overs spinner.
+        let plan = MatchEngine.autoAttack(squad, pitch: .englishSeam)
+        XCTAssertEqual(plan.count, 5)
+        XCTAssertEqual(MatchEngine.overs(forSlot: 0), [1, 3, 17, 19])
+        // Home conditions.
+        XCTAssertEqual(Pitch.englishSeam.homeBonus(byId["jos-buttler"]!), 5)
+        XCTAssertEqual(Pitch.englishSeam.homeBonus(byId["virat-kohli"]!), 0)
+        print("legends in data:", players.filter(\.legend).count)
     }
 
     func testSeasonAndPlayoffs() {
@@ -311,6 +356,14 @@ final class GameFlowTests: XCTestCase {
                 XCTAssertGreaterThanOrEqual(t.purse, 0)
             }
 
+            // A custom bowling plan is used when valid.
+            let t0 = g.teams[0]
+            let planIds = Array(MatchEngine.autoAttack(t0.squad.compactMap { book[$0] }, pitch: nil).map(\.id).reversed())
+            g.setBowlingOrder(teamId: t0.id, ids: planIds)
+            XCTAssertEqual(g.side(t0.id, book: book).attack?.map(\.id), planIds)
+            g.setBowlingOrder(teamId: t0.id, ids: [])
+            XCTAssertNil(g.side(t0.id, book: book).attack)
+            g.setBowlingOrder(teamId: t0.id, ids: planIds)
             // Round-trip the save file mid-game.
             g = try JSONDecoder().decode(GameState.self, from: JSONEncoder().encode(g))
 

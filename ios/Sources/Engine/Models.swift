@@ -40,8 +40,12 @@ struct Player: Codable, Identifiable, Hashable {
     let line: String
     let bowlType: BowlType
     let traits: [Trait]
+    /// Where this player bats best.
+    let slot: BatSlot
+    /// Retired IPL great (vs a current star).
+    let legend: Bool
 
-    var isLegend: Bool { !traits.isEmpty }
+    var isLegend: Bool { legend }
     func has(_ t: Trait) -> Bool { traits.contains(t) }
 
     /// Can be trusted with 4 overs.
@@ -53,17 +57,80 @@ enum BowlType: String, Codable {
     case pace, spin
 }
 
+/// Batting slot groups. Batting a player in his slot gives a bonus, far out of it a penalty.
+enum BatSlot: String, Codable, CaseIterable {
+    case open, top, middle, finish, lower
+
+    var ordinal: Int { BatSlot.allCases.firstIndex(of: self)! }
+
+    init(position i: Int) {
+        switch i {
+        case 0, 1: self = .open
+        case 2, 3: self = .top
+        case 4: self = .middle
+        case 5, 6: self = .finish
+        default: self = .lower
+        }
+    }
+
+    var label: String {
+        switch self {
+        case .open: return "OPENER"
+        case .top: return "TOP ORDER"
+        case .middle: return "MIDDLE"
+        case .finish: return "FINISHER"
+        case .lower: return "LOWER ORDER"
+        }
+    }
+
+    /// Batting-skill adjustment for a player who prefers `self` batting at `position`.
+    func fit(position: Int) -> Int {
+        switch abs(BatSlot(position: position).ordinal - ordinal) {
+        case 0: return 6
+        case 1: return 2
+        case 2: return -4
+        default: return -9
+        }
+    }
+}
+
+/// Bowling phases in a T20 innings.
+enum BowlPhase: Int {
+    case powerplay, middle, death
+}
+
 /// Signature skills for legends. They change the ball-by-ball odds in specific match-ups.
 enum Trait: String, Codable, CaseIterable {
     // Batting
     case powerHitter, anchor, finisher, spinBasher, paceBasher, powerplayBlitz, chaseMaster, threeSixty
+    case flatTrackBully, technician, shortBallKing
+    // Either
+    case bigMatch
     // Bowling
     case deathSpecialist, newBallSwing, mysterySpin, economical, wicketTaker, expressPace
+    case slowerBallMaster, bounceMerchant, turnerTerror, middleOversBoss
 
     var isBatting: Bool {
         switch self {
-        case .powerHitter, .anchor, .finisher, .spinBasher, .paceBasher, .powerplayBlitz, .chaseMaster, .threeSixty: return true
+        case .powerHitter, .anchor, .finisher, .spinBasher, .paceBasher, .powerplayBlitz, .chaseMaster, .threeSixty,
+             .flatTrackBully, .technician, .shortBallKing, .bigMatch: return true
         default: return false
+        }
+    }
+
+    var isBowling: Bool { !isBatting || self == .bigMatch }
+
+    /// Pitches where this trait comes alive.
+    var pitches: [Pitch] {
+        switch self {
+        case .flatTrackBully: return [.indianFlat, .aussieBounce]
+        case .technician: return [.englishSeam, .dustyTurner]
+        case .shortBallKing, .bounceMerchant: return [.aussieBounce]
+        case .newBallSwing: return [.englishSeam]
+        case .turnerTerror: return [.dustyTurner, .caribbeanSlow]
+        case .slowerBallMaster: return [.caribbeanSlow, .dustyTurner]
+        case .spinBasher: return [.dustyTurner]
+        default: return []
         }
     }
 
@@ -83,6 +150,14 @@ enum Trait: String, Codable, CaseIterable {
         case .economical: return "Miser"
         case .wicketTaker: return "Wicket Taker"
         case .expressPace: return "Express Pace"
+        case .flatTrackBully: return "Flat-Track Bully"
+        case .technician: return "Technician"
+        case .shortBallKing: return "Short-Ball King"
+        case .bigMatch: return "Big-Match Player"
+        case .slowerBallMaster: return "Slower-Ball Master"
+        case .bounceMerchant: return "Bounce Merchant"
+        case .turnerTerror: return "Turner Terror"
+        case .middleOversBoss: return "Middle-Overs Boss"
         }
     }
 
@@ -102,6 +177,14 @@ enum Trait: String, Codable, CaseIterable {
         case .economical: return "🔒"
         case .wicketTaker: return "🪓"
         case .expressPace: return "🔥"
+        case .flatTrackBully: return "🛣️"
+        case .technician: return "📐"
+        case .shortBallKing: return "🪝"
+        case .bigMatch: return "👑"
+        case .slowerBallMaster: return "🐢"
+        case .bounceMerchant: return "🦘"
+        case .turnerTerror: return "🌀"
+        case .middleOversBoss: return "🧱"
         }
     }
 
@@ -121,6 +204,14 @@ enum Trait: String, Codable, CaseIterable {
         case .economical: return "Bleeds very few boundaries"
         case .wicketTaker: return "Strikes often, at a price"
         case .expressPace: return "Rushes batters, but edges fly to the rope"
+        case .flatTrackBully: return "Murders flat decks, struggles when it seams or turns"
+        case .technician: return "Survives seam, swing and turn"
+        case .shortBallKing: return "Pulls and hooks pace and bounce"
+        case .bigMatch: return "Raises their game in the playoffs"
+        case .slowerBallMaster: return "Cutters and slower balls — deadly at the death and on slow decks"
+        case .bounceMerchant: return "Hits the deck hard — lethal on bouncy pitches"
+        case .turnerTerror: return "Rips it on turning and slow pitches"
+        case .middleOversBoss: return "Chokes runs and takes wickets in overs 7–16"
         }
     }
 }
@@ -171,6 +262,26 @@ enum Pitch: String, Codable, CaseIterable, Identifiable {
     var swings: Bool { self == .englishSeam }
 
     private var index: Int { Pitch.allCases.firstIndex(of: self)! }
+
+    /// Countries whose players feel at home here (+5 skill).
+    var homeCountries: [String] {
+        switch self {
+        case .indianFlat: return ["IND"]
+        case .englishSeam: return ["ENG", "NZ"]
+        case .aussieBounce: return ["AUS", "SA"]
+        case .dustyTurner: return ["IND", "SL", "AFG", "BAN"]
+        case .caribbeanSlow: return ["WI"]
+        }
+    }
+
+    func homeBonus(_ p: Player) -> Int { homeCountries.contains(p.country) ? 5 : 0 }
+
+    /// Pitches a player is likely to enjoy (home conditions or a condition trait).
+    static func favoured(by p: Player) -> [Pitch] {
+        Pitch.allCases.filter { pitch in
+            pitch.homeCountries.contains(p.country) || p.traits.contains { $0.pitches.contains(pitch) }
+        }
+    }
 
     func bonus(for type: BowlType) -> Int { type == .spin ? spinBonus : paceBonus }
 }
@@ -224,6 +335,8 @@ struct Franchise: Codable, Identifiable, Hashable {
     var xi: [String] = []
     /// CPU bidding temperament (0.85 cautious ... 1.2 aggressive).
     var personality: Double = 1.0
+    /// Custom bowling plan: five player ids (slot 1-2 new ball + death, 3-5 middle). Empty = auto.
+    var bowlingOrder: [String] = []
 }
 
 struct FranchiseTemplate {
@@ -282,8 +395,8 @@ struct Rules: Codable, Hashable {
         doubleRoundRobin = try c.decodeIfPresent(Bool.self, forKey: .doubleRoundRobin) ?? d.doubleRoundRobin
         pitchMode = try c.decodeIfPresent(PitchMode.self, forKey: .pitchMode) ?? d.pitchMode
         bidStep = try c.decodeIfPresent(Int.self, forKey: .bidStep) ?? d.bidStep
-        minBase = try c.decodeIfPresent(Int.self, forKey: .minBase) ?? d.minBase
+        minBase = d.minBase
     }
     /// Lowest base price in the pool; used to reserve purse for the minimum squad.
-    var minBase: Int = 30
+    var minBase: Int = 50
 }

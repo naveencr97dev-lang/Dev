@@ -37,7 +37,7 @@ enum AuctionEngine {
     /// Picks the auction pool (legends first, then a random mix of the best of the rest)
     /// and orders it: Marquee, Batters & Keepers, All-rounders, Bowlers.
     static func buildQueue(players: [Player], teamCount n: Int, rules: Rules, rng: inout SeededRNG) -> [String] {
-        let overseasCap = 3 * n + 2
+        let overseasCap = 4 * n   // every team can field 4; Indians always fill the other 7
         var overseas = 0
         var chosen: [Player] = []
         for (role, count) in poolSize(teams: n).sorted(by: { $0.key.rawValue < $1.key.rawValue }) {
@@ -57,6 +57,14 @@ enum AuctionEngine {
                 let i = min(pool.count - 1, Int(pow(rng.unit(), 1.6) * Double(pool.count)))
                 let p = pool.remove(at: i)
                 if p.overseas && overseas >= overseasCap { continue }
+                picked.append(p); overseas += p.overseas ? 1 : 0
+            }
+            // Still short (big leagues): take anyone left in the role, best first.
+            for p in ofRole where picked.count < count && !picked.contains(p) {
+                if p.overseas && overseas >= overseasCap { continue }
+                picked.append(p); overseas += p.overseas ? 1 : 0
+            }
+            for p in ofRole where picked.count < count && !picked.contains(p) {
                 picked.append(p); overseas += p.overseas ? 1 : 0
             }
             chosen += picked

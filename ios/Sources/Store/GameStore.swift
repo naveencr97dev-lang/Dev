@@ -25,7 +25,7 @@ final class GameStore: ObservableObject {
         let players = (try? PlayerDB.decode(Data(contentsOf: url))) ?? []
         book = PlayerBook(players)
         let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        fileURL = docs.appendingPathComponent("auctionxi-game.json")
+        fileURL = docs.appendingPathComponent("auctionxi-game-v2.json")   // v2: curated player pool
         load()
         if game?.phase == .auction {
             // Saved right after a hammer: move on to the next lot.
@@ -222,6 +222,10 @@ final class GameStore: ObservableObject {
 
     func setXI(teamId: Int, ids: [String]) {
         mutate { $0.setXI(teamId: teamId, ids: ids) }
+    }
+
+    func setBowlingOrder(teamId: Int, ids: [String]) {
+        mutate { $0.setBowlingOrder(teamId: teamId, ids: ids) }
     }
 
     func startSeason() {

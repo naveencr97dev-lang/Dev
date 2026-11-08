@@ -28,8 +28,32 @@ enum TeamSelector {
         return battingOrder(picked).map(\.id)
     }
 
+    /// How many balls each position tends to face (relative), for ordering.
+    static let positionWeight: [Double] = [1.0, 1.0, 0.95, 0.9, 0.82, 0.72, 0.62, 0.42, 0.28, 0.18, 0.1]
+
+    static func orderScore(_ order: [Player]) -> Double {
+        order.enumerated().reduce(0) { sum, e in
+            let w = e.offset < positionWeight.count ? positionWeight[e.offset] : 0.05
+            return sum + w * Double(e.element.bat + e.element.slot.fit(position: e.offset))
+        }
+    }
+
+    /// Best batting order: strongest batters face the most balls, each in a slot that suits them.
     static func battingOrder(_ xi: [Player]) -> [Player] {
-        xi.sorted { $0.bat == $1.bat ? $0.bowl < $1.bowl : $0.bat > $1.bat }
+        var order = xi.sorted { ($0.slot.ordinal, -$0.bat) < ($1.slot.ordinal, -$1.bat) }
+        var best = orderScore(order)
+        var improved = true
+        while improved {
+            improved = false
+            for i in order.indices {
+                for j in order.indices where j > i {
+                    order.swapAt(i, j)
+                    let s = orderScore(order)
+                    if s > best + 0.001 { best = s; improved = true } else { order.swapAt(i, j) }
+                }
+            }
+        }
+        return order
     }
 
     /// Problems that block saving an XI (empty = valid).
