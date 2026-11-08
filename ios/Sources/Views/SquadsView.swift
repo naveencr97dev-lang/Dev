@@ -193,7 +193,7 @@ struct BattingOrderView: View {
                 }
                 .onMove { order.move(fromOffsets: $0, toOffset: $1) }
             } footer: {
-                Text("Drag ≡ to reorder. Big number = batting strength. ✓ = batting in their best slot (+6), ~ = close (+2), ⚠︎ = out of position (−4 to −9). Best order puts strong batters high and everyone near their slot.")
+                Text("Drag ≡ to reorder. Big number = batting strength. ✓ = in their best slot (+6), ~ = close (+2), ⚠︎ = out of position (−8 to −26). 🚨 A tail-ender in the top six gets out about twice as often and rarely scores. ORDER = this order's strength vs the best possible.")
             }
             .listRowBackground(Palette.surface)
             Section {
@@ -258,7 +258,11 @@ struct BattingSlotRow: View {
                 }
                 HStack(spacing: 6) {
                     RoleChip(role: player.role)
-                    FitBadge(fit: fit, preferred: player.slot)
+                    if player.isExposed(atPosition: position) {
+                        Text("🚨 EXPOSED — tail-ender up top").font(.caption2.weight(.heavy)).foregroundStyle(Palette.wicket).lineLimit(1)
+                    } else {
+                        FitBadge(fit: fit, preferred: player.slot)
+                    }
                     Text(batTraits.map(\.icon).joined()).font(.caption2).lineLimit(1)
                 }
                 // Strength bar.
@@ -294,10 +298,20 @@ struct LineupSummary: View {
         let middle = Array(players.dropFirst(4).prefix(3))
         let avg: ([Player]) -> Int = { $0.isEmpty ? 0 : $0.map(\.bat).reduce(0, +) / $0.count }
         let bowlers = players.filter(\.isBowlingOption).count
-        HStack(spacing: 0) {
-            stat("\(avg(top))", "TOP 4 BAT", strengthColor(avg(top)))
-            stat("\(avg(middle))", "5–7 BAT", strengthColor(avg(middle)))
-            stat("\(bowlers)", "BOWLERS", bowlers >= 5 ? Palette.accent : .orange)
+        let best = TeamSelector.orderScore(TeamSelector.battingOrder(players))
+        let pct = best > 0 ? Int((TeamSelector.orderScore(players) / best * 100).rounded()) : 100
+        let exposed = players.enumerated().filter { $0.element.isExposed(atPosition: $0.offset) }.count
+        VStack(spacing: 6) {
+            HStack(spacing: 0) {
+                stat("\(pct)%", "ORDER", pct >= 98 ? Palette.accent : (pct >= 90 ? Palette.four : (pct >= 80 ? .orange : Palette.wicket)))
+                stat("\(avg(top))", "TOP 4 BAT", strengthColor(avg(top)))
+                stat("\(avg(middle))", "5–7 BAT", strengthColor(avg(middle)))
+                stat("\(bowlers)", "BOWLERS", bowlers >= 5 ? Palette.accent : .orange)
+            }
+            if exposed > 0 {
+                Text("🚨 \(exposed) tail-ender\(exposed == 1 ? "" : "s") in the top six — expect a collapse")
+                    .font(.caption.weight(.bold)).foregroundStyle(Palette.wicket)
+            }
         }
         .padding(.vertical, 4)
     }

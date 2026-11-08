@@ -234,19 +234,37 @@ final class EngineTests: XCTestCase {
 
         // Same XI, best order vs reversed order, many games against the same opponent.
         let opp = MatchEngine.Side(teamId: 1, xi: TeamSelector.battingOrder(teams[1].squad.compactMap { byId[$0] }))
-        func runs(_ order: [Player]) -> Double {
+        func runsAndWins(_ order: [Player]) -> (Double, Double) {
             var engine = MatchEngine(rng: SeededRNG(seed: 99))
-            var total = 0
+            var total = 0, wins = 0
             for _ in 0..<400 {
                 var log: [BallEvent] = []
                 let r = engine.play(MatchEngine.Side(teamId: 0, xi: order), opp, stage: .league, pitch: .indianFlat, log: &log)
                 total += r.innings.first { $0.teamId == 0 }!.runs
+                if r.winnerId == 0 { wins += 1 }
             }
-            return Double(total) / 400
+            return (Double(total) / 400, Double(wins) / 4)
         }
-        let good = runs(best), bad = runs(Array(best.reversed()))
-        print(String(format: "batting order: best %.1f vs reversed %.1f", good, bad))
-        XCTAssertGreaterThan(good, bad + 5)
+        let (good, goodWin) = runsAndWins(best), (bad, badWin) = runsAndWins(Array(best.reversed()))
+        print(String(format: "batting order: best %.1f runs, %.0f%% wins vs reversed %.1f runs, %.0f%% wins", good, goodWin, bad, badWin))
+        XCTAssertGreaterThan(good, bad + 15, "a reversed order (bowlers opening) must hurt badly")
+        XCTAssertGreaterThan(goodWin, badWin + 15, "and cost a lot of wins")
+
+        // A specialist bowler opening barely scores and falls quickly.
+        let tail = best.last!
+        var engine = MatchEngine(rng: SeededRNG(seed: 5))
+        var tailRuns = 0, tailOuts = 0
+        for _ in 0..<300 {
+            var log: [BallEvent] = []
+            let order = [tail] + best.filter { $0 != tail }
+            let r = engine.play(MatchEngine.Side(teamId: 0, xi: order), opp, stage: .league, pitch: .indianFlat, log: &log)
+            let card = r.innings.first { $0.teamId == 0 }!.batters.first { $0.id == tail.id }!
+            tailRuns += card.runs
+            if card.dismissal != nil { tailOuts += 1 }
+        }
+        let tailAvg = Double(tailRuns) / Double(max(1, tailOuts))
+        print(String(format: "%@ opening: average %.1f", tail.name, tailAvg))
+        XCTAssertLessThan(tailAvg, 8)
 
         // Phase fit: a death specialist gains at the death, a spinner loses there.
         let bumrah = byId["jasprit-bumrah"]!, chahal = byId["yuzvendra-chahal"]!

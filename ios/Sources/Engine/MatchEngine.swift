@@ -319,7 +319,7 @@ struct MatchEngine {
                 let batter = batting.xi[striker]
                 let (outcome, batTrait, bowlTrait) = ball(batter: batter, bowler: bowler, over: over, maxOvers: maxOvers,
                                                           card: card, target: target, maxWickets: maxWickets, pitch: pitch,
-                                                          position: striker)
+                                                          position: striker, faced: card.batters[striker].balls)
                 legal += 1
                 card.balls += 1
                 card.bowlers[bi].balls += 1
@@ -409,7 +409,7 @@ struct MatchEngine {
 
     /// Returns runs (0,1,2,3,4,6) or -1 for a wicket, plus the traits that shaped the ball.
     mutating func ball(batter: Player, bowler: Player, over: Int, maxOvers: Int, card: InningsCard,
-                       target: Int?, maxWickets: Int, pitch: Pitch, position: Int = 3) -> (Int, Trait?, Trait?) {
+                       target: Int?, maxWickets: Int, pitch: Pitch, position: Int = 3, faced: Int = 10) -> (Int, Trait?, Trait?) {
         // Weights for [0, 1, 2, 3, 4, 6, W] by phase.
         var w: [Double]
         let powerplay = over < 6 && maxOvers == 20
@@ -446,12 +446,30 @@ struct MatchEngine {
             if batter.has(.bigMatch) { batSkill += 8; batTrait = .bigMatch }
             if bowler.has(.bigMatch) { bowlSkill += 8; bowlTrait = .bigMatch }
         }
-        let d = max(-1.6, min(1.6, (batSkill - bowlSkill) / 50))
+        let d = max(-2.2, min(1.6, (batSkill - bowlSkill) / 50))
         let boost = exp(0.42 * d)
         w[0] /= boost
         w[4] *= boost
         w[5] *= pow(boost, 1.5)
         w[6] /= pow(boost, 1.8)
+
+        // Role clarity: in their slot a batter plays freely; out of it they look lost.
+        if maxOvers == 20 {
+            let dist = batter.slot.distance(position: position)
+            if dist == 0 {
+                w[6] *= 0.92; w[4] *= 1.05; w[5] *= 1.05
+            } else if dist >= 2 {
+                let k = Double(dist - 1)
+                w[6] *= 1 + 0.35 * k; w[4] *= max(0.5, 1 - 0.12 * k); w[5] *= max(0.4, 1 - 0.15 * k); w[0] *= 1 + 0.08 * k
+            }
+            // Settling in: new batters are vulnerable, set batters cash in.
+            if faced < 6 { w[6] *= 1.3; w[4] *= 0.8; w[5] *= 0.75 }
+            else if faced >= 25 { w[6] *= 0.85; w[4] *= 1.1; w[5] *= 1.12 }
+        }
+        // A tail-ender in the top order: no technique to survive, no shots to score.
+        if maxOvers == 20 && batter.isExposed(atPosition: position) {
+            w[6] *= 1.9; w[4] *= 0.55; w[5] *= 0.45; w[0] *= 1.25
+        }
 
         // Batting traits.
         let chasing = target != nil
@@ -509,6 +527,8 @@ struct MatchEngine {
             aggression = 0.25
         }
         if wicketsLeft <= 3 && ballsLeft > 24 { aggression = min(aggression, -0.3) }
+        // Early collapse: rebuild before attacking again.
+        if card.wickets >= 3 && over < 10 && maxOvers == 20 { aggression = max(-0.45, aggression - 0.3) }
 
         if aggression > 0 {
             w[4] *= 1 + 0.5 * aggression

@@ -33,7 +33,10 @@ Franchise names are fictional; the app is not affiliated with any real league.
      seamers, Australia/SA on bouncers, West Indies on slow pitches, SL/AFG/BAN on turners), plus
      trait effects such as Turner Terror on dust and Bounce Merchant in Australia.
    - **Batting order**: every player has a best slot (opener, top order, middle, finisher, lower).
-     In slot +6, close +2, out of position −4 to −9. "✨ Best order" optimises it.
+     In slot +6, close +2, out of position −8 to −26 plus more wickets and fewer boundaries.
+     A tail-ender in the top six is "exposed" (a bowler opening averages under 1). New batters
+     are vulnerable for 6 balls, set batters cash in, and 3 early wickets force a rebuild.
+     "✨ Best order" optimises it; the ORDER % shows how close you are.
    - **Bowling plan**: choose the five bowlers. Slots 1–2 bowl the new ball and the death, 3–5 the
      middle. Swing and death specialists gain at the ends, spinners in the middle. Auto picks per pitch.
 4. **Pitches**: 🛣️ Indian Flat (about 205 par) · 🌧️ English Seamer (about 140, swing) ·

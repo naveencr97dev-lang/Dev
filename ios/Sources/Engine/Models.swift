@@ -48,6 +48,9 @@ struct Player: Codable, Identifiable, Hashable {
     var isLegend: Bool { legend }
     func has(_ t: Trait) -> Bool { traits.contains(t) }
 
+    /// A tail-ender sent into the top six is badly exposed.
+    func isExposed(atPosition i: Int) -> Bool { bat < 40 && i < 6 }
+
     /// Can be trusted with 4 overs.
     var isBowlingOption: Bool { bowl >= 40 }
     var isTopOrderBat: Bool { bat >= 55 }
@@ -83,13 +86,17 @@ enum BatSlot: String, Codable, CaseIterable {
         }
     }
 
+    /// How many slot groups away from their best a player is batting.
+    func distance(position: Int) -> Int { abs(BatSlot(position: position).ordinal - ordinal) }
+
     /// Batting-skill adjustment for a player who prefers `self` batting at `position`.
     func fit(position: Int) -> Int {
-        switch abs(BatSlot(position: position).ordinal - ordinal) {
+        switch distance(position: position) {
         case 0: return 6
         case 1: return 2
-        case 2: return -4
-        default: return -9
+        case 2: return -8
+        case 3: return -16
+        default: return -26
         }
     }
 }
