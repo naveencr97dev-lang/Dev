@@ -30,5 +30,8 @@ it off for a session, or `/ultracave` for maximum compression.
 - Players: `tools/players_curated.py` → `ios/Resources/players.json` (172 stars and legends).
 - Live match: per-ball pacing by excitement, wagon wheel, runs-per-over bars, innings break,
   post-match scorecard → runs per over → highlights.
+- **Next big project: Career Mode** (a cricket manager in the style of football manager games).
+  Design: `docs/career/GDD.md`. Build order and milestone gates: `docs/career/ROADMAP.md`.
+  Work milestone by milestone and keep the GDD in sync with the code.
 - User preferences: replies in the "OPTIMIZED PROMPT (CO-STAR) + results" format, terse
   (caveman). Commit and push every change to the working branch. Tell the user to rebuild in Codemagic.
