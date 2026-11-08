@@ -1,0 +1,48 @@
+# Codemagic CI config — builds an UNSIGNED Auction XI IPA for sideloading (Signulous).
+# Same pipeline as Streaklet: free tier, no signing certificates needed.
+#
+# Setup (one time — skip if Codemagic is already connected to this repo):
+#   1. https://codemagic.io -> your app for naveencr97dev-lang/Dev.
+#   2. Start new build -> branch claude/beautiful-keller-qgp1vc -> workflow "Auction XI unsigned IPA".
+#   3. Download AuctionXI-unsigned.ipa from the build artifacts -> upload to Signulous.
+
+workflows:
+  auctionxi-unsigned:
+    name: Auction XI unsigned IPA
+    max_build_duration: 30
+    environment:
+      xcode: latest
+    scripts:
+      - name: Install XcodeGen
+        script: brew install xcodegen
+
+      - name: Generate Xcode project
+        script: |
+          cd "$CM_BUILD_DIR/ios"
+          xcodegen generate
+
+      - name: Build unsigned archive
+        script: |
+          cd "$CM_BUILD_DIR/ios"
+          xcodebuild \
+            -project AuctionXI.xcodeproj \
+            -scheme AuctionXI \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$CM_BUILD_DIR/build/AuctionXI.xcarchive" \
+            archive \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Package unsigned IPA
+        script: |
+          cd "$CM_BUILD_DIR/build"
+          APP_PATH="AuctionXI.xcarchive/Products/Applications/AuctionXI.app"
+          test -d "$APP_PATH"
+          mkdir -p Payload
+          cp -R "$APP_PATH" Payload/
+          zip -qry AuctionXI-unsigned.ipa Payload
+          ls -lh AuctionXI-unsigned.ipa
+    artifacts:
+      - build/AuctionXI-unsigned.ipa
