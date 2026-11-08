@@ -42,8 +42,9 @@ Franchise names are fictional; the app is not affiliated with any real league.
 4. **Pitches**: 🛣️ Indian Flat (about 205 par) · 🌧️ English Seamer (about 140, swing) ·
    🦘 Aussie Bouncer (pace) · 🏜️ Dusty Turner (spin) · 🌴 Caribbean Slow (low and slow).
    Captains pick the five bowlers that suit the pitch.
-5. **Season**: matches play ball by ball at a followable pace: 1× is about 2 s a ball
-   (around 10 minutes a match), 2× and 4× for quicker games, plus pause. Before each ball,
+5. **Season**: matches play ball by ball at a followable pace: 1× gives about 2 s
+   for big moments (dots and singles go by fast, about 7 minutes a match), 2× and 4× for
+   quicker games, plus pause. Before each ball,
    "🏃 Bumrah runs in to Kohli…", then the result. A **wagon wheel** shows the ground, with every
    scoring shot of the innings drawn from the bat (1–3 white, 4s blue to the rope, 6s purple
    beyond it, wickets ✕) and the latest shot racing out. A TV-style score strip shows both

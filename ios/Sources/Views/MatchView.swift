@@ -13,7 +13,8 @@ struct MatchView: View {
     /// Speed multiplier; 1× = one ball every `ballSeconds`. Remembered between matches.
     @AppStorage("matchSpeedV3") private var speed: Double = 1
     static let speeds: [(label: String, value: Double)] = [("1×", 1), ("2×", 2), ("4×", 4)]
-    /// Seconds per delivery at 1× (about 10 minutes for a full match).
+    /// Seconds for a big moment at 1×; dots and singles take a third to a half of this
+    /// (about 7 minutes for a full match).
     static let ballSeconds = 2.2
     static let tick = 0.05
 
@@ -65,11 +66,34 @@ struct MatchView: View {
         if log.isEmpty { finished = true }
     }
 
-    /// Wait for the current ball (longer after the last ball of an over).
+    /// How long the ball just shown stays on screen: quick for dots and singles, long for
+    /// boundaries, wickets and milestones, every ball counts in a tight finish.
     private var ballWait: Double {
-        var wait = MatchView.ballSeconds
-        if shown > 0, MatchView.isOverEnd(log[shown - 1]) { wait *= 1.8 }
-        return wait
+        guard shown > 0 else { return MatchView.ballSeconds * 0.6 }
+        let e = log[shown - 1]
+        var f: Double
+        switch e.label {
+        case "wd": f = 0.3
+        case "0": f = 0.35
+        case "1": f = 0.45
+        case "2", "3": f = 0.6
+        case "4": f = 1.0
+        case "6": f = 1.25
+        case "W": f = 1.6
+        default: f = 0.5
+        }
+        if e.text.contains("FIFTY") || e.text.contains("HUNDRED") { f = max(f, 1.6) }
+        if isTense(e) { f = max(f, 0.9) }
+        if MatchView.isOverEnd(e) { f += 1.2 }
+        return MatchView.ballSeconds * f
+    }
+
+    /// Last 3 overs of a chase that's still alive: let every ball breathe.
+    private func isTense(_ e: BallEvent) -> Bool {
+        guard e.innings == 1, let r = result else { return false }
+        let need = r.innings[0].runs + 1 - e.score
+        let left = 120 - (e.over * 6 + e.ballInOver)
+        return need > 0 && left <= 18 && need <= left * 2 + 6
     }
 
     static func isOverEnd(_ e: BallEvent) -> Bool { e.ballInOver == 6 && e.label != "wd" }
@@ -124,7 +148,9 @@ struct MatchView: View {
         let recent = Array(log[..<shown].suffix(8).reversed())
         let shots = log[..<shown].enumerated().filter { $0.element.innings == inningsNow }
             .map { WagonWheel.Shot(index: $0.offset, event: $0.element) }
-        let anticipating = !inningsBreak && shown < log.count && ballClock > ballWait * 0.45
+        // Only build up to the next ball after something worth pausing on.
+        let anticipating = !inningsBreak && shown < log.count && ballWait >= MatchView.ballSeconds * 0.85
+            && ballClock > ballWait * 0.45
 
         let board = VStack(spacing: DS.Space.sm) {
             ScoreBug(result: r, event: current)
