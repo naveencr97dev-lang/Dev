@@ -25,7 +25,21 @@ local persistence.
 
 You don't need a Mac. There are two routes.
 
-### Route A — GitHub Actions (no Mac) → Signulous
+### Route A (recommended) — Codemagic (no Mac) → Signulous
+
+GitHub-hosted macOS runners aren't available on this account, so CI runs on
+**Codemagic** (free macOS builds for public repos). Config: `codemagic.yaml`
+at the repo root.
+
+1. Sign up at **https://codemagic.io** with your GitHub account.
+2. **Add application** → choose **naveencr97dev-lang/Dev** → it detects
+   `codemagic.yaml`.
+3. Start a build on branch **`claude/reverse-engineer-repo-rnfy93`**
+   (workflow **"Streaklet unsigned IPA"**).
+4. Download the **`Streaklet-unsigned.ipa`** artifact → upload to **Signulous**
+   to sign and install.
+
+### Route B — GitHub Actions (needs Actions billing enabled) → Signulous
 
 1. Push this repo to GitHub (done on your branch).
 2. Open the repo's **Actions** tab → the **"Build unsigned IPA"** workflow.
@@ -39,7 +53,7 @@ You don't need a Mac. There are two routes.
 > The bundle id is `com.streaklet.app` (set in `project.yml`). Change it there
 > if Signulous needs a bundle id tied to your account, then re-run the build.
 
-### Route B — on your own Mac
+### Route C — on your own Mac
 
 ```bash
 brew install xcodegen

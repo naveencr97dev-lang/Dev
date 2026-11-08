@@ -1,11 +1,9 @@
 name: Build unsigned IPA
 
+# Manual-only: GitHub-hosted macOS runners are not available on this account
+# (jobs are cancelled at scheduling). Primary build path is Codemagic
+# (see codemagic.yaml). Kept here for when GitHub Actions billing is enabled.
 on:
-  push:
-    branches: ["**"]
-    paths:
-      - "ios/**"
-      - ".github/workflows/ios.yml"
   workflow_dispatch: {}
 
 jobs:
