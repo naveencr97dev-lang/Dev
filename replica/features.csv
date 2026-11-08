@@ -1,0 +1,34 @@
+feature,area,priority,original,clone,notes
+Create build habit,core,must,yes,no,name icon color repeat goal
+Create quit habit,core,must,yes,no,track days avoided
+Today view with date strip,core,must,yes,no,S02
+Check off habit (1 tap),core,must,yes,no,core loop
+Goal-unit progress (minutes/glasses),core,must,yes,no,+1 toward target
+Repeat rules daily/weekly/interval/custom,core,must,yes,no,custom intervals added in 2.14
+Current & longest streak,core,must,yes,no,derived from checkins
+Habit detail with calendar heatmap,core,must,yes,no,S04
+Day rollover / skip day,core,must,yes,no,reviewer pain: after-midnight logging
+Local persistence (works offline),core,must,yes,no,PWA/localStorage then DB
+Edit / archive / delete habit,core,must,yes,no,
+Stats weekly/monthly/yearly,stats,should,yes,no,S05
+Completion % and charts,stats,should,yes,no,
+Reorder habits,core,should,yes,no,
+Reminders (time-based multiple),engage,should,yes,no,web notifications
+Mood tracking,wellbeing,should,yes,no,S06 5-point
+Habit diary / notes,wellbeing,should,yes,no,per-day notes
+Focus timer with sounds,wellbeing,should,yes,no,S07
+Dark mode,ux,should,yes,no,theme toggle
+Face ID / app lock,privacy,should,yes,no,web = PIN/passkey
+Account sign up / sign in,account,should,yes,no,email + OAuth
+Cloud sync across devices,account,should,yes,no,needs backend
+Premium paywall + plans,monetize,should,yes,no,monthly/yearly/lifetime
+Group habits with friends,social,could,yes,no,invite + shared progress
+Friendly competition / leaderboard,social,could,yes,no,
+Daily inspiration quotes/wallpapers,content,could,yes,no,our own content
+Custom reminder sounds (record/import),engage,could,yes,no,
+ADHD-friendly plan templates,content,could,yes,no,our own templates
+Widgets (home/lock screen),platform,could,yes,no,native only - skip on web
+Apple Health sync,platform,could,yes,skip,HealthKit - native only
+HRV stress monitor,platform,could,yes,skip,Watch sensors - native only
+Apple Watch app,platform,could,yes,skip,native only
+Siri / Shortcuts,platform,could,yes,skip,native only
