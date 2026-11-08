@@ -13,11 +13,20 @@ struct AuctionView: View {
             Group {
                 if let g = store.game {
                     if vSize == .compact {
-                        // Landscape: player on the left, bidding on the right (good for casting).
+                        // Landscape (casting): no nav bar; player + bid on the left,
+                        // controls, bid buttons and purses on the right — all on one screen.
                         TwoColumns {
-                            lotColumn(g, compact: true)
+                            if let p = store.currentPlayer {
+                                PlayerCard(player: p, setName: store.currentSetName, compact: true)
+                                bidPanel(g, p, compact: true)
+                            }
                         } right: {
-                            bidColumn(g, compact: true)
+                            landscapeBar(g)
+                            if let p = store.currentPlayer {
+                                bidButtons(g, p, compact: true)
+                                actionRow(g, compact: true)
+                            }
+                            purseStrip(g, compact: true)
                         }
                     } else {
                         ScrollView {
@@ -41,6 +50,7 @@ struct AuctionView: View {
             .animation(.spring(response: 0.4, dampingFraction: 0.62), value: store.banner)
             .navigationTitle("Auction")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar(vSize == .compact ? .hidden : .visible, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button { store.paused.toggle() } label: {
@@ -48,20 +58,7 @@ struct AuctionView: View {
                     }
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Menu {
-                        Picker(selection: Binding(get: { store.game?.rules.bidStep ?? 0 },
-                                                  set: { store.setBidStep($0) })) {
-                            ForEach(Rules.bidSteps, id: \.self) { step in
-                                Text(step == 0 ? "IPL-style" : "+\(Money.format(step)) per bid").tag(step)
-                            }
-                        } label: {
-                            Label("Bid raise", systemImage: "arrow.up.circle")
-                        }
-                        .pickerStyle(.menu)
-                        Button { showSquads = true } label: { Label("View squads", systemImage: "person.3") }
-                        Button { confirmSim = true } label: { Label("Sim rest of auction", systemImage: "forward.end") }
-                        QuitMenuItem(confirm: $confirmQuit)
-                    } label: { Image(systemName: "ellipsis.circle") }
+                    Menu { menuItems } label: { Image(systemName: "ellipsis.circle") }
                 }
             }
             .sheet(isPresented: $showSquads) {
@@ -78,6 +75,51 @@ struct AuctionView: View {
         }
         .onReceive(clock) { _ in store.tick(0.1) }
         .keepAwake()
+    }
+
+    // MARK: Menu & landscape bar
+
+    @ViewBuilder private var menuItems: some View {
+        Picker(selection: Binding(get: { store.game?.rules.bidStep ?? 0 },
+                                  set: { store.setBidStep($0) })) {
+            ForEach(Rules.bidSteps, id: \.self) { step in
+                Text(step == 0 ? "IPL-style" : "+\(Money.format(step)) per bid").tag(step)
+            }
+        } label: {
+            Label("Bid raise", systemImage: "arrow.up.circle")
+        }
+        .pickerStyle(.menu)
+        Button { showSquads = true } label: { Label("View squads", systemImage: "person.3") }
+        Button { confirmSim = true } label: { Label("Sim rest of auction", systemImage: "forward.end") }
+        QuitMenuItem(confirm: $confirmQuit)
+    }
+
+    /// Replaces the navigation bar in landscape: pause, lot counter, menu.
+    private func landscapeBar(_ g: GameState) -> some View {
+        let a = g.auction
+        let filled = g.teams.reduce(0) { $0 + $1.squad.count }
+        return HStack(spacing: 10) {
+            Button { store.paused.toggle() } label: {
+                Image(systemName: store.paused ? "play.fill" : "pause.fill")
+                    .font(.system(size: 15, weight: .bold))
+                    .frame(width: 34, height: 34)
+                    .background(Circle().fill(store.paused ? Color.orange.opacity(0.8) : Palette.surfaceHi))
+            }
+            .foregroundStyle(store.paused ? Palette.ink : Palette.accent)
+            Text("LOT \(min(a.index + 1, a.queue.count))").font(.display(22)).foregroundStyle(Palette.accent)
+            Text("/ \(a.queue.count)").font(.display(15, weight: .heavy)).foregroundStyle(Palette.muted)
+            Spacer(minLength: 4)
+            Text("\(filled)/\(g.teams.count * g.rules.maxSquad) FILLED").font(.display(12, weight: .heavy)).foregroundStyle(Palette.muted)
+            Menu { menuItems } label: {
+                Image(systemName: "ellipsis")
+                    .font(.system(size: 15, weight: .bold))
+                    .frame(width: 34, height: 34)
+                    .background(Circle().fill(Palette.surfaceHi))
+            }
+            .foregroundStyle(Palette.accent)
+        }
+        .lineLimit(1)
+        .minimumScaleFactor(0.6)
     }
 
     // MARK: Columns
@@ -121,7 +163,7 @@ struct AuctionView: View {
         let leader = g.auction.leader.flatMap { g.team($0) }
         let fraction = max(0, min(1, store.timeLeft / g.rules.bidSeconds))
         let urgent = fraction < 0.3
-        return VStack(spacing: 10) {
+        return VStack(spacing: compact ? 6 : 10) {
             HStack(alignment: .center, spacing: DS.Space.md) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(leader == nil ? "BASE PRICE" : "CURRENT BID")
@@ -211,7 +253,7 @@ struct AuctionView: View {
         }
     }
 
-    private func actionRow(_ g: GameState) -> some View {
+    private func actionRow(_ g: GameState, compact: Bool = false) -> some View {
         HStack(spacing: 10) {
             Button { store.skipLot() } label: { Label("Skip", systemImage: "forward.fill").lineLimit(1) }
                 .buttonStyle(SecondaryButtonStyle())
@@ -222,30 +264,32 @@ struct AuctionView: View {
         }
         .disabled(store.banner != nil || store.paused)
         .overlay(alignment: .bottom) {
-            Text("Skip: CPUs settle this player instantly")
-                .font(.caption2).foregroundStyle(Palette.muted).lineLimit(1).minimumScaleFactor(0.6).offset(y: 18)
+            if !compact {
+                Text("Skip: CPUs settle this player instantly")
+                    .font(.caption2).foregroundStyle(Palette.muted).lineLimit(1).minimumScaleFactor(0.6).offset(y: 18)
+            }
         }
-        .padding(.bottom, 14)
+        .padding(.bottom, compact ? 0 : 14)
     }
 
-    private func purseStrip(_ g: GameState) -> some View {
+    private func purseStrip(_ g: GameState, compact: Bool = false) -> some View {
         VStack(alignment: .leading, spacing: DS.Space.sm) {
-            SectionLabel(text: "Purses")
+            if !compact { SectionLabel(text: "Purses") }
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
+                HStack(spacing: compact ? 6 : 8) {
                     ForEach(g.teams) { t in
-                        VStack(spacing: 4) {
-                            TeamBadge(team: t, size: 34)
-                            Text(Money.format(t.purse)).font(.score(13))
+                        VStack(spacing: compact ? 2 : 4) {
+                            TeamBadge(team: t, size: compact ? 24 : 34)
+                            Text(Money.format(t.purse)).font(.score(compact ? 11 : 13))
                                 .contentTransition(.numericText())
-                            HStack(spacing: 2) {
+                            HStack(spacing: compact ? 1.5 : 2) {
                                 ForEach(0..<g.rules.maxSquad, id: \.self) { i in
                                     Capsule().fill(i < t.squad.count ? Color(hex: t.colorHex) : Color.white.opacity(0.12))
-                                        .frame(width: 4, height: 8)
+                                        .frame(width: compact ? 3 : 4, height: compact ? 6 : 8)
                                 }
                             }
                         }
-                        .padding(8)
+                        .padding(compact ? 6 : 8)
                         .background(RoundedRectangle(cornerRadius: DS.Radius.md).fill(Palette.surface))
                         .overlay(RoundedRectangle(cornerRadius: DS.Radius.md).stroke(Palette.stroke))
                     }
@@ -308,7 +352,7 @@ struct PlayerCard: View {
                 }
                 .lineLimit(1).minimumScaleFactor(0.6)
                 .foregroundStyle(Palette.ink)
-                .padding(.horizontal, DS.Space.lg).padding(.vertical, 6)
+                .padding(.horizontal, compact ? DS.Space.md : DS.Space.lg).padding(.vertical, compact ? 3 : 6)
                 .background(Palette.role(player.role))
 
                 VStack(alignment: .leading, spacing: compact ? DS.Space.sm : DS.Space.md) {
@@ -328,7 +372,7 @@ struct PlayerCard: View {
                     }
                     RatingBar(label: "BAT", value: player.bat, color: Color(hex: "#F59E0B"))
                     RatingBar(label: "BOWL", value: player.bowl, color: Color(hex: "#F43F5E"))
-                    TraitChips(traits: player.traits, showBlurb: !compact)
+                    TraitChips(traits: player.traits, showBlurb: !compact, inline: compact)
                     let thrives = Pitch.favoured(by: player)
                     HStack(spacing: 6) {
                         Text("BATS \(player.slot.label)").font(.display(12, weight: .heavy)).foregroundStyle(Palette.muted)

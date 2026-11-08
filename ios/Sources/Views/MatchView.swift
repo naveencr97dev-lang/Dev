@@ -14,6 +14,7 @@ struct MatchView: View {
     @AppStorage("matchSpeed") private var speed: Double = 0.5
     @State private var carry: Double = 0
     @State private var showReel = false
+    @Environment(\.dismiss) private var dismiss
     private let clock = Timer.publish(every: 0.06, on: .main, in: .common).autoconnect()
 
     var body: some View {
@@ -34,6 +35,7 @@ struct MatchView: View {
         .background(AppBackground())
         .navigationTitle(result?.stage == .league ? "Match" : (result?.stage.label ?? "Match"))
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar(vSize == .compact && !finished && !log.isEmpty ? .hidden : .visible, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 if !finished && !log.isEmpty {
@@ -125,7 +127,17 @@ struct MatchView: View {
 
         return Group {
             if vSize == .compact {
-                TwoColumns { board } right: { feed }
+                TwoColumns { board } right: {
+                    HStack {
+                        Button { dismiss() } label: { Label("Back", systemImage: "chevron.left") }
+                            .font(.display(15, weight: .heavy))
+                        Spacer()
+                        Button { finish() } label: { Label("Skip", systemImage: "forward.end.fill") }
+                            .font(.display(15, weight: .heavy))
+                    }
+                    .foregroundStyle(Palette.accent)
+                    feed
+                }
             } else {
                 ScrollView {
                     VStack(spacing: DS.Space.md) { board; feed }

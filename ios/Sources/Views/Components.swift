@@ -74,9 +74,31 @@ struct RatingBar: View {
 struct TraitChips: View {
     let traits: [Trait]
     var showBlurb = false
+    /// One row (landscape): labels if they fit, otherwise icons only.
+    var inline = false
+
+    private func color(_ t: Trait) -> Color { t.isBatting ? Color(hex: "#F59E0B") : Color(hex: "#F43F5E") }
 
     var body: some View {
-        if !traits.isEmpty {
+        if inline && !traits.isEmpty {
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 10) {
+                    ForEach(traits, id: \.self) { t in
+                        Text("\(t.icon) \(t.label.uppercased())").font(.display(12, weight: .heavy))
+                            .foregroundStyle(color(t)).fixedSize()
+                    }
+                }
+                HStack(spacing: 8) {
+                    ForEach(traits, id: \.self) { t in
+                        Text("\(t.icon) \(t.label.split(separator: " ").first.map(String.init)?.uppercased() ?? "")")
+                            .font(.display(11, weight: .heavy)).foregroundStyle(color(t)).fixedSize()
+                    }
+                }
+                HStack(spacing: 6) {
+                    ForEach(traits, id: \.self) { t in Text(t.icon) }
+                }
+            }
+        } else if !traits.isEmpty {
             VStack(alignment: .leading, spacing: 6) {
                 ForEach(traits, id: \.self) { t in
                     HStack(spacing: 6) {

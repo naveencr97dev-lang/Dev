@@ -247,13 +247,13 @@ struct TwoColumns<Left: View, Right: View>: View {
             let gap = DS.Space.md
             let col = max(0, (geo.size.width - gap) / 2)
             HStack(alignment: .top, spacing: gap) {
-                ScrollView {
+                ScrollView(showsIndicators: false) {
                     VStack(spacing: DS.Space.sm) { left }
                         .frame(width: col)
                         .padding(.vertical, DS.Space.sm)
                 }
                 .frame(width: col)
-                ScrollView {
+                ScrollView(showsIndicators: false) {
                     VStack(spacing: DS.Space.sm) { right }
                         .frame(width: col)
                         .padding(.vertical, DS.Space.sm)
@@ -263,7 +263,6 @@ struct TwoColumns<Left: View, Right: View>: View {
             .frame(width: geo.size.width, alignment: .top)
         }
         .padding(.horizontal, DS.Space.md)
-        .clipped()
     }
 }
 
