@@ -1,0 +1,88 @@
+import Foundation
+
+/// Balance numbers for career mode. Defaults live here; `career_tuning.json` (generated from these
+/// defaults and checked by a test) lets values be tuned without touching code.
+struct CareerTuning: Codable, Hashable {
+    // Season shape
+    /// Times each pair of teams meets in the league (4 → 36 matches each with 10 teams).
+    var meetings = 4
+    /// League blocks: first day-of-year and number of rounds. International windows fall between them.
+    var leagueBlocks: [[Int]] = [[10, 12], [125, 12], [244, 12]]
+    /// Days between league rounds.
+    var roundGap = 6
+    /// Days of Qualifier 1, Eliminator, Qualifier 2 and the Final.
+    var playoffDays = [316, 318, 320, 323]
+
+    // Squads
+    var minSquad = 18
+    var maxSquad = 25
+    var startSquad = 20
+    var maxOverseasSquad = 8
+    var maxOverseasXI = 4
+    /// Starting squad shape: WK, BAT, AR, BOWL.
+    var squadShape = [2, 6, 4, 8]
+    /// Generated depth players in a new career.
+    var depthPlayers = 160
+    /// Rating ranges for depth players: batters/keepers, bowlers (all-rounders sit between).
+    /// Batting depth is a little stronger because the curated bowlers are more elite than the batters.
+    var depthBat = [58, 76]
+    var depthBowl = [52, 70]
+    /// Chance a generated player has a trait (and of a second one after that).
+    var traitChance = 0.5
+    var secondTraitChance = 0.25
+    /// Batting points added inside the match engine only, so career XIs (deeper, with fewer
+    /// trait-laden stars than the quick game) score like the quick game's calibrated pars.
+    var engineBatBoost = 8
+
+    // Development (per season, applied to the main skill)
+    /// Growth range by age band: [maxAge, min, max].
+    var growth: [[Int]] = [[20, 2, 7], [23, 1, 5], [26, 0, 3], [29, -1, 1], [32, -3, 0], [35, -5, -1], [99, -7, -2]]
+    /// Retirement: earliest age, base chance at that age, extra chance per year after.
+    var retireAge = 35
+    var retireBase = 0.3
+    var retirePerYear = 0.2
+    /// Pace bowlers retire a year earlier.
+    var paceRetireOffset = 1
+    /// Weak veterans (below this rating, 31+) retire more often.
+    var weakVeteranRating = 56
+    var youthIntake = 30
+    var youthGemChance = 0.08
+
+    // Form
+    var formDecay = 1
+    var formCap = 10
+
+    static let standard = CareerTuning()
+
+    func growthRange(age: Int) -> ClosedRange<Int> {
+        let band = growth.first { age <= $0[0] } ?? growth.last!
+        return band[1]...band[2]
+    }
+
+    /// Day-of-year for each league round (0-based).
+    var roundDays: [Int] {
+        leagueBlocks.flatMap { b in (0..<b[1]).map { b[0] + $0 * roundGap } }
+    }
+}
+
+/// Day-of-year → "12 Mar".
+enum CareerCalendar {
+    static let monthLengths = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+    static let monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+    static func monthDay(_ dayOfYear: Int) -> (month: Int, day: Int) {
+        var d = max(1, min(365, dayOfYear))
+        for (m, len) in monthLengths.enumerated() {
+            if d <= len { return (m, d) }
+            d -= len
+        }
+        return (11, 31)
+    }
+
+    static func label(_ dayOfYear: Int) -> String {
+        let md = monthDay(dayOfYear)
+        return "\(md.day) \(monthNames[md.month])"
+    }
+
+    static func label(_ dayOfYear: Int, year: Int) -> String { "\(label(dayOfYear)) \(year)" }
+}

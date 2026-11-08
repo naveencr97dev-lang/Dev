@@ -1,0 +1,93 @@
+{
+  "depthBat" : [
+    58,
+    76
+  ],
+  "depthBowl" : [
+    52,
+    70
+  ],
+  "depthPlayers" : 160,
+  "engineBatBoost" : 8,
+  "formCap" : 10,
+  "formDecay" : 1,
+  "growth" : [
+    [
+      20,
+      2,
+      7
+    ],
+    [
+      23,
+      1,
+      5
+    ],
+    [
+      26,
+      0,
+      3
+    ],
+    [
+      29,
+      -1,
+      1
+    ],
+    [
+      32,
+      -3,
+      0
+    ],
+    [
+      35,
+      -5,
+      -1
+    ],
+    [
+      99,
+      -7,
+      -2
+    ]
+  ],
+  "leagueBlocks" : [
+    [
+      10,
+      12
+    ],
+    [
+      125,
+      12
+    ],
+    [
+      244,
+      12
+    ]
+  ],
+  "maxOverseasSquad" : 8,
+  "maxOverseasXI" : 4,
+  "maxSquad" : 25,
+  "meetings" : 4,
+  "minSquad" : 18,
+  "paceRetireOffset" : 1,
+  "playoffDays" : [
+    316,
+    318,
+    320,
+    323
+  ],
+  "retireAge" : 35,
+  "retireBase" : 0.3,
+  "retirePerYear" : 0.2,
+  "roundGap" : 6,
+  "secondTraitChance" : 0.25,
+  "squadShape" : [
+    2,
+    6,
+    4,
+    8
+  ],
+  "startSquad" : 20,
+  "traitChance" : 0.5,
+  "weakVeteranRating" : 56,
+  "youthGemChance" : 0.08,
+  "youthIntake" : 30
+}
