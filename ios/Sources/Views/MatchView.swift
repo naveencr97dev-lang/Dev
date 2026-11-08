@@ -75,7 +75,6 @@ struct MatchView: View {
         withAnimation(.easeInOut) {
             shown = log.count
             finished = true
-            showReel = true
         }
         Haptics.success()
     }
@@ -343,6 +342,11 @@ struct MatchResultContent: View {
                     Button("🏆 Trophy ceremony") { store.finishSeason() }
                         .buttonStyle(PrimaryButtonStyle())
                 }
+                // Post-match order: scorecard, then worm, then highlights.
+                ForEach(Array(result.innings.prefix(2).enumerated()), id: \.offset) { _, inn in
+                    InningsCardView(innings: inn)
+                }
+                worm
                 if let moments = result.highlights, !moments.isEmpty {
                     VStack(alignment: .leading, spacing: DS.Space.sm) {
                         HStack {
@@ -353,11 +357,9 @@ struct MatchResultContent: View {
                             }
                         }
                         HighlightsList(moments: moments)
+                        Button { showReel = true } label: { Label("Watch highlights", systemImage: "play.fill") }
+                            .buttonStyle(PrimaryButtonStyle())
                     }
-                }
-                worm
-                ForEach(Array(result.innings.prefix(2).enumerated()), id: \.offset) { _, inn in
-                    InningsCardView(innings: inn)
                 }
             }
             .padding(DS.Space.lg)

@@ -81,7 +81,7 @@ struct SeasonView: View {
                     NextMatchCard(fixture: f, number: matchNumber(g, f)) {
                         path.append(.match(f.id))
                     } quick: {
-                        if let r = store.play(fixtureId: f.id) { path.append(.highlights(r.id)) }
+                        if let r = store.play(fixtureId: f.id) { path.append(.result(r.id)) }
                     }
                     if !g.isHumanFixture(f) {
                         Button {
@@ -166,7 +166,7 @@ struct NextMatchCard: View {
                     side(fixture.away)
                 }
                 Button("Play match ▶︎", action: play).buttonStyle(PrimaryButtonStyle())
-                Button("Skip to highlights", action: quick).font(.subheadline.weight(.semibold))
+                Button("Skip to scorecard", action: quick).font(.subheadline.weight(.semibold))
             }
         }
     }
