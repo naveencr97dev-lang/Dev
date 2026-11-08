@@ -1,0 +1,3429 @@
+[
+ {
+  "id": "sachin-tendulkar",
+  "name": "Sachin Tendulkar",
+  "role": "BAT",
+  "overseas": false,
+  "country": "IND",
+  "base": 200,
+  "pool": "Legends",
+  "rating": 86,
+  "bat": 86,
+  "bowl": 20,
+  "line": "Orange Cap 2010 · IPL title 2013",
+  "bowlType": "spin",
+  "traits": [
+   "anchor",
+   "technician",
+   "bigMatch"
+  ],
+  "slot": "open",
+  "legend": true
+ },
+ {
+  "id": "chris-gayle",
+  "name": "Chris Gayle",
+  "role": "BAT",
+  "overseas": true,
+  "country": "WI",
+  "base": 200,
+  "pool": "Legends",
+  "rating": 92,
+  "bat": 92,
+  "bowl": 25,
+  "line": "~4,965 IPL runs at SR ~148 · 175* record",
+  "bowlType": "spin",
+  "traits": [
+   "powerHitter",
+   "powerplayBlitz",
+   "flatTrackBully"
+  ],
+  "slot": "open",
+  "legend": true
+ },
+ {
+  "id": "ab-de-villiers",
+  "name": "AB de Villiers",
+  "role": "BAT",
+  "overseas": true,
+  "country": "SA",
+  "base": 200,
+  "pool": "Legends",
+  "rating": 93,
+  "bat": 93,
+  "bowl": 10,
+  "line": "~5,160 IPL runs at SR ~152 · Mr 360",
+  "bowlType": "pace",
+  "traits": [
+   "threeSixty",
+   "finisher",
+   "shortBallKing"
+  ],
+  "slot": "middle",
+  "legend": true
+ },
+ {
+  "id": "david-warner",
+  "name": "David Warner",
+  "role": "BAT",
+  "overseas": true,
+  "country": "AUS",
+  "base": 200,
+  "pool": "Legends",
+  "rating": 89,
+  "bat": 89,
+  "bowl": 5,
+  "line": "~6,560 IPL runs · 3× Orange Cap · 2016 title captain",
+  "bowlType": "pace",
+  "traits": [
+   "powerplayBlitz",
+   "paceBasher",
+   "chaseMaster"
+  ],
+  "slot": "open",
+  "legend": true
+ },
+ {
+  "id": "suresh-raina",
+  "name": "Suresh Raina",
+  "role": "BAT",
+  "overseas": false,
+  "country": "IND",
+  "base": 200,
+  "pool": "Legends",
+  "rating": 85,
+  "bat": 85,
+  "bowl": 35,
+  "line": "~5,530 IPL runs · \"Mr IPL\" · 4 titles",
+  "bowlType": "spin",
+  "traits": [
+   "spinBasher",
+   "bigMatch"
+  ],
+  "slot": "top",
+  "legend": true
+ },
+ {
+  "id": "virender-sehwag",
+  "name": "Virender Sehwag",
+  "role": "BAT",
+  "overseas": false,
+  "country": "IND",
+  "base": 150,
+  "pool": "Legends",
+  "rating": 84,
+  "bat": 84,
+  "bowl": 20,
+  "line": "IPL SR ~155 · 122 off 58 in 2014 Q2",
+  "bowlType": "spin",
+  "traits": [
+   "powerplayBlitz",
+   "flatTrackBully"
+  ],
+  "slot": "open",
+  "legend": true
+ },
+ {
+  "id": "gautam-gambhir",
+  "name": "Gautam Gambhir",
+  "role": "BAT",
+  "overseas": false,
+  "country": "IND",
+  "base": 150,
+  "pool": "Legends",
+  "rating": 80,
+  "bat": 80,
+  "bowl": 5,
+  "line": "~4,220 IPL runs · 2× title-winning captain",
+  "bowlType": "spin",
+  "traits": [
+   "anchor",
+   "bigMatch"
+  ],
+  "slot": "open",
+  "legend": true
+ },
+ {
+  "id": "shikhar-dhawan",
+  "name": "Shikhar Dhawan",
+  "role": "BAT",
+  "overseas": false,
+  "country": "IND",
+  "base": 150,
+  "pool": "Legends",
+  "rating": 82,
+  "bat": 82,
+  "bowl": 10,
+  "line": "~6,770 IPL runs · Mr Consistent",
+  "bowlType": "spin",
+  "traits": [
+   "anchor",
+   "technician"
+  ],
+  "slot": "open",
+  "legend": true
+ },
+ {
+  "id": "yuvraj-singh",
+  "name": "Yuvraj Singh",
+  "role": "BAT",
+  "overseas": false,
+  "country": "IND",
+  "base": 150,
+  "pool": "Legends",
+  "rating": 80,
+  "bat": 80,
+  "bowl": 45,
+  "line": "Two IPL hat-tricks · big-hitting left-hander",
+  "bowlType": "spin",
+  "traits": [
+   "powerHitter",
+   "spinBasher"
+  ],
+  "slot": "middle",
+  "legend": true
+ },
+ {
+  "id": "faf-du-plessis",
+  "name": "Faf du Plessis",
+  "role": "BAT",
+  "overseas": true,
+  "country": "SA",
+  "base": 150,
+  "pool": "Legends",
+  "rating": 83,
+  "bat": 83,
+  "bowl": 5,
+  "line": "~4,770 IPL runs · 86 in the 2021 Final",
+  "bowlType": "spin",
+  "traits": [
+   "anchor",
+   "technician",
+   "bigMatch"
+  ],
+  "slot": "open",
+  "legend": true
+ },
+ {
+  "id": "kevin-pietersen",
+  "name": "Kevin Pietersen",
+  "role": "BAT",
+  "overseas": true,
+  "country": "ENG",
+  "base": 150,
+  "pool": "Legends",
+  "rating": 80,
+  "bat": 80,
+  "bowl": 20,
+  "line": "Switch-hit pioneer · IPL hundred 2012",
+  "bowlType": "spin",
+  "traits": [
+   "threeSixty",
+   "paceBasher"
+  ],
+  "slot": "top",
+  "legend": true
+ },
+ {
+  "id": "brendon-mccullum",
+  "name": "Brendon McCullum",
+  "role": "BAT",
+  "overseas": true,
+  "country": "NZ",
+  "base": 150,
+  "pool": "Legends",
+  "rating": 82,
+  "bat": 82,
+  "bowl": 5,
+  "line": "158* in the very first IPL match",
+  "bowlType": "pace",
+  "traits": [
+   "powerplayBlitz",
+   "powerHitter"
+  ],
+  "slot": "open",
+  "legend": true
+ },
+ {
+  "id": "matthew-hayden",
+  "name": "Matthew Hayden",
+  "role": "BAT",
+  "overseas": true,
+  "country": "AUS",
+  "base": 150,
+  "pool": "Legends",
+  "rating": 82,
+  "bat": 82,
+  "bowl": 5,
+  "line": "Orange Cap 2009 · Mongoose bat",
+  "bowlType": "pace",
+  "traits": [
+   "powerplayBlitz",
+   "paceBasher"
+  ],
+  "slot": "open",
+  "legend": true
+ },
+ {
+  "id": "michael-hussey",
+  "name": "Michael Hussey",
+  "role": "BAT",
+  "overseas": true,
+  "country": "AUS",
+  "base": 100,
+  "pool": "Legends",
+  "rating": 79,
+  "bat": 79,
+  "bowl": 10,
+  "line": "Orange Cap 2013 · Mr Cricket",
+  "bowlType": "pace",
+  "traits": [
+   "anchor",
+   "chaseMaster",
+   "technician"
+  ],
+  "slot": "top",
+  "legend": true
+ },
+ {
+  "id": "ambati-rayudu",
+  "name": "Ambati Rayudu",
+  "role": "BAT",
+  "overseas": false,
+  "country": "IND",
+  "base": 100,
+  "pool": "Legends",
+  "rating": 77,
+  "bat": 77,
+  "bowl": 10,
+  "line": "6 IPL titles · 2018 comeback season",
+  "bowlType": "spin",
+  "traits": [
+   "spinBasher",
+   "chaseMaster"
+  ],
+  "slot": "middle",
+  "legend": true
+ },
+ {
+  "id": "robin-uthappa",
+  "name": "Robin Uthappa",
+  "role": "BAT",
+  "overseas": false,
+  "country": "IND",
+  "base": 100,
+  "pool": "Legends",
+  "rating": 78,
+  "bat": 78,
+  "bowl": 5,
+  "line": "Orange Cap 2014 · 2 titles",
+  "bowlType": "pace",
+  "traits": [
+   "powerplayBlitz",
+   "bigMatch"
+  ],
+  "slot": "open",
+  "legend": true
+ },
+ {
+  "id": "shaun-marsh",
+  "name": "Shaun Marsh",
+  "role": "BAT",
+  "overseas": true,
+  "country": "AUS",
+  "base": 150,
+  "pool": "Legends",
+  "rating": 80,
+  "bat": 80,
+  "bowl": 5,
+  "line": "Orange Cap 2008 (616 runs)",
+  "bowlType": "pace",
+  "traits": [
+   "anchor",
+   "technician"
+  ],
+  "slot": "open",
+  "legend": true
+ },
+ {
+  "id": "murali-vijay",
+  "name": "Murali Vijay",
+  "role": "BAT",
+  "overseas": false,
+  "country": "IND",
+  "base": 100,
+  "pool": "Legends",
+  "rating": 75,
+  "bat": 75,
+  "bowl": 10,
+  "line": "Two IPL hundreds · 95 in the 2011 Final",
+  "bowlType": "spin",
+  "traits": [
+   "anchor",
+   "technician"
+  ],
+  "slot": "open",
+  "legend": true
+ },
+ {
+  "id": "lendl-simmons",
+  "name": "Lendl Simmons",
+  "role": "BAT",
+  "overseas": true,
+  "country": "WI",
+  "base": 100,
+  "pool": "Legends",
+  "rating": 78,
+  "bat": 78,
+  "bowl": 20,
+  "line": "Opened for 2 title-winning seasons",
+  "bowlType": "pace",
+  "traits": [
+   "anchor",
+   "flatTrackBully"
+  ],
+  "slot": "open",
+  "legend": true
+ },
+ {
+  "id": "kane-williamson",
+  "name": "Kane Williamson",
+  "role": "BAT",
+  "overseas": true,
+  "country": "NZ",
+  "base": 150,
+  "pool": "Legends",
+  "rating": 80,
+  "bat": 80,
+  "bowl": 20,
+  "line": "Orange Cap 2018 (735 runs)",
+  "bowlType": "spin",
+  "traits": [
+   "anchor",
+   "technician",
+   "chaseMaster"
+  ],
+  "slot": "top",
+  "legend": true
+ },
+ {
+  "id": "steve-smith",
+  "name": "Steve Smith",
+  "role": "BAT",
+  "overseas": true,
+  "country": "AUS",
+  "base": 100,
+  "pool": "Legends",
+  "rating": 77,
+  "bat": 77,
+  "bowl": 15,
+  "line": "IPL hundred 2016 · captained 2017 finalists",
+  "bowlType": "spin",
+  "traits": [
+   "anchor",
+   "technician"
+  ],
+  "slot": "top",
+  "legend": true
+ },
+ {
+  "id": "virat-kohli",
+  "name": "Virat Kohli",
+  "role": "BAT",
+  "overseas": false,
+  "country": "IND",
+  "base": 200,
+  "pool": "Stars",
+  "rating": 92,
+  "bat": 92,
+  "bowl": 10,
+  "line": "~8,600 IPL runs · 973 in 2016 · 8 hundreds",
+  "bowlType": "pace",
+  "traits": [
+   "anchor",
+   "chaseMaster",
+   "bigMatch"
+  ],
+  "slot": "top",
+  "legend": false
+ },
+ {
+  "id": "rohit-sharma",
+  "name": "Rohit Sharma",
+  "role": "BAT",
+  "overseas": false,
+  "country": "IND",
+  "base": 200,
+  "pool": "Stars",
+  "rating": 86,
+  "bat": 86,
+  "bowl": 15,
+  "line": "~7,000 IPL runs · 6 titles",
+  "bowlType": "spin",
+  "traits": [
+   "powerplayBlitz",
+   "powerHitter",
+   "bigMatch"
+  ],
+  "slot": "open",
+  "legend": false
+ },
+ {
+  "id": "suryakumar-yadav",
+  "name": "Suryakumar Yadav",
+  "role": "BAT",
+  "overseas": false,
+  "country": "IND",
+  "base": 200,
+  "pool": "Stars",
+  "rating": 88,
+  "bat": 88,
+  "bowl": 10,
+  "line": "SKY · scoops and ramps all round",
+  "bowlType": "spin",
+  "traits": [
+   "threeSixty",
+   "shortBallKing"
+  ],
+  "slot": "top",
+  "legend": false
+ },
+ {
+  "id": "shubman-gill",
+  "name": "Shubman Gill",
+  "role": "BAT",
+  "overseas": false,
+  "country": "IND",
+  "base": 200,
+  "pool": "Stars",
+  "rating": 86,
+  "bat": 86,
+  "bowl": 5,
+  "line": "890 runs in 2023 · Orange Cap",
+  "bowlType": "spin",
+  "traits": [
+   "anchor",
+   "technician"
+  ],
+  "slot": "open",
+  "legend": false
+ },
+ {
+  "id": "yashasvi-jaiswal",
+  "name": "Yashasvi Jaiswal",
+  "role": "BAT",
+  "overseas": false,
+  "country": "IND",
+  "base": 150,
+  "pool": "Stars",
+  "rating": 84,
+  "bat": 84,
+  "bowl": 10,
+  "line": "13-ball fifty — IPL record",
+  "bowlType": "spin",
+  "traits": [
+   "powerplayBlitz",
+   "paceBasher"
+  ],
+  "slot": "open",
+  "legend": false
+ },
+ {
+  "id": "travis-head",
+  "name": "Travis Head",
+  "role": "BAT",
+  "overseas": true,
+  "country": "AUS",
+  "base": 200,
+  "pool": "Stars",
+  "rating": 87,
+  "bat": 87,
+  "bowl": 20,
+  "line": "Powerplay demolisher · SR ~190 in 2024",
+  "bowlType": "spin",
+  "traits": [
+   "powerplayBlitz",
+   "paceBasher",
+   "bigMatch"
+  ],
+  "slot": "open",
+  "legend": false
+ },
+ {
+  "id": "abhishek-sharma",
+  "name": "Abhishek Sharma",
+  "role": "BAT",
+  "overseas": false,
+  "country": "IND",
+  "base": 150,
+  "pool": "Stars",
+  "rating": 84,
+  "bat": 84,
+  "bowl": 42,
+  "line": "141 off 55 in 2025 · 42 sixes in 2024",
+  "bowlType": "spin",
+  "traits": [
+   "powerplayBlitz",
+   "powerHitter"
+  ],
+  "slot": "open",
+  "legend": false
+ },
+ {
+  "id": "ruturaj-gaikwad",
+  "name": "Ruturaj Gaikwad",
+  "role": "BAT",
+  "overseas": false,
+  "country": "IND",
+  "base": 150,
+  "pool": "Stars",
+  "rating": 82,
+  "bat": 82,
+  "bowl": 5,
+  "line": "Orange Cap 2021 · CSK captain",
+  "bowlType": "spin",
+  "traits": [
+   "anchor",
+   "technician"
+  ],
+  "slot": "open",
+  "legend": false
+ },
+ {
+  "id": "sai-sudharsan",
+  "name": "Sai Sudharsan",
+  "role": "BAT",
+  "overseas": false,
+  "country": "IND",
+  "base": 150,
+  "pool": "Stars",
+  "rating": 84,
+  "bat": 84,
+  "bowl": 5,
+  "line": "Orange Cap 2025",
+  "bowlType": "spin",
+  "traits": [
+   "anchor",
+   "technician"
+  ],
+  "slot": "top",
+  "legend": false
+ },
+ {
+  "id": "shreyas-iyer",
+  "name": "Shreyas Iyer",
+  "role": "BAT",
+  "overseas": false,
+  "country": "IND",
+  "base": 150,
+  "pool": "Stars",
+  "rating": 83,
+  "bat": 83,
+  "bowl": 10,
+  "line": "2024 title captain · 2025 finalist",
+  "bowlType": "spin",
+  "traits": [
+   "spinBasher",
+   "chaseMaster",
+   "bigMatch"
+  ],
+  "slot": "top",
+  "legend": false
+ },
+ {
+  "id": "tilak-varma",
+  "name": "Tilak Varma",
+  "role": "BAT",
+  "overseas": false,
+  "country": "IND",
+  "base": 150,
+  "pool": "Stars",
+  "rating": 80,
+  "bat": 80,
+  "bowl": 25,
+  "line": "Calm left-hander in the middle",
+  "bowlType": "spin",
+  "traits": [
+   "chaseMaster",
+   "spinBasher"
+  ],
+  "slot": "middle",
+  "legend": false
+ },
+ {
+  "id": "rinku-singh",
+  "name": "Rinku Singh",
+  "role": "BAT",
+  "overseas": false,
+  "country": "IND",
+  "base": 150,
+  "pool": "Stars",
+  "rating": 80,
+  "bat": 80,
+  "bowl": 5,
+  "line": "Five sixes in the last over vs GT",
+  "bowlType": "spin",
+  "traits": [
+   "finisher",
+   "chaseMaster"
+  ],
+  "slot": "finish",
+  "legend": false
+ },
+ {
+  "id": "shivam-dube",
+  "name": "Shivam Dube",
+  "role": "BAT",
+  "overseas": false,
+  "country": "IND",
+  "base": 100,
+  "pool": "Stars",
+  "rating": 79,
+  "bat": 79,
+  "bowl": 35,
+  "line": "Spin-wrecking six hitter",
+  "bowlType": "pace",
+  "traits": [
+   "spinBasher",
+   "powerHitter"
+  ],
+  "slot": "middle",
+  "legend": false
+ },
+ {
+  "id": "david-miller",
+  "name": "David Miller",
+  "role": "BAT",
+  "overseas": true,
+  "country": "SA",
+  "base": 150,
+  "pool": "Stars",
+  "rating": 82,
+  "bat": 82,
+  "bowl": 5,
+  "line": "Killer Miller · 2022 champion",
+  "bowlType": "spin",
+  "traits": [
+   "finisher",
+   "chaseMaster"
+  ],
+  "slot": "finish",
+  "legend": false
+ },
+ {
+  "id": "tim-david",
+  "name": "Tim David",
+  "role": "BAT",
+  "overseas": true,
+  "country": "AUS",
+  "base": 150,
+  "pool": "Stars",
+  "rating": 80,
+  "bat": 80,
+  "bowl": 15,
+  "line": "Death-overs six machine",
+  "bowlType": "spin",
+  "traits": [
+   "finisher",
+   "powerHitter"
+  ],
+  "slot": "finish",
+  "legend": false
+ },
+ {
+  "id": "shimron-hetmyer",
+  "name": "Shimron Hetmyer",
+  "role": "BAT",
+  "overseas": true,
+  "country": "WI",
+  "base": 100,
+  "pool": "Stars",
+  "rating": 78,
+  "bat": 78,
+  "bowl": 5,
+  "line": "Left-handed finisher",
+  "bowlType": "spin",
+  "traits": [
+   "finisher",
+   "powerHitter"
+  ],
+  "slot": "finish",
+  "legend": false
+ },
+ {
+  "id": "rajat-patidar",
+  "name": "Rajat Patidar",
+  "role": "BAT",
+  "overseas": false,
+  "country": "IND",
+  "base": 100,
+  "pool": "Stars",
+  "rating": 79,
+  "bat": 79,
+  "bowl": 5,
+  "line": "2025 title-winning captain · hundred in an Eliminator",
+  "bowlType": "spin",
+  "traits": [
+   "spinBasher",
+   "bigMatch"
+  ],
+  "slot": "top",
+  "legend": false
+ },
+ {
+  "id": "priyansh-arya",
+  "name": "Priyansh Arya",
+  "role": "BAT",
+  "overseas": false,
+  "country": "IND",
+  "base": 100,
+  "pool": "Stars",
+  "rating": 77,
+  "bat": 77,
+  "bowl": 5,
+  "line": "39-ball hundred in 2025",
+  "bowlType": "spin",
+  "traits": [
+   "powerplayBlitz"
+  ],
+  "slot": "open",
+  "legend": false
+ },
+ {
+  "id": "vaibhav-sooryavanshi",
+  "name": "Vaibhav Sooryavanshi",
+  "role": "BAT",
+  "overseas": false,
+  "country": "IND",
+  "base": 100,
+  "pool": "Stars",
+  "rating": 76,
+  "bat": 76,
+  "bowl": 5,
+  "line": "35-ball hundred at 14",
+  "bowlType": "spin",
+  "traits": [
+   "powerplayBlitz",
+   "powerHitter"
+  ],
+  "slot": "open",
+  "legend": false
+ },
+ {
+  "id": "tristan-stubbs",
+  "name": "Tristan Stubbs",
+  "role": "BAT",
+  "overseas": true,
+  "country": "SA",
+  "base": 100,
+  "pool": "Stars",
+  "rating": 78,
+  "bat": 78,
+  "bowl": 15,
+  "line": "Death hitter with a reverse ramp",
+  "bowlType": "spin",
+  "traits": [
+   "finisher",
+   "spinBasher"
+  ],
+  "slot": "finish",
+  "legend": false
+ },
+ {
+  "id": "harry-brook",
+  "name": "Harry Brook",
+  "role": "BAT",
+  "overseas": true,
+  "country": "ENG",
+  "base": 100,
+  "pool": "Stars",
+  "rating": 79,
+  "bat": 79,
+  "bowl": 10,
+  "line": "IPL hundred 2023",
+  "bowlType": "spin",
+  "traits": [
+   "paceBasher",
+   "spinBasher"
+  ],
+  "slot": "middle",
+  "legend": false
+ },
+ {
+  "id": "jake-fraser-mcgurk",
+  "name": "Jake Fraser-McGurk",
+  "role": "BAT",
+  "overseas": true,
+  "country": "AUS",
+  "base": 100,
+  "pool": "Stars",
+  "rating": 78,
+  "bat": 78,
+  "bowl": 5,
+  "line": "15-ball fifty in 2024",
+  "bowlType": "spin",
+  "traits": [
+   "powerplayBlitz",
+   "powerHitter",
+   "flatTrackBully"
+  ],
+  "slot": "open",
+  "legend": false
+ },
+ {
+  "id": "devdutt-padikkal",
+  "name": "Devdutt Padikkal",
+  "role": "BAT",
+  "overseas": false,
+  "country": "IND",
+  "base": 75,
+  "pool": "Stars",
+  "rating": 74,
+  "bat": 74,
+  "bowl": 5,
+  "line": "Elegant left-handed opener",
+  "bowlType": "spin",
+  "traits": [
+   "anchor"
+  ],
+  "slot": "top",
+  "legend": false
+ },
+ {
+  "id": "ajinkya-rahane",
+  "name": "Ajinkya Rahane",
+  "role": "BAT",
+  "overseas": false,
+  "country": "IND",
+  "base": 100,
+  "pool": "Stars",
+  "rating": 75,
+  "bat": 75,
+  "bowl": 5,
+  "line": "IPL hundreds in two eras",
+  "bowlType": "spin",
+  "traits": [
+   "technician",
+   "anchor"
+  ],
+  "slot": "top",
+  "legend": false
+ },
+ {
+  "id": "dewald-brevis",
+  "name": "Dewald Brevis",
+  "role": "BAT",
+  "overseas": true,
+  "country": "SA",
+  "base": 100,
+  "pool": "Stars",
+  "rating": 76,
+  "bat": 76,
+  "bowl": 20,
+  "line": "Baby AB",
+  "bowlType": "spin",
+  "traits": [
+   "powerHitter",
+   "spinBasher"
+  ],
+  "slot": "middle",
+  "legend": false
+ },
+ {
+  "id": "ayush-badoni",
+  "name": "Ayush Badoni",
+  "role": "BAT",
+  "overseas": false,
+  "country": "IND",
+  "base": 75,
+  "pool": "Stars",
+  "rating": 72,
+  "bat": 72,
+  "bowl": 20,
+  "line": "Unflappable lower-middle order",
+  "bowlType": "spin",
+  "traits": [
+   "finisher"
+  ],
+  "slot": "finish",
+  "legend": false
+ },
+ {
+  "id": "shashank-singh",
+  "name": "Shashank Singh",
+  "role": "BAT",
+  "overseas": false,
+  "country": "IND",
+  "base": 100,
+  "pool": "Stars",
+  "rating": 75,
+  "bat": 75,
+  "bowl": 10,
+  "line": "Chased 262 for PBKS",
+  "bowlType": "pace",
+  "traits": [
+   "finisher",
+   "chaseMaster"
+  ],
+  "slot": "finish",
+  "legend": false
+ },
+ {
+  "id": "ashutosh-sharma",
+  "name": "Ashutosh Sharma",
+  "role": "BAT",
+  "overseas": false,
+  "country": "IND",
+  "base": 75,
+  "pool": "Stars",
+  "rating": 74,
+  "bat": 74,
+  "bowl": 5,
+  "line": "Last-over heists",
+  "bowlType": "pace",
+  "traits": [
+   "finisher",
+   "powerHitter"
+  ],
+  "slot": "finish",
+  "legend": false
+ },
+ {
+  "id": "nehal-wadhera",
+  "name": "Nehal Wadhera",
+  "role": "BAT",
+  "overseas": false,
+  "country": "IND",
+  "base": 75,
+  "pool": "Stars",
+  "rating": 72,
+  "bat": 72,
+  "bowl": 10,
+  "line": "Left-handed spin hitter",
+  "bowlType": "spin",
+  "traits": [
+   "spinBasher"
+  ],
+  "slot": "middle",
+  "legend": false
+ },
+ {
+  "id": "aiden-markram",
+  "name": "Aiden Markram",
+  "role": "BAT",
+  "overseas": true,
+  "country": "SA",
+  "base": 100,
+  "pool": "Stars",
+  "rating": 78,
+  "bat": 78,
+  "bowl": 42,
+  "line": "Captained SRH to the 2024 Final",
+  "bowlType": "spin",
+  "traits": [
+   "anchor",
+   "technician"
+  ],
+  "slot": "top",
+  "legend": false
+ },
+ {
+  "id": "rovman-powell",
+  "name": "Rovman Powell",
+  "role": "BAT",
+  "overseas": true,
+  "country": "WI",
+  "base": 100,
+  "pool": "Stars",
+  "rating": 75,
+  "bat": 75,
+  "bowl": 20,
+  "line": "Huge Caribbean hitter",
+  "bowlType": "pace",
+  "traits": [
+   "powerHitter",
+   "flatTrackBully"
+  ],
+  "slot": "finish",
+  "legend": false
+ },
+ {
+  "id": "finn-allen",
+  "name": "Finn Allen",
+  "role": "BAT",
+  "overseas": true,
+  "country": "NZ",
+  "base": 100,
+  "pool": "Stars",
+  "rating": 76,
+  "bat": 76,
+  "bowl": 5,
+  "line": "Kiwi powerplay blitzer",
+  "bowlType": "spin",
+  "traits": [
+   "powerplayBlitz",
+   "powerHitter"
+  ],
+  "slot": "open",
+  "legend": false
+ },
+ {
+  "id": "daryl-mitchell",
+  "name": "Daryl Mitchell",
+  "role": "BAT",
+  "overseas": true,
+  "country": "NZ",
+  "base": 100,
+  "pool": "Stars",
+  "rating": 77,
+  "bat": 77,
+  "bowl": 30,
+  "line": "Sweeps spinners to distraction",
+  "bowlType": "pace",
+  "traits": [
+   "spinBasher",
+   "anchor"
+  ],
+  "slot": "middle",
+  "legend": false
+ },
+ {
+  "id": "angkrish-raghuvanshi",
+  "name": "Angkrish Raghuvanshi",
+  "role": "BAT",
+  "overseas": false,
+  "country": "IND",
+  "base": 75,
+  "pool": "Stars",
+  "rating": 72,
+  "bat": 72,
+  "bowl": 5,
+  "line": "Young KKR top order",
+  "bowlType": "spin",
+  "traits": [
+   "anchor"
+  ],
+  "slot": "top",
+  "legend": false
+ },
+ {
+  "id": "nitish-rana",
+  "name": "Nitish Rana",
+  "role": "BAT",
+  "overseas": false,
+  "country": "IND",
+  "base": 75,
+  "pool": "Stars",
+  "rating": 74,
+  "bat": 74,
+  "bowl": 30,
+  "line": "Left-handed spin hitter",
+  "bowlType": "spin",
+  "traits": [
+   "spinBasher"
+  ],
+  "slot": "top",
+  "legend": false
+ },
+ {
+  "id": "ms-dhoni",
+  "name": "MS Dhoni",
+  "role": "WK",
+  "overseas": false,
+  "country": "IND",
+  "base": 200,
+  "pool": "Legends",
+  "rating": 86,
+  "bat": 86,
+  "bowl": 5,
+  "line": "5× IPL champion captain · helicopter shot",
+  "bowlType": "pace",
+  "traits": [
+   "finisher",
+   "chaseMaster",
+   "bigMatch"
+  ],
+  "slot": "finish",
+  "legend": true
+ },
+ {
+  "id": "adam-gilchrist",
+  "name": "Adam Gilchrist",
+  "role": "WK",
+  "overseas": true,
+  "country": "AUS",
+  "base": 150,
+  "pool": "Legends",
+  "rating": 82,
+  "bat": 82,
+  "bowl": 5,
+  "line": "2009 title captain · 42-ball hundred in 2008",
+  "bowlType": "pace",
+  "traits": [
+   "powerplayBlitz",
+   "paceBasher",
+   "bigMatch"
+  ],
+  "slot": "open",
+  "legend": true
+ },
+ {
+  "id": "dinesh-karthik",
+  "name": "Dinesh Karthik",
+  "role": "WK",
+  "overseas": false,
+  "country": "IND",
+  "base": 100,
+  "pool": "Legends",
+  "rating": 77,
+  "bat": 77,
+  "bowl": 5,
+  "line": "DK the finisher · 17 IPL seasons",
+  "bowlType": "pace",
+  "traits": [
+   "finisher",
+   "threeSixty"
+  ],
+  "slot": "finish",
+  "legend": true
+ },
+ {
+  "id": "kumar-sangakkara",
+  "name": "Kumar Sangakkara",
+  "role": "WK",
+  "overseas": true,
+  "country": "SL",
+  "base": 100,
+  "pool": "Legends",
+  "rating": 77,
+  "bat": 77,
+  "bowl": 5,
+  "line": "Elegant left-hander",
+  "bowlType": "pace",
+  "traits": [
+   "anchor",
+   "technician"
+  ],
+  "slot": "top",
+  "legend": true
+ },
+ {
+  "id": "parthiv-patel",
+  "name": "Parthiv Patel",
+  "role": "WK",
+  "overseas": false,
+  "country": "IND",
+  "base": 75,
+  "pool": "Legends",
+  "rating": 72,
+  "bat": 72,
+  "bowl": 5,
+  "line": "3 IPL titles",
+  "bowlType": "pace",
+  "traits": [
+   "anchor"
+  ],
+  "slot": "open",
+  "legend": true
+ },
+ {
+  "id": "wriddhiman-saha",
+  "name": "Wriddhiman Saha",
+  "role": "WK",
+  "overseas": false,
+  "country": "IND",
+  "base": 75,
+  "pool": "Legends",
+  "rating": 72,
+  "bat": 72,
+  "bowl": 5,
+  "line": "Hundred in the 2014 Final",
+  "bowlType": "pace",
+  "traits": [
+   "technician"
+  ],
+  "slot": "open",
+  "legend": true
+ },
+ {
+  "id": "jos-buttler",
+  "name": "Jos Buttler",
+  "role": "WK",
+  "overseas": true,
+  "country": "ENG",
+  "base": 200,
+  "pool": "Stars",
+  "rating": 90,
+  "bat": 90,
+  "bowl": 5,
+  "line": "863 runs and 4 hundreds in 2022",
+  "bowlType": "pace",
+  "traits": [
+   "powerplayBlitz",
+   "chaseMaster",
+   "bigMatch"
+  ],
+  "slot": "open",
+  "legend": false
+ },
+ {
+  "id": "kl-rahul",
+  "name": "KL Rahul",
+  "role": "WK",
+  "overseas": false,
+  "country": "IND",
+  "base": 200,
+  "pool": "Stars",
+  "rating": 87,
+  "bat": 87,
+  "bowl": 5,
+  "line": "4 IPL seasons of 600+ runs",
+  "bowlType": "pace",
+  "traits": [
+   "anchor",
+   "technician"
+  ],
+  "slot": "open",
+  "legend": false
+ },
+ {
+  "id": "rishabh-pant",
+  "name": "Rishabh Pant",
+  "role": "WK",
+  "overseas": false,
+  "country": "IND",
+  "base": 150,
+  "pool": "Stars",
+  "rating": 84,
+  "bat": 84,
+  "bowl": 5,
+  "line": "Fearless left-hander · one-handed sixes",
+  "bowlType": "pace",
+  "traits": [
+   "spinBasher",
+   "powerHitter"
+  ],
+  "slot": "middle",
+  "legend": false
+ },
+ {
+  "id": "sanju-samson",
+  "name": "Sanju Samson",
+  "role": "WK",
+  "overseas": false,
+  "country": "IND",
+  "base": 150,
+  "pool": "Stars",
+  "rating": 83,
+  "bat": 83,
+  "bowl": 5,
+  "line": "Stylish six-hitter · RR captain",
+  "bowlType": "pace",
+  "traits": [
+   "spinBasher",
+   "powerHitter"
+  ],
+  "slot": "top",
+  "legend": false
+ },
+ {
+  "id": "heinrich-klaasen",
+  "name": "Heinrich Klaasen",
+  "role": "WK",
+  "overseas": true,
+  "country": "SA",
+  "base": 200,
+  "pool": "Stars",
+  "rating": 88,
+  "bat": 88,
+  "bowl": 5,
+  "line": "Destroyer of spin · SR ~170",
+  "bowlType": "pace",
+  "traits": [
+   "spinBasher",
+   "powerHitter"
+  ],
+  "slot": "middle",
+  "legend": false
+ },
+ {
+  "id": "nicholas-pooran",
+  "name": "Nicholas Pooran",
+  "role": "WK",
+  "overseas": true,
+  "country": "WI",
+  "base": 200,
+  "pool": "Stars",
+  "rating": 86,
+  "bat": 86,
+  "bowl": 5,
+  "line": "Most sixes in 2025",
+  "bowlType": "pace",
+  "traits": [
+   "powerHitter",
+   "spinBasher",
+   "flatTrackBully"
+  ],
+  "slot": "finish",
+  "legend": false
+ },
+ {
+  "id": "quinton-de-kock",
+  "name": "Quinton de Kock",
+  "role": "WK",
+  "overseas": true,
+  "country": "SA",
+  "base": 150,
+  "pool": "Stars",
+  "rating": 82,
+  "bat": 82,
+  "bowl": 5,
+  "line": "140* in 2022 — record stand",
+  "bowlType": "pace",
+  "traits": [
+   "powerplayBlitz",
+   "paceBasher"
+  ],
+  "slot": "open",
+  "legend": false
+ },
+ {
+  "id": "ishan-kishan",
+  "name": "Ishan Kishan",
+  "role": "WK",
+  "overseas": false,
+  "country": "IND",
+  "base": 150,
+  "pool": "Stars",
+  "rating": 80,
+  "bat": 80,
+  "bowl": 5,
+  "line": "Left-handed opener · IPL hundred 2025",
+  "bowlType": "pace",
+  "traits": [
+   "powerplayBlitz"
+  ],
+  "slot": "open",
+  "legend": false
+ },
+ {
+  "id": "phil-salt",
+  "name": "Phil Salt",
+  "role": "WK",
+  "overseas": true,
+  "country": "ENG",
+  "base": 150,
+  "pool": "Stars",
+  "rating": 84,
+  "bat": 84,
+  "bowl": 5,
+  "line": "2025 champion opener",
+  "bowlType": "pace",
+  "traits": [
+   "powerplayBlitz",
+   "paceBasher"
+  ],
+  "slot": "open",
+  "legend": false
+ },
+ {
+  "id": "prabhsimran-singh",
+  "name": "Prabhsimran Singh",
+  "role": "WK",
+  "overseas": false,
+  "country": "IND",
+  "base": 100,
+  "pool": "Stars",
+  "rating": 77,
+  "bat": 77,
+  "bowl": 5,
+  "line": "Attacking PBKS opener",
+  "bowlType": "pace",
+  "traits": [
+   "powerplayBlitz"
+  ],
+  "slot": "open",
+  "legend": false
+ },
+ {
+  "id": "jitesh-sharma",
+  "name": "Jitesh Sharma",
+  "role": "WK",
+  "overseas": false,
+  "country": "IND",
+  "base": 75,
+  "pool": "Stars",
+  "rating": 74,
+  "bat": 74,
+  "bowl": 5,
+  "line": "85* to seal a top-2 finish in 2025",
+  "bowlType": "pace",
+  "traits": [
+   "finisher"
+  ],
+  "slot": "finish",
+  "legend": false
+ },
+ {
+  "id": "dhruv-jurel",
+  "name": "Dhruv Jurel",
+  "role": "WK",
+  "overseas": false,
+  "country": "IND",
+  "base": 100,
+  "pool": "Stars",
+  "rating": 75,
+  "bat": 75,
+  "bowl": 5,
+  "line": "Calm lower-order hitter",
+  "bowlType": "pace",
+  "traits": [
+   "finisher",
+   "technician"
+  ],
+  "slot": "finish",
+  "legend": false
+ },
+ {
+  "id": "ryan-rickelton",
+  "name": "Ryan Rickelton",
+  "role": "WK",
+  "overseas": true,
+  "country": "SA",
+  "base": 100,
+  "pool": "Stars",
+  "rating": 76,
+  "bat": 76,
+  "bowl": 5,
+  "line": "Left-handed MI opener",
+  "bowlType": "pace",
+  "traits": [
+   "powerplayBlitz"
+  ],
+  "slot": "open",
+  "legend": false
+ },
+ {
+  "id": "devon-conway",
+  "name": "Devon Conway",
+  "role": "WK",
+  "overseas": true,
+  "country": "NZ",
+  "base": 100,
+  "pool": "Stars",
+  "rating": 79,
+  "bat": 79,
+  "bowl": 5,
+  "line": "CSK title-winning opener 2023",
+  "bowlType": "pace",
+  "traits": [
+   "anchor",
+   "technician"
+  ],
+  "slot": "open",
+  "legend": false
+ },
+ {
+  "id": "josh-inglis",
+  "name": "Josh Inglis",
+  "role": "WK",
+  "overseas": true,
+  "country": "AUS",
+  "base": 100,
+  "pool": "Stars",
+  "rating": 76,
+  "bat": 76,
+  "bowl": 5,
+  "line": "Sweeps and reverse-sweeps",
+  "bowlType": "pace",
+  "traits": [
+   "spinBasher"
+  ],
+  "slot": "middle",
+  "legend": false
+ },
+ {
+  "id": "andre-russell",
+  "name": "Andre Russell",
+  "role": "AR",
+  "overseas": true,
+  "country": "WI",
+  "base": 200,
+  "pool": "Legends",
+  "rating": 85,
+  "bat": 84,
+  "bowl": 70,
+  "line": "SR ~175 · 2× MVP",
+  "bowlType": "pace",
+  "traits": [
+   "finisher",
+   "powerHitter",
+   "wicketTaker"
+  ],
+  "slot": "finish",
+  "legend": true
+ },
+ {
+  "id": "kieron-pollard",
+  "name": "Kieron Pollard",
+  "role": "AR",
+  "overseas": true,
+  "country": "WI",
+  "base": 100,
+  "pool": "Legends",
+  "rating": 79,
+  "bat": 80,
+  "bowl": 60,
+  "line": "5 IPL titles · death-overs giant",
+  "bowlType": "pace",
+  "traits": [
+   "finisher",
+   "powerHitter",
+   "bigMatch"
+  ],
+  "slot": "finish",
+  "legend": true
+ },
+ {
+  "id": "shane-watson",
+  "name": "Shane Watson",
+  "role": "AR",
+  "overseas": true,
+  "country": "AUS",
+  "base": 200,
+  "pool": "Legends",
+  "rating": 85,
+  "bat": 84,
+  "bowl": 70,
+  "line": "117* in the 2018 Final · 2008 MVP",
+  "bowlType": "pace",
+  "traits": [
+   "powerplayBlitz",
+   "bigMatch"
+  ],
+  "slot": "open",
+  "legend": true
+ },
+ {
+  "id": "jacques-kallis",
+  "name": "Jacques Kallis",
+  "role": "AR",
+  "overseas": true,
+  "country": "SA",
+  "base": 150,
+  "pool": "Legends",
+  "rating": 81,
+  "bat": 80,
+  "bowl": 66,
+  "line": "2 titles with KKR",
+  "bowlType": "pace",
+  "traits": [
+   "anchor",
+   "technician",
+   "economical"
+  ],
+  "slot": "top",
+  "legend": true
+ },
+ {
+  "id": "dwayne-bravo",
+  "name": "Dwayne Bravo",
+  "role": "AR",
+  "overseas": true,
+  "country": "WI",
+  "base": 150,
+  "pool": "Legends",
+  "rating": 81,
+  "bat": 66,
+  "bowl": 80,
+  "line": "2× Purple Cap · 32 wkts in 2013",
+  "bowlType": "pace",
+  "traits": [
+   "deathSpecialist",
+   "slowerBallMaster"
+  ],
+  "slot": "finish",
+  "legend": true
+ },
+ {
+  "id": "yusuf-pathan",
+  "name": "Yusuf Pathan",
+  "role": "AR",
+  "overseas": false,
+  "country": "IND",
+  "base": 100,
+  "pool": "Legends",
+  "rating": 75,
+  "bat": 79,
+  "bowl": 50,
+  "line": "37-ball hundred in 2010",
+  "bowlType": "spin",
+  "traits": [
+   "powerHitter",
+   "finisher"
+  ],
+  "slot": "finish",
+  "legend": true
+ },
+ {
+  "id": "irfan-pathan",
+  "name": "Irfan Pathan",
+  "role": "AR",
+  "overseas": false,
+  "country": "IND",
+  "base": 75,
+  "pool": "Legends",
+  "rating": 73,
+  "bat": 62,
+  "bowl": 70,
+  "line": "Left-arm swing",
+  "bowlType": "pace",
+  "traits": [
+   "newBallSwing"
+  ],
+  "slot": "middle",
+  "legend": true
+ },
+ {
+  "id": "ben-stokes",
+  "name": "Ben Stokes",
+  "role": "AR",
+  "overseas": true,
+  "country": "ENG",
+  "base": 150,
+  "pool": "Legends",
+  "rating": 80,
+  "bat": 78,
+  "bowl": 68,
+  "line": "2017 MVP · two IPL hundreds",
+  "bowlType": "pace",
+  "traits": [
+   "bigMatch",
+   "chaseMaster",
+   "bounceMerchant"
+  ],
+  "slot": "middle",
+  "legend": true
+ },
+ {
+  "id": "glenn-maxwell",
+  "name": "Glenn Maxwell",
+  "role": "AR",
+  "overseas": true,
+  "country": "AUS",
+  "base": 100,
+  "pool": "Legends",
+  "rating": 78,
+  "bat": 80,
+  "bowl": 58,
+  "line": "The Big Show · switch hits",
+  "bowlType": "spin",
+  "traits": [
+   "threeSixty",
+   "powerHitter"
+  ],
+  "slot": "middle",
+  "legend": true
+ },
+ {
+  "id": "shakib-al-hasan",
+  "name": "Shakib Al Hasan",
+  "role": "AR",
+  "overseas": true,
+  "country": "BAN",
+  "base": 150,
+  "pool": "Legends",
+  "rating": 80,
+  "bat": 72,
+  "bowl": 76,
+  "line": "2 titles with KKR",
+  "bowlType": "spin",
+  "traits": [
+   "economical",
+   "middleOversBoss"
+  ],
+  "slot": "middle",
+  "legend": true
+ },
+ {
+  "id": "moeen-ali",
+  "name": "Moeen Ali",
+  "role": "AR",
+  "overseas": true,
+  "country": "ENG",
+  "base": 100,
+  "pool": "Legends",
+  "rating": 76,
+  "bat": 72,
+  "bowl": 68,
+  "line": "2021 champion",
+  "bowlType": "spin",
+  "traits": [
+   "spinBasher",
+   "turnerTerror"
+  ],
+  "slot": "top",
+  "legend": true
+ },
+ {
+  "id": "sunil-narine",
+  "name": "Sunil Narine",
+  "role": "AR",
+  "overseas": true,
+  "country": "WI",
+  "base": 200,
+  "pool": "Stars",
+  "rating": 89,
+  "bat": 76,
+  "bowl": 88,
+  "line": "3× MVP · 180+ IPL wickets",
+  "bowlType": "spin",
+  "traits": [
+   "powerplayBlitz",
+   "mysterySpin",
+   "economical"
+  ],
+  "slot": "open",
+  "legend": false
+ },
+ {
+  "id": "ravindra-jadeja",
+  "name": "Ravindra Jadeja",
+  "role": "AR",
+  "overseas": false,
+  "country": "IND",
+  "base": 150,
+  "pool": "Stars",
+  "rating": 83,
+  "bat": 74,
+  "bowl": 80,
+  "line": "Won the 2023 Final off the last 2 balls",
+  "bowlType": "spin",
+  "traits": [
+   "economical",
+   "finisher",
+   "turnerTerror"
+  ],
+  "slot": "finish",
+  "legend": false
+ },
+ {
+  "id": "hardik-pandya",
+  "name": "Hardik Pandya",
+  "role": "AR",
+  "overseas": false,
+  "country": "IND",
+  "base": 200,
+  "pool": "Stars",
+  "rating": 85,
+  "bat": 82,
+  "bowl": 74,
+  "line": "2022 title captain",
+  "bowlType": "pace",
+  "traits": [
+   "finisher",
+   "bounceMerchant",
+   "bigMatch"
+  ],
+  "slot": "finish",
+  "legend": false
+ },
+ {
+  "id": "axar-patel",
+  "name": "Axar Patel",
+  "role": "AR",
+  "overseas": false,
+  "country": "IND",
+  "base": 150,
+  "pool": "Stars",
+  "rating": 83,
+  "bat": 72,
+  "bowl": 80,
+  "line": "Left-arm spin, economy ~7.3",
+  "bowlType": "spin",
+  "traits": [
+   "economical",
+   "middleOversBoss"
+  ],
+  "slot": "middle",
+  "legend": false
+ },
+ {
+  "id": "krunal-pandya",
+  "name": "Krunal Pandya",
+  "role": "AR",
+  "overseas": false,
+  "country": "IND",
+  "base": 100,
+  "pool": "Stars",
+  "rating": 75,
+  "bat": 66,
+  "bowl": 72,
+  "line": "Player of the Match, 2025 Final",
+  "bowlType": "spin",
+  "traits": [
+   "economical",
+   "bigMatch"
+  ],
+  "slot": "middle",
+  "legend": false
+ },
+ {
+  "id": "washington-sundar",
+  "name": "Washington Sundar",
+  "role": "AR",
+  "overseas": false,
+  "country": "IND",
+  "base": 100,
+  "pool": "Stars",
+  "rating": 76,
+  "bat": 64,
+  "bowl": 74,
+  "line": "Powerplay off-spin",
+  "bowlType": "spin",
+  "traits": [
+   "economical"
+  ],
+  "slot": "middle",
+  "legend": false
+ },
+ {
+  "id": "marcus-stoinis",
+  "name": "Marcus Stoinis",
+  "role": "AR",
+  "overseas": true,
+  "country": "AUS",
+  "base": 100,
+  "pool": "Stars",
+  "rating": 77,
+  "bat": 78,
+  "bowl": 58,
+  "line": "124* chasing 211",
+  "bowlType": "pace",
+  "traits": [
+   "finisher",
+   "powerHitter"
+  ],
+  "slot": "finish",
+  "legend": false
+ },
+ {
+  "id": "sam-curran",
+  "name": "Sam Curran",
+  "role": "AR",
+  "overseas": true,
+  "country": "ENG",
+  "base": 100,
+  "pool": "Stars",
+  "rating": 78,
+  "bat": 70,
+  "bowl": 74,
+  "line": "Left-arm swing",
+  "bowlType": "pace",
+  "traits": [
+   "newBallSwing",
+   "bigMatch"
+  ],
+  "slot": "middle",
+  "legend": false
+ },
+ {
+  "id": "liam-livingstone",
+  "name": "Liam Livingstone",
+  "role": "AR",
+  "overseas": true,
+  "country": "ENG",
+  "base": 100,
+  "pool": "Stars",
+  "rating": 76,
+  "bat": 78,
+  "bowl": 56,
+  "line": "117-metre six",
+  "bowlType": "spin",
+  "traits": [
+   "powerHitter",
+   "spinBasher"
+  ],
+  "slot": "middle",
+  "legend": false
+ },
+ {
+  "id": "mitchell-marsh",
+  "name": "Mitchell Marsh",
+  "role": "AR",
+  "overseas": true,
+  "country": "AUS",
+  "base": 100,
+  "pool": "Stars",
+  "rating": 79,
+  "bat": 80,
+  "bowl": 60,
+  "line": "Six-hitting top order",
+  "bowlType": "pace",
+  "traits": [
+   "paceBasher",
+   "powerHitter"
+  ],
+  "slot": "top",
+  "legend": false
+ },
+ {
+  "id": "cameron-green",
+  "name": "Cameron Green",
+  "role": "AR",
+  "overseas": true,
+  "country": "AUS",
+  "base": 100,
+  "pool": "Stars",
+  "rating": 79,
+  "bat": 77,
+  "bowl": 66,
+  "line": "Hundred for MI 2023",
+  "bowlType": "pace",
+  "traits": [
+   "paceBasher",
+   "bounceMerchant"
+  ],
+  "slot": "top",
+  "legend": false
+ },
+ {
+  "id": "rachin-ravindra",
+  "name": "Rachin Ravindra",
+  "role": "AR",
+  "overseas": true,
+  "country": "NZ",
+  "base": 100,
+  "pool": "Stars",
+  "rating": 76,
+  "bat": 76,
+  "bowl": 58,
+  "line": "Left-handed opener, left-arm spin",
+  "bowlType": "spin",
+  "traits": [
+   "technician",
+   "powerplayBlitz"
+  ],
+  "slot": "open",
+  "legend": false
+ },
+ {
+  "id": "will-jacks",
+  "name": "Will Jacks",
+  "role": "AR",
+  "overseas": true,
+  "country": "ENG",
+  "base": 100,
+  "pool": "Stars",
+  "rating": 76,
+  "bat": 77,
+  "bowl": 58,
+  "line": "41-ball hundred in 2024",
+  "bowlType": "spin",
+  "traits": [
+   "powerplayBlitz",
+   "powerHitter"
+  ],
+  "slot": "open",
+  "legend": false
+ },
+ {
+  "id": "nitish-kumar-reddy",
+  "name": "Nitish Kumar Reddy",
+  "role": "AR",
+  "overseas": false,
+  "country": "IND",
+  "base": 75,
+  "pool": "Stars",
+  "rating": 73,
+  "bat": 72,
+  "bowl": 58,
+  "line": "Emerging Player 2024",
+  "bowlType": "pace",
+  "traits": [
+   "paceBasher"
+  ],
+  "slot": "middle",
+  "legend": false
+ },
+ {
+  "id": "marco-jansen",
+  "name": "Marco Jansen",
+  "role": "AR",
+  "overseas": true,
+  "country": "SA",
+  "base": 100,
+  "pool": "Stars",
+  "rating": 76,
+  "bat": 60,
+  "bowl": 76,
+  "line": "Tall left-arm swing and bounce",
+  "bowlType": "pace",
+  "traits": [
+   "newBallSwing",
+   "bounceMerchant"
+  ],
+  "slot": "lower",
+  "legend": false
+ },
+ {
+  "id": "azmatullah-omarzai",
+  "name": "Azmatullah Omarzai",
+  "role": "AR",
+  "overseas": true,
+  "country": "AFG",
+  "base": 100,
+  "pool": "Stars",
+  "rating": 75,
+  "bat": 64,
+  "bowl": 72,
+  "line": "Seam-bowling all-rounder",
+  "bowlType": "pace",
+  "traits": [
+   "newBallSwing"
+  ],
+  "slot": "middle",
+  "legend": false
+ },
+ {
+  "id": "mitchell-santner",
+  "name": "Mitchell Santner",
+  "role": "AR",
+  "overseas": true,
+  "country": "NZ",
+  "base": 100,
+  "pool": "Stars",
+  "rating": 77,
+  "bat": 58,
+  "bowl": 78,
+  "line": "Left-arm spin control",
+  "bowlType": "spin",
+  "traits": [
+   "economical",
+   "middleOversBoss"
+  ],
+  "slot": "lower",
+  "legend": false
+ },
+ {
+  "id": "wanindu-hasaranga",
+  "name": "Wanindu Hasaranga",
+  "role": "AR",
+  "overseas": true,
+  "country": "SL",
+  "base": 150,
+  "pool": "Stars",
+  "rating": 80,
+  "bat": 58,
+  "bowl": 82,
+  "line": "26 wickets in 2022",
+  "bowlType": "spin",
+  "traits": [
+   "wicketTaker",
+   "turnerTerror"
+  ],
+  "slot": "lower",
+  "legend": false
+ },
+ {
+  "id": "romario-shepherd",
+  "name": "Romario Shepherd",
+  "role": "AR",
+  "overseas": true,
+  "country": "WI",
+  "base": 75,
+  "pool": "Stars",
+  "rating": 73,
+  "bat": 70,
+  "bowl": 62,
+  "line": "14-ball fifty in 2025",
+  "bowlType": "pace",
+  "traits": [
+   "powerHitter",
+   "finisher"
+  ],
+  "slot": "finish",
+  "legend": false
+ },
+ {
+  "id": "shardul-thakur",
+  "name": "Shardul Thakur",
+  "role": "AR",
+  "overseas": false,
+  "country": "IND",
+  "base": 75,
+  "pool": "Stars",
+  "rating": 73,
+  "bat": 62,
+  "bowl": 70,
+  "line": "Lord Shardul · golden arm",
+  "bowlType": "pace",
+  "traits": [
+   "wicketTaker"
+  ],
+  "slot": "lower",
+  "legend": false
+ },
+ {
+  "id": "venkatesh-iyer",
+  "name": "Venkatesh Iyer",
+  "role": "AR",
+  "overseas": false,
+  "country": "IND",
+  "base": 75,
+  "pool": "Stars",
+  "rating": 70,
+  "bat": 74,
+  "bowl": 45,
+  "line": "2021 breakout opener",
+  "bowlType": "pace",
+  "traits": [
+   "paceBasher"
+  ],
+  "slot": "top",
+  "legend": false
+ },
+ {
+  "id": "riyan-parag",
+  "name": "Riyan Parag",
+  "role": "AR",
+  "overseas": false,
+  "country": "IND",
+  "base": 75,
+  "pool": "Stars",
+  "rating": 73,
+  "bat": 76,
+  "bowl": 50,
+  "line": "573 runs in 2024",
+  "bowlType": "spin",
+  "traits": [
+   "spinBasher"
+  ],
+  "slot": "middle",
+  "legend": false
+ },
+ {
+  "id": "rahul-tewatia",
+  "name": "Rahul Tewatia",
+  "role": "AR",
+  "overseas": false,
+  "country": "IND",
+  "base": 75,
+  "pool": "Stars",
+  "rating": 70,
+  "bat": 70,
+  "bowl": 55,
+  "line": "Five sixes in an over vs Cottrell",
+  "bowlType": "spin",
+  "traits": [
+   "finisher",
+   "chaseMaster"
+  ],
+  "slot": "finish",
+  "legend": false
+ },
+ {
+  "id": "lasith-malinga",
+  "name": "Lasith Malinga",
+  "role": "BOWL",
+  "overseas": true,
+  "country": "SL",
+  "base": 200,
+  "pool": "Legends",
+  "rating": 90,
+  "bat": 20,
+  "bowl": 90,
+  "line": "170 IPL wickets · Purple Cap 2011",
+  "bowlType": "pace",
+  "traits": [
+   "deathSpecialist",
+   "wicketTaker",
+   "bigMatch"
+  ],
+  "slot": "lower",
+  "legend": true
+ },
+ {
+  "id": "harbhajan-singh",
+  "name": "Harbhajan Singh",
+  "role": "BOWL",
+  "overseas": false,
+  "country": "IND",
+  "base": 150,
+  "pool": "Legends",
+  "rating": 80,
+  "bat": 30,
+  "bowl": 80,
+  "line": "150 IPL wickets · 4 titles",
+  "bowlType": "spin",
+  "traits": [
+   "economical",
+   "turnerTerror"
+  ],
+  "slot": "lower",
+  "legend": true
+ },
+ {
+  "id": "amit-mishra",
+  "name": "Amit Mishra",
+  "role": "BOWL",
+  "overseas": false,
+  "country": "IND",
+  "base": 150,
+  "pool": "Legends",
+  "rating": 80,
+  "bat": 20,
+  "bowl": 80,
+  "line": "3 IPL hat-tricks",
+  "bowlType": "spin",
+  "traits": [
+   "wicketTaker",
+   "turnerTerror"
+  ],
+  "slot": "lower",
+  "legend": true
+ },
+ {
+  "id": "ravichandran-ashwin",
+  "name": "Ravichandran Ashwin",
+  "role": "BOWL",
+  "overseas": false,
+  "country": "IND",
+  "base": 150,
+  "pool": "Legends",
+  "rating": 84,
+  "bat": 35,
+  "bowl": 84,
+  "line": "180+ IPL wickets",
+  "bowlType": "spin",
+  "traits": [
+   "economical",
+   "middleOversBoss",
+   "turnerTerror"
+  ],
+  "slot": "lower",
+  "legend": true
+ },
+ {
+  "id": "dale-steyn",
+  "name": "Dale Steyn",
+  "role": "BOWL",
+  "overseas": true,
+  "country": "SA",
+  "base": 200,
+  "pool": "Legends",
+  "rating": 86,
+  "bat": 20,
+  "bowl": 86,
+  "line": "Fastest, fiercest new-ball spells",
+  "bowlType": "pace",
+  "traits": [
+   "newBallSwing",
+   "expressPace"
+  ],
+  "slot": "lower",
+  "legend": true
+ },
+ {
+  "id": "zaheer-khan",
+  "name": "Zaheer Khan",
+  "role": "BOWL",
+  "overseas": false,
+  "country": "IND",
+  "base": 150,
+  "pool": "Legends",
+  "rating": 82,
+  "bat": 20,
+  "bowl": 82,
+  "line": "Left-arm swing master",
+  "bowlType": "pace",
+  "traits": [
+   "newBallSwing",
+   "slowerBallMaster"
+  ],
+  "slot": "lower",
+  "legend": true
+ },
+ {
+  "id": "shane-warne",
+  "name": "Shane Warne",
+  "role": "BOWL",
+  "overseas": true,
+  "country": "AUS",
+  "base": 150,
+  "pool": "Legends",
+  "rating": 84,
+  "bat": 25,
+  "bowl": 84,
+  "line": "2008 title-winning captain",
+  "bowlType": "spin",
+  "traits": [
+   "wicketTaker",
+   "bigMatch"
+  ],
+  "slot": "lower",
+  "legend": true
+ },
+ {
+  "id": "anil-kumble",
+  "name": "Anil Kumble",
+  "role": "BOWL",
+  "overseas": false,
+  "country": "IND",
+  "base": 150,
+  "pool": "Legends",
+  "rating": 80,
+  "bat": 20,
+  "bowl": 80,
+  "line": "5/5 in 2009",
+  "bowlType": "spin",
+  "traits": [
+   "economical",
+   "wicketTaker"
+  ],
+  "slot": "lower",
+  "legend": true
+ },
+ {
+  "id": "morne-morkel",
+  "name": "Morne Morkel",
+  "role": "BOWL",
+  "overseas": true,
+  "country": "SA",
+  "base": 150,
+  "pool": "Legends",
+  "rating": 80,
+  "bat": 20,
+  "bowl": 80,
+  "line": "Purple Cap 2012",
+  "bowlType": "pace",
+  "traits": [
+   "bounceMerchant",
+   "economical"
+  ],
+  "slot": "lower",
+  "legend": true
+ },
+ {
+  "id": "imran-tahir",
+  "name": "Imran Tahir",
+  "role": "BOWL",
+  "overseas": true,
+  "country": "SA",
+  "base": 150,
+  "pool": "Legends",
+  "rating": 82,
+  "bat": 10,
+  "bowl": 82,
+  "line": "Purple Cap 2019 · the sprint celebration",
+  "bowlType": "spin",
+  "traits": [
+   "wicketTaker"
+  ],
+  "slot": "lower",
+  "legend": true
+ },
+ {
+  "id": "piyush-chawla",
+  "name": "Piyush Chawla",
+  "role": "BOWL",
+  "overseas": false,
+  "country": "IND",
+  "base": 100,
+  "pool": "Legends",
+  "rating": 76,
+  "bat": 25,
+  "bowl": 76,
+  "line": "190+ IPL wickets",
+  "bowlType": "spin",
+  "traits": [
+   "wicketTaker"
+  ],
+  "slot": "lower",
+  "legend": true
+ },
+ {
+  "id": "praveen-kumar",
+  "name": "Praveen Kumar",
+  "role": "BOWL",
+  "overseas": false,
+  "country": "IND",
+  "base": 100,
+  "pool": "Legends",
+  "rating": 76,
+  "bat": 30,
+  "bowl": 76,
+  "line": "Swing it both ways",
+  "bowlType": "pace",
+  "traits": [
+   "newBallSwing",
+   "economical"
+  ],
+  "slot": "lower",
+  "legend": true
+ },
+ {
+  "id": "ashish-nehra",
+  "name": "Ashish Nehra",
+  "role": "BOWL",
+  "overseas": false,
+  "country": "IND",
+  "base": 100,
+  "pool": "Legends",
+  "rating": 78,
+  "bat": 10,
+  "bowl": 78,
+  "line": "Left-arm swing, title-winning coach",
+  "bowlType": "pace",
+  "traits": [
+   "newBallSwing",
+   "deathSpecialist"
+  ],
+  "slot": "lower",
+  "legend": true
+ },
+ {
+  "id": "mitchell-johnson",
+  "name": "Mitchell Johnson",
+  "role": "BOWL",
+  "overseas": true,
+  "country": "AUS",
+  "base": 100,
+  "pool": "Legends",
+  "rating": 79,
+  "bat": 30,
+  "bowl": 79,
+  "line": "Bowled MI to the 2017 title",
+  "bowlType": "pace",
+  "traits": [
+   "expressPace",
+   "bounceMerchant"
+  ],
+  "slot": "lower",
+  "legend": true
+ },
+ {
+  "id": "pragyan-ojha",
+  "name": "Pragyan Ojha",
+  "role": "BOWL",
+  "overseas": false,
+  "country": "IND",
+  "base": 75,
+  "pool": "Legends",
+  "rating": 74,
+  "bat": 10,
+  "bowl": 74,
+  "line": "Purple Cap 2010",
+  "bowlType": "spin",
+  "traits": [
+   "economical"
+  ],
+  "slot": "lower",
+  "legend": true
+ },
+ {
+  "id": "umesh-yadav",
+  "name": "Umesh Yadav",
+  "role": "BOWL",
+  "overseas": false,
+  "country": "IND",
+  "base": 100,
+  "pool": "Legends",
+  "rating": 75,
+  "bat": 20,
+  "bowl": 75,
+  "line": "Powerplay wicket-taker",
+  "bowlType": "pace",
+  "traits": [
+   "expressPace",
+   "newBallSwing"
+  ],
+  "slot": "lower",
+  "legend": true
+ },
+ {
+  "id": "mohit-sharma",
+  "name": "Mohit Sharma",
+  "role": "BOWL",
+  "overseas": false,
+  "country": "IND",
+  "base": 75,
+  "pool": "Legends",
+  "rating": 74,
+  "bat": 15,
+  "bowl": 74,
+  "line": "Purple Cap 2014",
+  "bowlType": "pace",
+  "traits": [
+   "slowerBallMaster",
+   "deathSpecialist"
+  ],
+  "slot": "lower",
+  "legend": true
+ },
+ {
+  "id": "jasprit-bumrah",
+  "name": "Jasprit Bumrah",
+  "role": "BOWL",
+  "overseas": false,
+  "country": "IND",
+  "base": 200,
+  "pool": "Stars",
+  "rating": 95,
+  "bat": 15,
+  "bowl": 95,
+  "line": "Best death bowler in the world",
+  "bowlType": "pace",
+  "traits": [
+   "deathSpecialist",
+   "economical",
+   "newBallSwing",
+   "bigMatch"
+  ],
+  "slot": "lower",
+  "legend": false
+ },
+ {
+  "id": "rashid-khan",
+  "name": "Rashid Khan",
+  "role": "BOWL",
+  "overseas": true,
+  "country": "AFG",
+  "base": 200,
+  "pool": "Stars",
+  "rating": 92,
+  "bat": 50,
+  "bowl": 92,
+  "line": "Leg-spin genius · 150+ IPL wickets",
+  "bowlType": "spin",
+  "traits": [
+   "mysterySpin",
+   "economical",
+   "middleOversBoss"
+  ],
+  "slot": "lower",
+  "legend": false
+ },
+ {
+  "id": "yuzvendra-chahal",
+  "name": "Yuzvendra Chahal",
+  "role": "BOWL",
+  "overseas": false,
+  "country": "IND",
+  "base": 200,
+  "pool": "Stars",
+  "rating": 86,
+  "bat": 10,
+  "bowl": 86,
+  "line": "Most IPL wickets ever (200+)",
+  "bowlType": "spin",
+  "traits": [
+   "wicketTaker",
+   "turnerTerror"
+  ],
+  "slot": "lower",
+  "legend": false
+ },
+ {
+  "id": "kuldeep-yadav",
+  "name": "Kuldeep Yadav",
+  "role": "BOWL",
+  "overseas": false,
+  "country": "IND",
+  "base": 150,
+  "pool": "Stars",
+  "rating": 84,
+  "bat": 15,
+  "bowl": 84,
+  "line": "Left-arm wrist spin",
+  "bowlType": "spin",
+  "traits": [
+   "wicketTaker",
+   "mysterySpin"
+  ],
+  "slot": "lower",
+  "legend": false
+ },
+ {
+  "id": "varun-chakaravarthy",
+  "name": "Varun Chakaravarthy",
+  "role": "BOWL",
+  "overseas": false,
+  "country": "IND",
+  "base": 200,
+  "pool": "Stars",
+  "rating": 85,
+  "bat": 10,
+  "bowl": 85,
+  "line": "21 wickets in KKR's 2024 title run",
+  "bowlType": "spin",
+  "traits": [
+   "mysterySpin",
+   "middleOversBoss"
+  ],
+  "slot": "lower",
+  "legend": false
+ },
+ {
+  "id": "mitchell-starc",
+  "name": "Mitchell Starc",
+  "role": "BOWL",
+  "overseas": true,
+  "country": "AUS",
+  "base": 200,
+  "pool": "Stars",
+  "rating": 86,
+  "bat": 35,
+  "bowl": 86,
+  "line": "Player of the Match in Q1 and the 2024 Final",
+  "bowlType": "pace",
+  "traits": [
+   "newBallSwing",
+   "deathSpecialist",
+   "bigMatch"
+  ],
+  "slot": "lower",
+  "legend": false
+ },
+ {
+  "id": "trent-boult",
+  "name": "Trent Boult",
+  "role": "BOWL",
+  "overseas": true,
+  "country": "NZ",
+  "base": 200,
+  "pool": "Stars",
+  "rating": 85,
+  "bat": 20,
+  "bowl": 85,
+  "line": "First-over wicket specialist",
+  "bowlType": "pace",
+  "traits": [
+   "newBallSwing"
+  ],
+  "slot": "lower",
+  "legend": false
+ },
+ {
+  "id": "bhuvneshwar-kumar",
+  "name": "Bhuvneshwar Kumar",
+  "role": "BOWL",
+  "overseas": false,
+  "country": "IND",
+  "base": 150,
+  "pool": "Stars",
+  "rating": 84,
+  "bat": 30,
+  "bowl": 84,
+  "line": "2× Purple Cap",
+  "bowlType": "pace",
+  "traits": [
+   "newBallSwing",
+   "economical",
+   "slowerBallMaster"
+  ],
+  "slot": "lower",
+  "legend": false
+ },
+ {
+  "id": "arshdeep-singh",
+  "name": "Arshdeep Singh",
+  "role": "BOWL",
+  "overseas": false,
+  "country": "IND",
+  "base": 150,
+  "pool": "Stars",
+  "rating": 83,
+  "bat": 15,
+  "bowl": 83,
+  "line": "Left-arm yorkers",
+  "bowlType": "pace",
+  "traits": [
+   "deathSpecialist",
+   "newBallSwing"
+  ],
+  "slot": "lower",
+  "legend": false
+ },
+ {
+  "id": "mohammed-shami",
+  "name": "Mohammed Shami",
+  "role": "BOWL",
+  "overseas": false,
+  "country": "IND",
+  "base": 150,
+  "pool": "Stars",
+  "rating": 83,
+  "bat": 15,
+  "bowl": 83,
+  "line": "Purple Cap 2023",
+  "bowlType": "pace",
+  "traits": [
+   "newBallSwing",
+   "wicketTaker"
+  ],
+  "slot": "lower",
+  "legend": false
+ },
+ {
+  "id": "mohammed-siraj",
+  "name": "Mohammed Siraj",
+  "role": "BOWL",
+  "overseas": false,
+  "country": "IND",
+  "base": 150,
+  "pool": "Stars",
+  "rating": 81,
+  "bat": 15,
+  "bowl": 81,
+  "line": "Swing and aggression",
+  "bowlType": "pace",
+  "traits": [
+   "newBallSwing"
+  ],
+  "slot": "lower",
+  "legend": false
+ },
+ {
+  "id": "josh-hazlewood",
+  "name": "Josh Hazlewood",
+  "role": "BOWL",
+  "overseas": true,
+  "country": "AUS",
+  "base": 150,
+  "pool": "Stars",
+  "rating": 84,
+  "bat": 15,
+  "bowl": 84,
+  "line": "Relentless line and length",
+  "bowlType": "pace",
+  "traits": [
+   "economical",
+   "bounceMerchant",
+   "newBallSwing"
+  ],
+  "slot": "lower",
+  "legend": false
+ },
+ {
+  "id": "pat-cummins",
+  "name": "Pat Cummins",
+  "role": "BOWL",
+  "overseas": true,
+  "country": "AUS",
+  "base": 150,
+  "pool": "Stars",
+  "rating": 82,
+  "bat": 45,
+  "bowl": 82,
+  "line": "2024 finalist captain",
+  "bowlType": "pace",
+  "traits": [
+   "bounceMerchant",
+   "bigMatch"
+  ],
+  "slot": "lower",
+  "legend": false
+ },
+ {
+  "id": "kagiso-rabada",
+  "name": "Kagiso Rabada",
+  "role": "BOWL",
+  "overseas": true,
+  "country": "SA",
+  "base": 200,
+  "pool": "Stars",
+  "rating": 85,
+  "bat": 25,
+  "bowl": 85,
+  "line": "Purple Cap 2020",
+  "bowlType": "pace",
+  "traits": [
+   "wicketTaker",
+   "expressPace"
+  ],
+  "slot": "lower",
+  "legend": false
+ },
+ {
+  "id": "jofra-archer",
+  "name": "Jofra Archer",
+  "role": "BOWL",
+  "overseas": true,
+  "country": "ENG",
+  "base": 150,
+  "pool": "Stars",
+  "rating": 84,
+  "bat": 40,
+  "bowl": 84,
+  "line": "2020 MVP · 150 km/h yorkers",
+  "bowlType": "pace",
+  "traits": [
+   "expressPace",
+   "deathSpecialist"
+  ],
+  "slot": "lower",
+  "legend": false
+ },
+ {
+  "id": "matheesha-pathirana",
+  "name": "Matheesha Pathirana",
+  "role": "BOWL",
+  "overseas": true,
+  "country": "SL",
+  "base": 150,
+  "pool": "Stars",
+  "rating": 80,
+  "bat": 5,
+  "bowl": 80,
+  "line": "Slingy death yorkers",
+  "bowlType": "pace",
+  "traits": [
+   "deathSpecialist"
+  ],
+  "slot": "lower",
+  "legend": false
+ },
+ {
+  "id": "harshal-patel",
+  "name": "Harshal Patel",
+  "role": "BOWL",
+  "overseas": false,
+  "country": "IND",
+  "base": 100,
+  "pool": "Stars",
+  "rating": 78,
+  "bat": 35,
+  "bowl": 78,
+  "line": "32 wickets in 2021 · Purple Cap ×2",
+  "bowlType": "pace",
+  "traits": [
+   "slowerBallMaster",
+   "deathSpecialist"
+  ],
+  "slot": "lower",
+  "legend": false
+ },
+ {
+  "id": "lockie-ferguson",
+  "name": "Lockie Ferguson",
+  "role": "BOWL",
+  "overseas": true,
+  "country": "NZ",
+  "base": 100,
+  "pool": "Stars",
+  "rating": 78,
+  "bat": 20,
+  "bowl": 78,
+  "line": "Raw pace",
+  "bowlType": "pace",
+  "traits": [
+   "expressPace",
+   "bounceMerchant"
+  ],
+  "slot": "lower",
+  "legend": false
+ },
+ {
+  "id": "anrich-nortje",
+  "name": "Anrich Nortje",
+  "role": "BOWL",
+  "overseas": true,
+  "country": "SA",
+  "base": 100,
+  "pool": "Stars",
+  "rating": 78,
+  "bat": 10,
+  "bowl": 78,
+  "line": "IPL's fastest balls",
+  "bowlType": "pace",
+  "traits": [
+   "expressPace"
+  ],
+  "slot": "lower",
+  "legend": false
+ },
+ {
+  "id": "mayank-yadav",
+  "name": "Mayank Yadav",
+  "role": "BOWL",
+  "overseas": false,
+  "country": "IND",
+  "base": 100,
+  "pool": "Stars",
+  "rating": 75,
+  "bat": 10,
+  "bowl": 75,
+  "line": "156 km/h on debut",
+  "bowlType": "pace",
+  "traits": [
+   "expressPace"
+  ],
+  "slot": "lower",
+  "legend": false
+ },
+ {
+  "id": "noor-ahmad",
+  "name": "Noor Ahmad",
+  "role": "BOWL",
+  "overseas": true,
+  "country": "AFG",
+  "base": 150,
+  "pool": "Stars",
+  "rating": 80,
+  "bat": 10,
+  "bowl": 80,
+  "line": "Left-arm wrist spin · 24 wickets in 2025",
+  "bowlType": "spin",
+  "traits": [
+   "mysterySpin",
+   "wicketTaker"
+  ],
+  "slot": "lower",
+  "legend": false
+ },
+ {
+  "id": "ravi-bishnoi",
+  "name": "Ravi Bishnoi",
+  "role": "BOWL",
+  "overseas": false,
+  "country": "IND",
+  "base": 100,
+  "pool": "Stars",
+  "rating": 78,
+  "bat": 10,
+  "bowl": 78,
+  "line": "Quick leg-spin",
+  "bowlType": "spin",
+  "traits": [
+   "wicketTaker"
+  ],
+  "slot": "lower",
+  "legend": false
+ },
+ {
+  "id": "prasidh-krishna",
+  "name": "Prasidh Krishna",
+  "role": "BOWL",
+  "overseas": false,
+  "country": "IND",
+  "base": 150,
+  "pool": "Stars",
+  "rating": 80,
+  "bat": 10,
+  "bowl": 80,
+  "line": "Purple Cap 2025",
+  "bowlType": "pace",
+  "traits": [
+   "bounceMerchant",
+   "wicketTaker"
+  ],
+  "slot": "lower",
+  "legend": false
+ },
+ {
+  "id": "deepak-chahar",
+  "name": "Deepak Chahar",
+  "role": "BOWL",
+  "overseas": false,
+  "country": "IND",
+  "base": 100,
+  "pool": "Stars",
+  "rating": 77,
+  "bat": 35,
+  "bowl": 77,
+  "line": "Powerplay swing",
+  "bowlType": "pace",
+  "traits": [
+   "newBallSwing"
+  ],
+  "slot": "lower",
+  "legend": false
+ },
+ {
+  "id": "thangarasu-natarajan",
+  "name": "Thangarasu Natarajan",
+  "role": "BOWL",
+  "overseas": false,
+  "country": "IND",
+  "base": 100,
+  "pool": "Stars",
+  "rating": 76,
+  "bat": 5,
+  "bowl": 76,
+  "line": "Yorker king",
+  "bowlType": "pace",
+  "traits": [
+   "deathSpecialist"
+  ],
+  "slot": "lower",
+  "legend": false
+ },
+ {
+  "id": "mustafizur-rahman",
+  "name": "Mustafizur Rahman",
+  "role": "BOWL",
+  "overseas": true,
+  "country": "BAN",
+  "base": 100,
+  "pool": "Stars",
+  "rating": 78,
+  "bat": 5,
+  "bowl": 78,
+  "line": "The cutter master",
+  "bowlType": "pace",
+  "traits": [
+   "slowerBallMaster",
+   "deathSpecialist"
+  ],
+  "slot": "lower",
+  "legend": false
+ },
+ {
+  "id": "sandeep-sharma",
+  "name": "Sandeep Sharma",
+  "role": "BOWL",
+  "overseas": false,
+  "country": "IND",
+  "base": 100,
+  "pool": "Stars",
+  "rating": 76,
+  "bat": 10,
+  "bowl": 76,
+  "line": "Swing and slower balls",
+  "bowlType": "pace",
+  "traits": [
+   "newBallSwing",
+   "slowerBallMaster"
+  ],
+  "slot": "lower",
+  "legend": false
+ },
+ {
+  "id": "avesh-khan",
+  "name": "Avesh Khan",
+  "role": "BOWL",
+  "overseas": false,
+  "country": "IND",
+  "base": 75,
+  "pool": "Stars",
+  "rating": 74,
+  "bat": 15,
+  "bowl": 74,
+  "line": "Hit-the-deck pace",
+  "bowlType": "pace",
+  "traits": [
+   "bounceMerchant"
+  ],
+  "slot": "lower",
+  "legend": false
+ },
+ {
+  "id": "khaleel-ahmed",
+  "name": "Khaleel Ahmed",
+  "role": "BOWL",
+  "overseas": false,
+  "country": "IND",
+  "base": 100,
+  "pool": "Stars",
+  "rating": 76,
+  "bat": 5,
+  "bowl": 76,
+  "line": "Left-arm new ball",
+  "bowlType": "pace",
+  "traits": [
+   "newBallSwing"
+  ],
+  "slot": "lower",
+  "legend": false
+ },
+ {
+  "id": "harshit-rana",
+  "name": "Harshit Rana",
+  "role": "BOWL",
+  "overseas": false,
+  "country": "IND",
+  "base": 75,
+  "pool": "Stars",
+  "rating": 74,
+  "bat": 25,
+  "bowl": 74,
+  "line": "2024 title-winning seamer",
+  "bowlType": "pace",
+  "traits": [
+   "wicketTaker"
+  ],
+  "slot": "lower",
+  "legend": false
+ },
+ {
+  "id": "maheesh-theekshana",
+  "name": "Maheesh Theekshana",
+  "role": "BOWL",
+  "overseas": true,
+  "country": "SL",
+  "base": 100,
+  "pool": "Stars",
+  "rating": 77,
+  "bat": 10,
+  "bowl": 77,
+  "line": "Carrom-ball off-spin",
+  "bowlType": "spin",
+  "traits": [
+   "economical",
+   "mysterySpin"
+  ],
+  "slot": "lower",
+  "legend": false
+ },
+ {
+  "id": "adam-zampa",
+  "name": "Adam Zampa",
+  "role": "BOWL",
+  "overseas": true,
+  "country": "AUS",
+  "base": 100,
+  "pool": "Stars",
+  "rating": 78,
+  "bat": 10,
+  "bowl": 78,
+  "line": "Wicket-taking leg-spin",
+  "bowlType": "spin",
+  "traits": [
+   "wicketTaker"
+  ],
+  "slot": "lower",
+  "legend": false
+ },
+ {
+  "id": "rahul-chahar",
+  "name": "Rahul Chahar",
+  "role": "BOWL",
+  "overseas": false,
+  "country": "IND",
+  "base": 75,
+  "pool": "Stars",
+  "rating": 72,
+  "bat": 10,
+  "bowl": 72,
+  "line": "Leg-spin",
+  "bowlType": "spin",
+  "traits": [
+   "wicketTaker"
+  ],
+  "slot": "lower",
+  "legend": false
+ },
+ {
+  "id": "tushar-deshpande",
+  "name": "Tushar Deshpande",
+  "role": "BOWL",
+  "overseas": false,
+  "country": "IND",
+  "base": 75,
+  "pool": "Stars",
+  "rating": 72,
+  "bat": 10,
+  "bowl": 72,
+  "line": "Impact seamer",
+  "bowlType": "pace",
+  "traits": [
+   "wicketTaker"
+  ],
+  "slot": "lower",
+  "legend": false
+ },
+ {
+  "id": "akash-deep",
+  "name": "Akash Deep",
+  "role": "BOWL",
+  "overseas": false,
+  "country": "IND",
+  "base": 75,
+  "pool": "Stars",
+  "rating": 72,
+  "bat": 15,
+  "bowl": 72,
+  "line": "Seam and swing",
+  "bowlType": "pace",
+  "traits": [
+   "newBallSwing"
+  ],
+  "slot": "lower",
+  "legend": false
+ },
+ {
+  "id": "mukesh-kumar",
+  "name": "Mukesh Kumar",
+  "role": "BOWL",
+  "overseas": false,
+  "country": "IND",
+  "base": 75,
+  "pool": "Stars",
+  "rating": 72,
+  "bat": 10,
+  "bowl": 72,
+  "line": "Yorkers at the death",
+  "bowlType": "pace",
+  "traits": [
+   "deathSpecialist"
+  ],
+  "slot": "lower",
+  "legend": false
+ },
+ {
+  "id": "yash-dayal",
+  "name": "Yash Dayal",
+  "role": "BOWL",
+  "overseas": false,
+  "country": "IND",
+  "base": 75,
+  "pool": "Stars",
+  "rating": 72,
+  "bat": 10,
+  "bowl": 72,
+  "line": "Left-arm swing · 2025 champion",
+  "bowlType": "pace",
+  "traits": [
+   "newBallSwing"
+  ],
+  "slot": "lower",
+  "legend": false
+ },
+ {
+  "id": "sai-kishore",
+  "name": "Sai Kishore",
+  "role": "BOWL",
+  "overseas": false,
+  "country": "IND",
+  "base": 75,
+  "pool": "Stars",
+  "rating": 74,
+  "bat": 20,
+  "bowl": 74,
+  "line": "Left-arm spin",
+  "bowlType": "spin",
+  "traits": [
+   "economical"
+  ],
+  "slot": "lower",
+  "legend": false
+ },
+ {
+  "id": "digvesh-rathi",
+  "name": "Digvesh Rathi",
+  "role": "BOWL",
+  "overseas": false,
+  "country": "IND",
+  "base": 75,
+  "pool": "Stars",
+  "rating": 72,
+  "bat": 5,
+  "bowl": 72,
+  "line": "Mystery spinner",
+  "bowlType": "spin",
+  "traits": [
+   "mysterySpin"
+  ],
+  "slot": "lower",
+  "legend": false
+ },
+ {
+  "id": "gerald-coetzee",
+  "name": "Gerald Coetzee",
+  "role": "BOWL",
+  "overseas": true,
+  "country": "SA",
+  "base": 75,
+  "pool": "Stars",
+  "rating": 74,
+  "bat": 20,
+  "bowl": 74,
+  "line": "Express pace",
+  "bowlType": "pace",
+  "traits": [
+   "expressPace"
+  ],
+  "slot": "lower",
+  "legend": false
+ },
+ {
+  "id": "nathan-ellis",
+  "name": "Nathan Ellis",
+  "role": "BOWL",
+  "overseas": true,
+  "country": "AUS",
+  "base": 75,
+  "pool": "Stars",
+  "rating": 74,
+  "bat": 15,
+  "bowl": 74,
+  "line": "Death-overs variations",
+  "bowlType": "pace",
+  "traits": [
+   "deathSpecialist",
+   "slowerBallMaster"
+  ],
+  "slot": "lower",
+  "legend": false
+ },
+ {
+  "id": "spencer-johnson",
+  "name": "Spencer Johnson",
+  "role": "BOWL",
+  "overseas": true,
+  "country": "AUS",
+  "base": 75,
+  "pool": "Stars",
+  "rating": 72,
+  "bat": 10,
+  "bowl": 72,
+  "line": "Left-arm pace",
+  "bowlType": "pace",
+  "traits": [
+   "expressPace",
+   "newBallSwing"
+  ],
+  "slot": "lower",
+  "legend": false
+ },
+ {
+  "id": "lungi-ngidi",
+  "name": "Lungi Ngidi",
+  "role": "BOWL",
+  "overseas": true,
+  "country": "SA",
+  "base": 100,
+  "pool": "Stars",
+  "rating": 76,
+  "bat": 10,
+  "bowl": 76,
+  "line": "Slower-ball wickets",
+  "bowlType": "pace",
+  "traits": [
+   "wicketTaker",
+   "slowerBallMaster"
+  ],
+  "slot": "lower",
+  "legend": false
+ },
+ {
+  "id": "kyle-jamieson",
+  "name": "Kyle Jamieson",
+  "role": "BOWL",
+  "overseas": true,
+  "country": "NZ",
+  "base": 75,
+  "pool": "Stars",
+  "rating": 72,
+  "bat": 30,
+  "bowl": 72,
+  "line": "2-metre bounce",
+  "bowlType": "pace",
+  "traits": [
+   "bounceMerchant"
+  ],
+  "slot": "lower",
+  "legend": false
+ }
+]
