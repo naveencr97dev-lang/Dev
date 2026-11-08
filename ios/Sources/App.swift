@@ -9,6 +9,7 @@ struct StreakletApp: App {
             RootView()
                 .environmentObject(store)
                 .preferredColorScheme(store.appearance.colorScheme)
+                .dynamicTypeSize(store.textSize.dynamicTypeSize)
         }
     }
 }

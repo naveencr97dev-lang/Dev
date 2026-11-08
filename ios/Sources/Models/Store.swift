@@ -6,9 +6,11 @@ final class Store: ObservableObject {
     @Published var habits: [Habit] = []
     @Published var checkins: [Checkin] = []
     @Published var moods: [MoodEntry] = []
+    @Published var goals: [Goal] = []
     @Published var groceryItems: [GroceryItem] = []
     @Published var groceryChecks: [GroceryCheck] = []
     @Published var appearance: AppearanceMode = .system
+    @Published var textSize: TextSizePref = .default_
 
     private let calendar = Calendar.current
     private let fileURL: URL
@@ -25,9 +27,11 @@ final class Store: ObservableObject {
         var habits: [Habit]
         var checkins: [Checkin]
         var moods: [MoodEntry]
+        var goals: [Goal]?
         var groceryItems: [GroceryItem]?
         var groceryChecks: [GroceryCheck]?
         var appearance: AppearanceMode
+        var textSize: TextSizePref?
     }
 
     func load() {
@@ -41,15 +45,18 @@ final class Store: ObservableObject {
         habits = snap.habits
         checkins = snap.checkins
         moods = snap.moods
+        goals = snap.goals ?? []
         groceryItems = snap.groceryItems ?? []
         groceryChecks = snap.groceryChecks ?? []
         appearance = snap.appearance
+        textSize = snap.textSize ?? .default_
     }
 
     func save() {
         let snap = Snapshot(habits: habits, checkins: checkins, moods: moods,
+                            goals: goals,
                             groceryItems: groceryItems, groceryChecks: groceryChecks,
-                            appearance: appearance)
+                            appearance: appearance, textSize: textSize)
         if let data = try? JSONEncoder().encode(snap) {
             try? data.write(to: fileURL, options: .atomic)
         }
@@ -76,8 +83,58 @@ final class Store: ObservableObject {
         checkin(for: habit, on: date)?.value ?? 0
     }
 
+    /// The period (day / week / month) that `date` falls in for this habit.
+    func periodInterval(for habit: Habit, on date: Date) -> DateInterval {
+        switch habit.frequency {
+        case .daily:
+            let s = startOfDay(date)
+            return DateInterval(start: s, end: calendar.date(byAdding: .day, value: 1, to: s)!)
+        case .weekly:
+            let s = weekStart(date)
+            return DateInterval(start: s, end: calendar.date(byAdding: .day, value: 7, to: s)!)
+        case .monthly:
+            let comps = calendar.dateComponents([.year, .month], from: date)
+            let s = calendar.date(from: comps)!
+            return DateInterval(start: s, end: calendar.date(byAdding: .month, value: 1, to: s)!)
+        }
+    }
+
+    /// Distinct days with a check-in inside the habit's current period.
+    func completions(_ habit: Habit, inPeriodOf date: Date) -> Int {
+        let interval = periodInterval(for: habit, on: date)
+        let days = Set(checkins
+            .filter { $0.habitId == habit.id && $0.day >= interval.start && $0.day < interval.end }
+            .map { startOfDay($0.day) })
+        return days.count
+    }
+
+    /// Target completions for the habit's period.
+    func periodTargetCount(_ habit: Habit) -> Int {
+        habit.frequency == .daily ? habit.dailyTarget : max(habit.periodTarget, 1)
+    }
+
     func isDone(_ habit: Habit, on date: Date) -> Bool {
-        value(for: habit, on: date) >= habit.dailyTarget
+        switch habit.frequency {
+        case .daily:
+            return value(for: habit, on: date) >= habit.dailyTarget
+        case .weekly, .monthly:
+            return completions(habit, inPeriodOf: date) >= max(habit.periodTarget, 1)
+        }
+    }
+
+    /// Progress toward the current period's target (0...1).
+    func periodProgress(_ habit: Habit, on date: Date) -> Double {
+        let target = periodTargetCount(habit)
+        guard target > 0 else { return 0 }
+        let value = habit.frequency == .daily
+            ? self.value(for: habit, on: date)
+            : completions(habit, inPeriodOf: date)
+        return min(Double(value) / Double(target), 1)
+    }
+
+    /// Daily habits only — used for the day-oriented summary metrics.
+    func dailyHabitsScheduled(on date: Date) -> [Habit] {
+        habitsScheduled(on: date).filter { $0.frequency == .daily }
     }
 
     // MARK: - Mutations
@@ -107,21 +164,67 @@ final class Store: ObservableObject {
         save()
     }
 
-    /// Toggle a simple habit done/undone, or increment toward a goal.
+    /// Toggle a habit for a day. Daily simple habits toggle; daily goal habits
+    /// increment; weekly/monthly habits add or remove one completion for the day.
     func toggle(_ habit: Habit, on date: Date) {
         let day = startOfDay(date)
-        if let idx = checkins.firstIndex(where: { $0.habitId == habit.id && calendar.isDate($0.day, inSameDayAs: day) }) {
+        let existing = checkins.firstIndex { $0.habitId == habit.id && calendar.isDate($0.day, inSameDayAs: day) }
+
+        if habit.frequency != .daily {
+            if let idx = existing { checkins.remove(at: idx) }
+            else { checkins.append(Checkin(habitId: habit.id, day: day, value: 1)) }
+            save()
+            return
+        }
+
+        if let idx = existing {
             if habit.goalTarget == nil {
-                checkins.remove(at: idx)           // simple habit: tap again to undo
+                checkins.remove(at: idx)            // simple habit: tap again to undo
             } else {
                 var c = checkins[idx]
-                c.value += 1                        // goal habit: tap adds one
-                if c.value > habit.dailyTarget { c.value = 0 } // wrap to reset
+                c.value += 1                         // goal habit: tap adds one
+                if c.value > habit.dailyTarget { c.value = 0 }  // wrap to reset
                 if c.value == 0 { checkins.remove(at: idx) } else { checkins[idx] = c }
             }
         } else {
-            let v = habit.goalTarget == nil ? 1 : 1
-            checkins.append(Checkin(habitId: habit.id, day: day, value: v))
+            checkins.append(Checkin(habitId: habit.id, day: day, value: 1))
+        }
+        save()
+    }
+
+    // MARK: - Goals
+
+    var sortedGoals: [Goal] { goals.sorted { $0.sortIndex < $1.sortIndex } }
+
+    func habits(for goal: Goal) -> [Habit] {
+        activeHabits.filter { $0.goalId == goal.id }
+    }
+
+    /// Share of a goal's habits that are done in their current period (0...1).
+    func goalProgress(_ goal: Goal) -> Double {
+        let hs = habits(for: goal)
+        guard !hs.isEmpty else { return 0 }
+        let done = hs.filter { isDone($0, on: Date()) }.count
+        return Double(done) / Double(hs.count)
+    }
+
+    func addGoal(_ goal: Goal) {
+        var g = goal
+        g.sortIndex = (goals.map { $0.sortIndex }.max() ?? 0) + 1
+        goals.append(g)
+        save()
+    }
+
+    func updateGoal(_ goal: Goal) {
+        guard let idx = goals.firstIndex(where: { $0.id == goal.id }) else { return }
+        goals[idx] = goal
+        save()
+    }
+
+    func deleteGoal(_ goal: Goal) {
+        goals.removeAll { $0.id == goal.id }
+        for i in habits.indices where habits[i].goalId == goal.id {
+            habits[i].goalId = nil           // detach habits, keep them
         }
         save()
     }
@@ -245,6 +348,28 @@ final class Store: ObservableObject {
             Habit(name: "No late snacks", emoji: "🍫", colorHex: "#FB7185", kind: .quit)
         ]
         for s in samples { addHabit(s) }
+    }
+}
+
+/// App-wide text size, mapped to Dynamic Type.
+enum TextSizePref: String, Codable, CaseIterable, Identifiable {
+    case small, default_, large, xlarge
+    var id: String { rawValue }
+    var label: String {
+        switch self {
+        case .small: return "Small"
+        case .default_: return "Default"
+        case .large: return "Large"
+        case .xlarge: return "Extra Large"
+        }
+    }
+    var dynamicTypeSize: DynamicTypeSize {
+        switch self {
+        case .small: return .small
+        case .default_: return .large      // iOS system default
+        case .large: return .xLarge
+        case .xlarge: return .xxxLarge
+        }
     }
 }
 

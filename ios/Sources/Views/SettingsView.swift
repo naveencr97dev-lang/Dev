@@ -12,6 +12,24 @@ struct SettingsView: View {
                         ForEach(AppearanceMode.allCases) { Text($0.label).tag($0) }
                     }
                     .onChange(of: store.appearance) { _ in store.save() }
+
+                    Picker("Text size", selection: $store.textSize) {
+                        ForEach(TextSizePref.allCases) { Text($0.label).tag($0) }
+                    }
+                    .onChange(of: store.textSize) { _ in store.save() }
+
+                    HStack {
+                        Text("A").font(.caption)
+                        Slider(
+                            value: Binding(
+                                get: { Double(TextSizePref.allCases.firstIndex(of: store.textSize) ?? 1) },
+                                set: { store.textSize = TextSizePref.allCases[Int($0.rounded())]; store.save() }
+                            ),
+                            in: 0...Double(TextSizePref.allCases.count - 1),
+                            step: 1
+                        )
+                        Text("A").font(.title3)
+                    }
                 }
 
                 Section("Notifications") {

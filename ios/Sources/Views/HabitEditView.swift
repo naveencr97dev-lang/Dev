@@ -23,6 +23,9 @@ struct HabitEditView: View {
     @State private var hasReminder = false
     @State private var reminderTime = Date()
     @State private var timeOfDay: TimeOfDay = .anytime
+    @State private var goalId: UUID? = nil
+    @State private var frequency: Frequency = .daily
+    @State private var periodTarget = 1
 
     private let weekdaySymbols = Calendar.current.shortStandaloneWeekdaySymbols
 
@@ -50,6 +53,25 @@ struct HabitEditView: View {
                     if hasGoal {
                         Stepper("Target: \(goalTarget)", value: $goalTarget, in: 1...100)
                         TextField("Unit (e.g. glasses, minutes)", text: $goalUnit)
+                    }
+                }
+
+                Section("Goal") {
+                    Picker("Goal", selection: $goalId) {
+                        Text("None").tag(UUID?.none)
+                        ForEach(store.sortedGoals) { g in
+                            Text("\(g.emoji) \(g.name)").tag(UUID?.some(g.id))
+                        }
+                    }
+                }
+
+                Section("Frequency") {
+                    Picker("Repeats", selection: $frequency) {
+                        ForEach(Frequency.allCases) { Text($0.label).tag($0) }
+                    }
+                    .pickerStyle(.segmented)
+                    if frequency != .daily {
+                        Stepper("Target: \(periodTarget) × per \(frequency.unit)", value: $periodTarget, in: 1...30)
                     }
                 }
 
@@ -147,6 +169,9 @@ struct HabitEditView: View {
         everyDay = h.isDaily
         weekdays = h.weekdays
         timeOfDay = h.timeOfDay
+        goalId = h.goalId
+        frequency = h.frequency
+        periodTarget = h.periodTarget
         if let m = h.reminderMinutes {
             hasReminder = true
             reminderTime = Calendar.current.date(bySettingHour: m / 60, minute: m % 60, second: 0, of: Date()) ?? Date()
@@ -163,6 +188,9 @@ struct HabitEditView: View {
         h.goalUnit = hasGoal ? goalUnit : nil
         h.weekdays = everyDay ? [] : weekdays
         h.timeOfDay = timeOfDay
+        h.goalId = goalId
+        h.frequency = frequency
+        h.periodTarget = periodTarget
         if hasReminder {
             let c = Calendar.current.dateComponents([.hour, .minute], from: reminderTime)
             h.reminderMinutes = (c.hour ?? 0) * 60 + (c.minute ?? 0)

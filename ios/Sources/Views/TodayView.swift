@@ -4,6 +4,7 @@ struct TodayView: View {
     @EnvironmentObject var store: Store
     @State private var selected = Calendar.current.startOfDay(for: Date())
     @State private var showingNew = false
+    @State private var showingJournal = false
     @State private var statusFilter: StatusFilter = .all
     @State private var timeFilter: TimeFilter = .all
 
@@ -59,12 +60,18 @@ struct TodayView: View {
             }
             .navigationTitle(title)
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button { showingJournal = true } label: { Image(systemName: "face.smiling") }
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showingNew = true } label: { Image(systemName: "plus") }
                 }
             }
             .sheet(isPresented: $showingNew) {
                 HabitTemplatePicker()
+            }
+            .sheet(isPresented: $showingJournal) {
+                MoodView()
             }
         }
     }

@@ -7,6 +7,19 @@ enum HabitKind: String, Codable, CaseIterable, Identifiable {
     var label: String { self == .build ? "Build" : "Quit" }
 }
 
+enum Frequency: String, Codable, CaseIterable, Identifiable {
+    case daily, weekly, monthly
+    var id: String { rawValue }
+    var label: String { rawValue.capitalized }
+    var unit: String {
+        switch self {
+        case .daily: return "day"
+        case .weekly: return "week"
+        case .monthly: return "month"
+        }
+    }
+}
+
 enum TimeOfDay: String, Codable, CaseIterable, Identifiable {
     case anytime, morning, afternoon, evening
     var id: String { rawValue }
@@ -43,6 +56,15 @@ struct Habit: Identifiable, Codable, Equatable {
     /// Preferred time of day. Drives the Today-screen time filter.
     var timeOfDay: TimeOfDay = .anytime
 
+    /// Goal this habit belongs to (nil = standalone).
+    var goalId: UUID? = nil
+
+    /// How the habit is measured over time.
+    var frequency: Frequency = .daily
+
+    /// For weekly / monthly habits: how many times per period.
+    var periodTarget: Int = 1
+
     var archived: Bool = false
     var sortIndex: Int = 0
     var createdAt: Date = Date()
@@ -53,8 +75,13 @@ struct Habit: Identifiable, Codable, Equatable {
     var dailyTarget: Int { max(goalTarget ?? 1, 1) }
 
     func isScheduled(on date: Date, calendar: Calendar = .current) -> Bool {
-        if isDaily { return true }
-        let wd = calendar.component(.weekday, from: date)
-        return weekdays.contains(wd)
+        switch frequency {
+        case .weekly, .monthly:
+            return true          // available any day; measured over the period
+        case .daily:
+            if isDaily { return true }
+            let wd = calendar.component(.weekday, from: date)
+            return weekdays.contains(wd)
+        }
     }
 }
