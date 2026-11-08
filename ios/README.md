@@ -42,9 +42,13 @@ Franchise names are fictional; the app is not affiliated with any real league.
 4. **Pitches**: 🛣️ Indian Flat (about 205 par) · 🌧️ English Seamer (about 140, swing) ·
    🦘 Aussie Bouncer (pace) · 🏜️ Dusty Turner (spin) · 🌴 Caribbean Slow (low and slow).
    Captains pick the five bowlers that suit the pitch.
-5. **Season**: matches play live with a TV-style score strip: both batters' runs (balls, 4s, 6s),
-   the bowler's figures, the chase equation, this over and commentary. Speeds 1× (about 2 balls a second, default) 2× 4×
-   (remembered). You can also skip to
+5. **Season**: matches play ball by ball at a followable pace: 1× is about 2 s a ball
+   (around 10 minutes a match), 2× and 4× for quicker games, plus pause. Before each ball,
+   "🏃 Bumrah runs in to Kohli…", then the result. A **wagon wheel** shows the ground, with every
+   scoring shot of the innings drawn from the bat (1–3 white, 4s blue to the rope, 6s purple
+   beyond it, wickets ✕) and the latest shot racing out. A TV-style score strip shows both
+   batters, the bowler's figures and the chase equation. There's a short pause and summary at
+   the end of each over, and an **innings break** card with the target. You can also skip to
    the scorecard. Points table with NRR, plus Orange and Purple Cap leaderboards. Batting order
    can be changed between matches.
    After every match: **scorecard**, then the **worm**, then **highlights**: up to 12 key

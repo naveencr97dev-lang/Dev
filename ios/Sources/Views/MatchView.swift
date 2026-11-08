@@ -10,15 +10,22 @@ struct MatchView: View {
     @State private var log: [BallEvent] = []
     @State private var shown = 0
     @State private var finished = false
-    /// Balls per tick (a tick is 0.06 s). 1× = 0.125 (~2 balls a second, ~2 min a match).
-    /// Remembered between matches.
-    @AppStorage("matchSpeedV2") private var speed: Double = MatchView.speeds[0].value
+    /// Speed multiplier; 1× = one ball every `ballSeconds`. Remembered between matches.
+    @AppStorage("matchSpeedV3") private var speed: Double = 1
+    static let speeds: [(label: String, value: Double)] = [("1×", 1), ("2×", 2), ("4×", 4)]
+    /// Seconds per delivery at 1× (about 10 minutes for a full match).
+    static let ballSeconds = 2.2
+    static let tick = 0.05
 
-    static let speeds: [(label: String, value: Double)] = [("1×", 0.125), ("2×", 0.3), ("4×", 0.6)]
-    @State private var carry: Double = 0
+    /// Time since the last ball was revealed (at 1× scale).
+    @State private var ballClock: Double = 0
+    @State private var inningsBreak = false
+    @State private var breakTaken = false
+    @State private var breakClock: Double = 0
+    @State private var paused = false
     @State private var showReel = false
     @Environment(\.dismiss) private var dismiss
-    private let clock = Timer.publish(every: 0.06, on: .main, in: .common).autoconnect()
+    private let clock = Timer.publish(every: MatchView.tick, on: .main, in: .common).autoconnect()
 
     var body: some View {
         Group {
@@ -58,17 +65,44 @@ struct MatchView: View {
         if log.isEmpty { finished = true }
     }
 
+    /// Wait for the current ball (longer after the last ball of an over).
+    private var ballWait: Double {
+        var wait = MatchView.ballSeconds
+        if shown > 0, MatchView.isOverEnd(log[shown - 1]) { wait *= 1.8 }
+        return wait
+    }
+
+    static func isOverEnd(_ e: BallEvent) -> Bool { e.ballInOver == 6 && e.label != "wd" }
+
     private func advance() {
-        guard !finished, !log.isEmpty else { return }
-        carry += speed
-        let step = Int(carry)
-        guard step > 0 else { return }
-        carry -= Double(step)
-        let before = shown
-        shown = min(log.count, shown + step)
-        if log[before..<shown].contains(where: { $0.label == "W" }) { Haptics.heavy() }
-        else if log[before..<shown].contains(where: { $0.label == "6" }) { Haptics.tap() }
+        guard !finished, !log.isEmpty, !paused else { return }
+        if inningsBreak {
+            breakClock += MatchView.tick * speed
+            if breakClock >= 7 { continueAfterBreak() }
+            return
+        }
+        ballClock += MatchView.tick * speed
+        guard ballClock >= ballWait else { return }
+        ballClock = 0
+        // Innings break before the chase starts.
+        if shown > 0, shown < log.count, log[shown].innings != log[shown - 1].innings, !breakTaken {
+            withAnimation(.spring()) { inningsBreak = true }
+            breakTaken = true
+            breakClock = 0
+            return
+        }
+        withAnimation(.easeOut(duration: 0.25)) { shown = min(log.count, shown + 1) }
+        switch log[shown - 1].label {
+        case "W": Haptics.heavy()
+        case "6", "4": Haptics.tap()
+        default: break
+        }
         if shown >= log.count { finish() }
+    }
+
+    private func continueAfterBreak() {
+        withAnimation(.spring()) { inningsBreak = false }
+        ballClock = MatchView.ballSeconds * 0.4
     }
 
     private func finish() {
@@ -88,20 +122,28 @@ struct MatchView: View {
         let inningsNow = current?.innings ?? 0
         let thisOver = log[..<shown].filter { $0.innings == inningsNow && $0.over == (current?.over ?? 0) }
         let recent = Array(log[..<shown].suffix(8).reversed())
+        let shots = log[..<shown].enumerated().filter { $0.element.innings == inningsNow }
+            .map { WagonWheel.Shot(index: $0.offset, event: $0.element) }
+        let anticipating = !inningsBreak && shown < log.count && ballClock > ballWait * 0.45
 
-        let board = VStack(spacing: DS.Space.md) {
+        let board = VStack(spacing: DS.Space.sm) {
             ScoreBug(result: r, event: current)
+            statusLine(current: current, anticipating: anticipating)
+            WagonWheel(shots: shots, latest: shown - 1)
+                .frame(maxWidth: .infinity)
+                .frame(height: vSize == .compact ? 210 : 280)
+                .overlay {
+                    if let e = current, !anticipating { BigCall(event: e).id(shown) }
+                }
             if let e = current {
                 CreaseCard(event: e, battingTeam: store.team(r.innings[e.innings].teamId))
             }
-            ZStack {
-                if let e = current { BigCall(event: e).id(shown) }
-            }
-            .frame(height: 50)
+        }
+        let feed = VStack(alignment: .leading, spacing: DS.Space.sm) {
             VStack(alignment: .leading, spacing: DS.Space.sm) {
                 SectionLabel(text: "This over")
                 HStack(spacing: 6) {
-                    ForEach(Array(thisOver.enumerated()), id: \.offset) { i, e in
+                    ForEach(Array(thisOver.enumerated()), id: \.offset) { _, e in
                         BallChip(label: e.label)
                             .transition(.scale.combined(with: .opacity))
                     }
@@ -109,8 +151,6 @@ struct MatchView: View {
                 }
                 .animation(.spring(response: 0.3, dampingFraction: 0.6), value: thisOver.count)
             }
-        }
-        let feed = VStack(alignment: .leading, spacing: DS.Space.sm) {
             SectionLabel(text: "Commentary")
             AppCard(padding: DS.Space.md) {
                 VStack(alignment: .leading, spacing: 8) {
@@ -124,30 +164,76 @@ struct MatchView: View {
                     }
                 }
             }
-            SpeedPicker(speed: $speed, options: MatchView.speeds.map(\.value),
-                        labels: MatchView.speeds.map(\.label))
-        }
-
-        return Group {
-            if vSize == .compact {
-                TwoColumns { board } right: {
-                    HStack {
-                        Button { dismiss() } label: { Label("Back", systemImage: "chevron.left") }
-                            .font(.display(15, weight: .heavy))
-                        Spacer()
-                        Button { finish() } label: { Label("Skip", systemImage: "forward.end.fill") }
-                            .font(.display(15, weight: .heavy))
-                    }
-                    .foregroundStyle(Palette.accent)
-                    feed
+            HStack(spacing: 10) {
+                Button { paused.toggle() } label: {
+                    Image(systemName: paused ? "play.fill" : "pause.fill").frame(width: 30)
                 }
-            } else {
-                ScrollView {
-                    VStack(spacing: DS.Space.md) { board; feed }
-                        .padding(DS.Space.lg)
-                }
+                .buttonStyle(SecondaryButtonStyle()).frame(width: 64)
+                SpeedPicker(speed: $speed, options: MatchView.speeds.map(\.value),
+                            labels: MatchView.speeds.map(\.label))
             }
         }
+
+        return ZStack {
+            Group {
+                if vSize == .compact {
+                    TwoColumns { board } right: {
+                        HStack {
+                            Button { dismiss() } label: { Label("Back", systemImage: "chevron.left") }
+                                .font(.display(15, weight: .heavy))
+                            Spacer()
+                            Button { finish() } label: { Label("Skip", systemImage: "forward.end.fill") }
+                                .font(.display(15, weight: .heavy))
+                        }
+                        .foregroundStyle(Palette.accent)
+                        feed
+                    }
+                } else {
+                    ScrollView {
+                        VStack(spacing: DS.Space.md) { board; feed }
+                            .padding(DS.Space.lg)
+                    }
+                }
+            }
+            if inningsBreak {
+                InningsBreakCard(result: r, onContinue: continueAfterBreak)
+                    .transition(.scale(scale: 0.8).combined(with: .opacity))
+            }
+        }
+    }
+
+    /// "Bumrah runs in to Kohli…" before the ball, then the result.
+    @ViewBuilder private func statusLine(current: BallEvent?, anticipating: Bool) -> some View {
+        let text: String = {
+            if anticipating, shown < log.count {
+                let next = log[shown]
+                return "🏃 \(next.bowler.name) runs in to \(striker(before: shown))…"
+            }
+            if let c = current {
+                if MatchView.isOverEnd(c) {
+                    let rr = c.over >= 0 ? Double(c.score) * 6 / Double(max(1, (c.over + 1) * 6)) : 0
+                    return "End of over \(c.over + 1) · \(c.score)/\(c.wickets) · RR \(String(format: "%.1f", rr))"
+                }
+                return c.text
+            }
+            return "Players walk out…"
+        }()
+        Text(text)
+            .font(.display(17, weight: .heavy))
+            .foregroundStyle(anticipating ? Palette.muted : .white)
+            .lineLimit(2).minimumScaleFactor(0.7)
+            .frame(maxWidth: .infinity, minHeight: 40, alignment: .leading)
+            .animation(.easeInOut(duration: 0.2), value: text)
+    }
+
+    /// Who faces the next ball.
+    private func striker(before i: Int) -> String {
+        guard i > 0, log[i - 1].innings == log[i].innings else {
+            return log[i].batters.first(where: \.onStrike)?.name ?? ""
+        }
+        let prev = log[i - 1]
+        let onStrike = MatchView.isOverEnd(prev) ? prev.batters.first { !$0.onStrike } : prev.batters.first(where: \.onStrike)
+        return onStrike?.name ?? ""
     }
 
     private func overString(_ e: BallEvent) -> String {
