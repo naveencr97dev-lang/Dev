@@ -119,11 +119,7 @@ struct MatchView: View {
 
         return Group {
             if vSize == .compact {
-                HStack(alignment: .top, spacing: DS.Space.lg) {
-                    ScrollView { board.padding(.vertical, DS.Space.sm) }
-                    ScrollView { feed.padding(.vertical, DS.Space.sm) }
-                }
-                .padding(.horizontal, DS.Space.lg)
+                TwoColumns { board } right: { feed }
             } else {
                 ScrollView {
                     VStack(spacing: DS.Space.md) { board; feed }
@@ -159,7 +155,7 @@ struct ScoreBug: View {
                 .padding(.horizontal, 12).padding(.vertical, 8)
                 .background(Color(hex: batting?.colorHex ?? "#333333"))
                 HStack(spacing: 6) {
-                    Text("\(event?.score ?? 0)-\(event?.wickets ?? 0)").font(.score(30))
+                    Text("\(event?.score ?? 0)-\(event?.wickets ?? 0)").font(.score(30)).lineLimit(1).minimumScaleFactor(0.6)
                         .contentTransition(.numericText())
                         .animation(.spring(response: 0.25), value: event?.score)
                     Text("\(balls / 6).\(balls % 6)").font(.score(16, weight: .semibold)).foregroundStyle(Palette.muted)
@@ -167,14 +163,15 @@ struct ScoreBug: View {
                 .padding(.horizontal, 12)
                 Spacer(minLength: 4)
                 Text("v \(bowling?.short ?? "")").font(.display(16, weight: .heavy)).foregroundStyle(Palette.muted)
-                    .padding(.trailing, 12)
+                    .lineLimit(1).padding(.trailing, 12)
             }
             .background(Palette.surface)
             HStack {
                 Text("\(result.pitch.icon) \(result.pitch.label.uppercased())").font(.display(12, weight: .heavy))
-                Spacer()
+                Spacer(minLength: 4)
                 Text(equation(inn: inn, balls: balls)).font(.display(13, weight: .heavy))
             }
+            .lineLimit(1).minimumScaleFactor(0.6)
             .foregroundStyle(Palette.ink)
             .padding(.horizontal, 12).padding(.vertical, 4)
             .background(Palette.accent)
@@ -207,24 +204,25 @@ struct CreaseCard: View {
                 HStack(spacing: 8) {
                     Rectangle().fill(b.onStrike ? Palette.accent : Color.clear).frame(width: 4, height: 22)
                     Text(b.name.uppercased() + (b.onStrike ? " *" : ""))
-                        .font(.display(18, weight: b.onStrike ? .black : .heavy)).lineLimit(1)
+                        .font(.display(18, weight: b.onStrike ? .black : .heavy)).lineLimit(1).minimumScaleFactor(0.6)
                     Spacer()
                     Text("\(b.runs)").font(.score(22))
                         .contentTransition(.numericText())
                     Text("(\(b.balls))").font(.score(14, weight: .regular)).foregroundStyle(Palette.muted).frame(width: 40, alignment: .leading)
-                    Text("\(b.fours)×4 \(b.sixes)×6").font(.score(12, weight: .regular)).foregroundStyle(Palette.muted).frame(width: 62, alignment: .trailing)
+                    Text("\(b.fours)×4 \(b.sixes)×6").font(.score(12, weight: .regular)).foregroundStyle(Palette.muted)
+                        .lineLimit(1).minimumScaleFactor(0.6).frame(width: 52, alignment: .trailing)
                 }
                 .padding(.vertical, 6).padding(.trailing, 12)
             }
             Rectangle().fill(Palette.stroke).frame(height: 1)
             HStack(spacing: 8) {
                 Image(systemName: "figure.cricket").foregroundStyle(Palette.muted).frame(width: 18)
-                Text(event.bowler.name.uppercased()).font(.display(17, weight: .heavy)).lineLimit(1)
+                Text(event.bowler.name.uppercased()).font(.display(17, weight: .heavy)).lineLimit(1).minimumScaleFactor(0.6)
                 Spacer()
                 Text("\(event.bowler.overs)-\(event.bowler.runs)-\(event.bowler.wickets)").font(.score(20))
                 let econ = event.bowler.balls > 0 ? Double(event.bowler.runs) * 6 / Double(event.bowler.balls) : 0
                 Text("ECON \(String(format: "%.1f", econ))").font(.score(12, weight: .regular)).foregroundStyle(Palette.muted)
-                    .frame(width: 62, alignment: .trailing)
+                    .lineLimit(1).minimumScaleFactor(0.6).frame(width: 52, alignment: .trailing)
             }
             .padding(.vertical, 8).padding(.horizontal, 12)
         }

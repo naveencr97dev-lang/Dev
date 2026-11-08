@@ -83,10 +83,12 @@ struct TraitChips: View {
                         Text(t.icon)
                         Text(t.label.uppercased()).font(.display(13, weight: .heavy))
                             .foregroundStyle(t.isBatting ? Color(hex: "#F59E0B") : Color(hex: "#F43F5E"))
+                            .fixedSize()
                         if showBlurb {
                             Text(t.blurb).font(.caption).foregroundStyle(Palette.muted).lineLimit(1)
                         }
                     }
+                    .lineLimit(1)
                 }
             }
         }

@@ -237,6 +237,36 @@ struct Pulse: ViewModifier {
     }
 }
 
+/// Landscape: two fixed-width scrolling columns that can never push past the screen edges.
+struct TwoColumns<Left: View, Right: View>: View {
+    @ViewBuilder var left: Left
+    @ViewBuilder var right: Right
+
+    var body: some View {
+        GeometryReader { geo in
+            let gap = DS.Space.md
+            let col = max(0, (geo.size.width - gap) / 2)
+            HStack(alignment: .top, spacing: gap) {
+                ScrollView {
+                    VStack(spacing: DS.Space.sm) { left }
+                        .frame(width: col)
+                        .padding(.vertical, DS.Space.sm)
+                }
+                .frame(width: col)
+                ScrollView {
+                    VStack(spacing: DS.Space.sm) { right }
+                        .frame(width: col)
+                        .padding(.vertical, DS.Space.sm)
+                }
+                .frame(width: col)
+            }
+            .frame(width: geo.size.width, alignment: .top)
+        }
+        .padding(.horizontal, DS.Space.md)
+        .clipped()
+    }
+}
+
 extension View {
     func keepAwake() -> some View { modifier(KeepAwake()) }
     func staggered(_ index: Int) -> some View { modifier(Staggered(index: index)) }

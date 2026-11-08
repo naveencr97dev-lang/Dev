@@ -8,7 +8,7 @@ struct HomeView: View {
     var body: some View {
         let wide = vSize == .compact
         let layout = wide ? AnyLayout(HStackLayout(spacing: 40)) : AnyLayout(VStackLayout(spacing: DS.Space.xl))
-        layout {
+        let content = layout {
             VStack(alignment: .leading, spacing: 10) {
                 Text("SEASON 2026").font(.display(16, weight: .heavy)).foregroundStyle(Palette.accent).tracking(2)
                 Text("AUCTION\nXI").font(.display(wide ? 64 : 84)).lineSpacing(-14)
@@ -30,6 +30,13 @@ struct HomeView: View {
         }
         .padding(DS.Space.xl)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        Group {
+            if wide {
+                ScrollView { content }
+            } else {
+                content
+            }
+        }
         .onAppear { withAnimation(.spring(response: 0.6, dampingFraction: 0.75)) { appear = true } }
     }
 

@@ -14,11 +14,11 @@ struct AuctionView: View {
                 if let g = store.game {
                     if vSize == .compact {
                         // Landscape: player on the left, bidding on the right (good for casting).
-                        HStack(alignment: .top, spacing: DS.Space.lg) {
-                            ScrollView { VStack(spacing: DS.Space.md) { lotColumn(g) }.padding(.vertical, DS.Space.sm) }
-                            ScrollView { VStack(spacing: DS.Space.md) { bidColumn(g) }.padding(.vertical, DS.Space.sm) }
+                        TwoColumns {
+                            lotColumn(g, compact: true)
+                        } right: {
+                            bidColumn(g, compact: true)
                         }
-                        .padding(.horizontal, DS.Space.lg)
                     } else {
                         ScrollView {
                             VStack(spacing: DS.Space.md) {
@@ -73,21 +73,21 @@ struct AuctionView: View {
 
     // MARK: Columns
 
-    @ViewBuilder private func lotColumn(_ g: GameState) -> some View {
+    @ViewBuilder private func lotColumn(_ g: GameState, compact: Bool = false) -> some View {
         lotHeader(g)
         if let p = store.currentPlayer {
-            PlayerCard(player: p, setName: store.currentSetName)
-            bidPanel(g, p)
+            PlayerCard(player: p, setName: store.currentSetName, compact: compact)
+            bidPanel(g, p, compact: compact)
         }
     }
 
-    @ViewBuilder private func bidColumn(_ g: GameState) -> some View {
+    @ViewBuilder private func bidColumn(_ g: GameState, compact: Bool = false) -> some View {
         if let p = store.currentPlayer {
-            bidButtons(g, p)
+            bidButtons(g, p, compact: compact)
             actionRow(g)
         }
         purseStrip(g)
-        recentSales(g)
+        if !compact { recentSales(g) }
     }
 
     // MARK: Sections
@@ -100,13 +100,15 @@ struct AuctionView: View {
             Text("LOT \(min(a.index + 1, a.queue.count))")
                 .font(.display(26)).foregroundStyle(Palette.accent)
             Text("/ \(a.queue.count)").font(.display(18, weight: .heavy)).foregroundStyle(Palette.muted)
-            Spacer()
+            Spacer(minLength: 4)
             if store.paused { Chip(text: "Paused", color: .orange.opacity(0.7)) }
-            Text("\(filled)/\(slots) SLOTS FILLED").font(.display(14, weight: .heavy)).foregroundStyle(Palette.muted)
+            Text("\(filled)/\(slots) FILLED").font(.display(14, weight: .heavy)).foregroundStyle(Palette.muted)
         }
+        .lineLimit(1)
+        .minimumScaleFactor(0.6)
     }
 
-    private func bidPanel(_ g: GameState, _ p: Player) -> some View {
+    private func bidPanel(_ g: GameState, _ p: Player, compact: Bool = false) -> some View {
         let leader = g.auction.leader.flatMap { g.team($0) }
         let fraction = max(0, min(1, store.timeLeft / g.rules.bidSeconds))
         let urgent = fraction < 0.3
@@ -118,14 +120,15 @@ struct AuctionView: View {
                         .padding(.horizontal, 10).padding(.vertical, 3)
                         .background(Slant().fill(leader == nil ? Palette.muted : Palette.accent))
                     Text(Money.format(g.auction.currentBid ?? p.base))
-                        .font(.score(44))
+                        .font(.score(compact ? 34 : 44))
+                        .lineLimit(1).minimumScaleFactor(0.5)
                         .contentTransition(.numericText())
                         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: g.auction.currentBid)
                 }
                 Spacer()
                 if let leader {
                     VStack(spacing: 4) {
-                        TeamBadge(team: leader, size: 54).pulse(Color(hex: leader.colorHex), active: true)
+                        TeamBadge(team: leader, size: compact ? 40 : 54).pulse(Color(hex: leader.colorHex), active: true)
                         Text(leader.isCPU ? "CPU" : "LEADING").font(.display(12, weight: .heavy)).foregroundStyle(Palette.muted)
                     }
                     .transition(.scale.combined(with: .opacity))
@@ -151,13 +154,13 @@ struct AuctionView: View {
                     .font(.score(16)).foregroundStyle(urgent ? Palette.wicket : .white)
             }
         }
-        .padding(DS.Space.lg)
+        .padding(compact ? DS.Space.md : DS.Space.lg)
         .background(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous).fill(Palette.surface))
         .overlay(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
             .stroke(leader.map { Color(hex: $0.colorHex) } ?? Palette.stroke, lineWidth: leader == nil ? 1 : 2))
     }
 
-    private func bidButtons(_ g: GameState, _ p: Player) -> some View {
+    private func bidButtons(_ g: GameState, _ p: Player, compact: Bool = false) -> some View {
         let next = g.nextBidAmount(book: store.book) ?? p.base
         let humans = g.teams.filter { !$0.isCPU }
         let columns = [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)]
@@ -169,18 +172,20 @@ struct AuctionView: View {
                 let color = Color(hex: t.colorHex)
                 Button { store.humanBid(t.id) } label: {
                     VStack(alignment: .leading, spacing: 4) {
-                        HStack(spacing: 8) {
-                            TeamBadge(team: t, size: 30)
+                        HStack(spacing: 6) {
+                            TeamBadge(team: t, size: compact ? 24 : 30)
                             Text(leading ? "LEADING" : (reason?.uppercased() ?? "BID \(Money.format(next))"))
-                                .font(.display(17)).lineLimit(1).minimumScaleFactor(0.7)
+                                .font(.display(compact ? 15 : 17)).lineLimit(1).minimumScaleFactor(0.5)
                         }
                         Text("\(Money.format(t.purse)) · \(t.squad.count)/\(g.rules.maxSquad)")
-                            .font(.score(13, weight: .semibold)).opacity(0.85)
-                        Text(store.needs(t.id).summary).font(.caption2).opacity(0.75).lineLimit(1)
+                            .font(.score(compact ? 11 : 13, weight: .semibold)).opacity(0.85)
+                            .lineLimit(1).minimumScaleFactor(0.6)
+                        Text(store.needs(t.id).summary).font(.caption2).opacity(0.75)
+                            .lineLimit(1).minimumScaleFactor(0.6)
                     }
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(10)
+                    .padding(compact ? 7 : 10)
                     .background(
                         RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
                             .fill(LinearGradient(colors: [color.opacity(enabled || leading ? 0.95 : 0.22),
@@ -199,17 +204,17 @@ struct AuctionView: View {
 
     private func actionRow(_ g: GameState) -> some View {
         HStack(spacing: 10) {
-            Button { store.skipLot() } label: { Label("Skip", systemImage: "forward.fill") }
+            Button { store.skipLot() } label: { Label("Skip", systemImage: "forward.fill").lineLimit(1) }
                 .buttonStyle(SecondaryButtonStyle())
             Button { store.hammerNow() } label: {
-                Label(g.auction.leader == nil ? "Unsold" : "Sold", systemImage: "hammer.fill")
+                Label(g.auction.leader == nil ? "Unsold" : "Sold", systemImage: "hammer.fill").lineLimit(1)
             }
             .buttonStyle(SecondaryButtonStyle())
         }
         .disabled(store.banner != nil || store.paused)
         .overlay(alignment: .bottom) {
             Text("Skip: CPUs settle this player instantly")
-                .font(.caption2).foregroundStyle(Palette.muted).offset(y: 18)
+                .font(.caption2).foregroundStyle(Palette.muted).lineLimit(1).minimumScaleFactor(0.6).offset(y: 18)
         }
         .padding(.bottom, 14)
     }
@@ -281,42 +286,45 @@ struct BidButtonStyle: ButtonStyle {
 struct PlayerCard: View {
     let player: Player
     var setName: String = ""
+    /// Landscape: smaller type, no stat line or trait descriptions.
+    var compact = false
 
     var body: some View {
         FlipCard(id: player.id) {
             VStack(alignment: .leading, spacing: 0) {
                 HStack {
                     Text(setName.uppercased()).font(.display(13, weight: .heavy))
-                    Spacer()
+                    Spacer(minLength: 4)
                     Text(player.role.label.uppercased()).font(.display(13, weight: .heavy))
                 }
+                .lineLimit(1).minimumScaleFactor(0.6)
                 .foregroundStyle(Palette.ink)
                 .padding(.horizontal, DS.Space.lg).padding(.vertical, 6)
                 .background(Palette.role(player.role))
 
-                VStack(alignment: .leading, spacing: DS.Space.md) {
+                VStack(alignment: .leading, spacing: compact ? DS.Space.sm : DS.Space.md) {
                     HStack(alignment: .top) {
                         VStack(alignment: .leading, spacing: 6) {
-                            Text(player.name.uppercased()).font(.display(34)).minimumScaleFactor(0.5).lineLimit(1)
-                            HStack(spacing: 6) {
-                                if player.overseas { Chip(text: "✈︎ Overseas", color: Color(hex: "#1E3A8A")) }
-                                if player.pool == "Uncapped" { Chip(text: "Uncapped") }
-                                if player.isLegend { Chip(text: "★ Legend", color: Palette.accent, textColor: Palette.ink) }
-                                if player.bowl >= 40 { Chip(text: player.bowlType == .spin ? "Spin" : "Pace") }
+                            Text(player.name.uppercased()).font(.display(compact ? 26 : 34)).minimumScaleFactor(0.4).lineLimit(1)
+                            ViewThatFits(in: .horizontal) {
+                                chips(full: true)
+                                chips(full: false)
                             }
                         }
-                        Spacer()
+                        Spacer(minLength: 4)
                         VStack(spacing: -4) {
-                            Text("\(player.rating)").font(.display(46)).foregroundStyle(Palette.accent)
+                            Text("\(player.rating)").font(.display(compact ? 34 : 46)).foregroundStyle(Palette.accent)
                             Text("OVR").font(.display(12, weight: .heavy)).foregroundStyle(Palette.muted)
                         }
                     }
                     RatingBar(label: "BAT", value: player.bat, color: Color(hex: "#F59E0B"))
                     RatingBar(label: "BOWL", value: player.bowl, color: Color(hex: "#F43F5E"))
-                    TraitChips(traits: player.traits, showBlurb: true)
-                    Text(player.line).font(.footnote).foregroundStyle(Palette.muted)
+                    TraitChips(traits: player.traits, showBlurb: !compact)
+                    if !compact {
+                        Text(player.line).font(.footnote).foregroundStyle(Palette.muted)
+                    }
                 }
-                .padding(DS.Space.lg)
+                .padding(compact ? DS.Space.md : DS.Space.lg)
             }
             .background(
                 ZStack {
@@ -328,6 +336,18 @@ struct PlayerCard: View {
             .overlay(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
                 .stroke(player.isLegend ? Palette.accent.opacity(0.7) : Palette.stroke, lineWidth: player.isLegend ? 1.5 : 1))
         }
+    }
+}
+
+extension PlayerCard {
+    @ViewBuilder func chips(full: Bool) -> some View {
+        HStack(spacing: 6) {
+            if player.overseas { Chip(text: full ? "✈︎ Overseas" : "✈︎", color: Color(hex: "#1E3A8A")) }
+            if player.pool == "Uncapped" && full { Chip(text: "Uncapped") }
+            if player.isLegend { Chip(text: full ? "★ Legend" : "★", color: Palette.accent, textColor: Palette.ink) }
+            if player.bowl >= 40 { Chip(text: player.bowlType == .spin ? "Spin" : "Pace") }
+        }
+        .fixedSize()
     }
 }
 
