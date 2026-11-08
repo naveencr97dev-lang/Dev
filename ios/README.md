@@ -19,7 +19,9 @@ Franchise names are fictional; the app is not affiliated with any real league.
    - Tap your crest to bid. The timer resets on every bid.
    - **Skip** settles a lot instantly (CPU teams decide, no waiting). **Sold/Unsold** drops the hammer now.
    - Each bid tile shows what your XI still needs (WK, bowlers, batters).
-   - IPL-style increments: +₹5 L under ₹1 Cr, +₹10 L to ₹2 Cr, +₹20 L to ₹5 Cr, +₹25 L above.
+   - Bid raise: IPL-style (+₹5 L under ₹1 Cr, +₹10 L to ₹2 Cr, +₹20 L to ₹5 Cr, +₹25 L above)
+     or a fixed +₹25 L / ₹50 L / ₹1 Cr / ₹2 Cr per bid for a quicker auction. Set it in Setup
+     or change it mid-auction from the ••• menu.
 3. **Legends**: 67 star players carry traits that change match-ups ball by ball:
    Power Hitter, Anchor, Finisher, Spin/Pace Basher, Powerplay Blitz, Chase Master, 360°,
    Death Specialist, New-Ball Swing, Mystery Spin, Miser, Wicket Taker, Express Pace.

@@ -44,6 +44,11 @@ final class EngineTests: XCTestCase {
         XCTAssertEqual(AuctionEngine.increment(after: 150), 10)
         XCTAssertEqual(AuctionEngine.increment(after: 300), 20)
         XCTAssertEqual(AuctionEngine.increment(after: 1200), 25)
+        XCTAssertEqual(AuctionEngine.increment(after: 30, step: 100), 100, "fixed ₹1 Cr raise")
+        XCTAssertEqual(AuctionEngine.increment(after: 1200, step: 100), 100)
+        // Older saves without bidStep still decode.
+        let old = #"{"purse":10000,"minSquad":11,"maxSquad":11,"maxOverseasSquad":4,"maxOverseasXI":4,"bidSeconds":8,"doubleRoundRobin":false,"pitchMode":{"mixed":{}},"minBase":30}"#
+        XCTAssertEqual(try JSONDecoder().decode(Rules.self, from: Data(old.utf8)).bidStep, 0)
         XCTAssertEqual(Money.format(75), "₹75 L")
         XCTAssertEqual(Money.format(200), "₹2 Cr")
         XCTAssertEqual(Money.format(1225), "₹12.25 Cr")
@@ -92,7 +97,11 @@ final class EngineTests: XCTestCase {
         let p = byId[state.currentPlayerId!]!
         XCTAssertTrue(AuctionEngine.placeBid(&state, teamId: 0, teams: teams, rules: rules, players: byId))
         XCTAssertEqual(state.currentBid, p.base)
-        XCTAssertFalse(AuctionEngine.placeBid(&state, teamId: 0, teams: teams, rules: rules, players: byId), "can't outbid yourself")
+        var crore = rules
+        crore.bidStep = 100
+        XCTAssertTrue(AuctionEngine.placeBid(&state, teamId: 1, teams: teams, rules: crore, players: byId))
+        XCTAssertEqual(state.currentBid, p.base + 100, "next bid jumps by ₹1 Cr")
+        XCTAssertFalse(AuctionEngine.placeBid(&state, teamId: 1, teams: teams, rules: rules, players: byId), "can't outbid yourself")
         // Reserve: a team with 1 Cr and an empty squad can't bid more than 1 Cr - 10 * 30 L.
         teams[1].purse = 100
         XCTAssertEqual(AuctionEngine.maxAffordable(teams[1], rules: rules), -200)

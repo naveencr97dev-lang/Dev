@@ -61,7 +61,7 @@ struct GameState: Codable {
 
     func nextBidAmount(book: PlayerBook) -> Int? {
         guard let pid = auction.currentPlayerId, let p = book[pid] else { return nil }
-        return AuctionEngine.nextBid(auction, base: p.base)
+        return AuctionEngine.nextBid(auction, base: p.base, step: rules.bidStep)
     }
 
     @discardableResult

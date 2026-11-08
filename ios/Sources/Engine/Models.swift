@@ -258,6 +258,32 @@ struct Rules: Codable, Hashable {
     var bidSeconds: Double = 8
     var doubleRoundRobin: Bool = false
     var pitchMode: PitchMode = .mixed
+    /// Fixed raise per bid in lakhs; 0 = IPL-style sliding increments.
+    var bidStep: Int = 0
+
+    static let bidSteps = [0, 25, 50, 100, 200]
+
+    static func bidStepLabel(_ step: Int) -> String {
+        step == 0 ? "IPL-style (+5 L → +25 L)" : "+\(Money.format(step)) per bid"
+    }
+
+    init() {}
+
+    // Tolerant decoding so saves from older versions still load.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        let d = Rules()
+        purse = try c.decodeIfPresent(Int.self, forKey: .purse) ?? d.purse
+        minSquad = try c.decodeIfPresent(Int.self, forKey: .minSquad) ?? d.minSquad
+        maxSquad = try c.decodeIfPresent(Int.self, forKey: .maxSquad) ?? d.maxSquad
+        maxOverseasSquad = try c.decodeIfPresent(Int.self, forKey: .maxOverseasSquad) ?? d.maxOverseasSquad
+        maxOverseasXI = try c.decodeIfPresent(Int.self, forKey: .maxOverseasXI) ?? d.maxOverseasXI
+        bidSeconds = try c.decodeIfPresent(Double.self, forKey: .bidSeconds) ?? d.bidSeconds
+        doubleRoundRobin = try c.decodeIfPresent(Bool.self, forKey: .doubleRoundRobin) ?? d.doubleRoundRobin
+        pitchMode = try c.decodeIfPresent(PitchMode.self, forKey: .pitchMode) ?? d.pitchMode
+        bidStep = try c.decodeIfPresent(Int.self, forKey: .bidStep) ?? d.bidStep
+        minBase = try c.decodeIfPresent(Int.self, forKey: .minBase) ?? d.minBase
+    }
     /// Lowest base price in the pool; used to reserve purse for the minimum squad.
     var minBase: Int = 30
 }

@@ -206,6 +206,13 @@ final class GameStore: ObservableObject {
         }
     }
 
+    /// Change the raise per bid mid-auction.
+    func setBidStep(_ step: Int) {
+        mutate { $0.rules.bidStep = step }
+        lastAction = step == 0 ? "Bids now rise IPL-style" : "Bids now rise by \(Money.format(step))"
+        Haptics.tap()
+    }
+
     func simRestOfAuction() {
         banner = nil
         mutate { $0.simRestOfAuction(book: book) }

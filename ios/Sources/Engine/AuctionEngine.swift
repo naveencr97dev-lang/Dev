@@ -109,7 +109,8 @@ enum AuctionEngine {
     // MARK: Bidding rules
 
     /// IPL-style increments: +5 L below 1 Cr, +10 L to 2 Cr, +20 L to 5 Cr, +25 L above.
-    static func increment(after bid: Int) -> Int {
+    static func increment(after bid: Int, step: Int = 0) -> Int {
+        if step > 0 { return step }
         switch bid {
         case ..<100: return 5
         case ..<200: return 10
@@ -118,9 +119,9 @@ enum AuctionEngine {
         }
     }
 
-    static func nextBid(_ state: AuctionState, base: Int) -> Int {
+    static func nextBid(_ state: AuctionState, base: Int, step: Int = 0) -> Int {
         guard let bid = state.currentBid else { return base }
-        return bid + increment(after: bid)
+        return bid + increment(after: bid, step: step)
     }
 
     /// The most a team can spend on one player while still affording a minimum squad.
@@ -197,7 +198,7 @@ enum AuctionEngine {
     /// A CPU team willing to make the next bid, if any.
     static func cpuBidder(_ state: AuctionState, teams: [Franchise], rules: Rules, players: [String: Player], rng: inout SeededRNG) -> Int? {
         guard !state.lotClosed, let pid = state.currentPlayerId, let p = players[pid] else { return nil }
-        let amount = nextBid(state, base: p.base)
+        let amount = nextBid(state, base: p.base, step: rules.bidStep)
         let keen = teams.filter { t in
             t.isCPU && t.id != state.leader
                 && (state.cpuLimits[t.id] ?? 0) >= amount
@@ -214,7 +215,7 @@ enum AuctionEngine {
         guard !state.lotClosed, let pid = state.currentPlayerId, let p = players[pid],
               let team = teams.first(where: { $0.id == teamId }),
               state.leader != teamId else { return false }
-        let amount = nextBid(state, base: p.base)
+        let amount = nextBid(state, base: p.base, step: rules.bidStep)
         guard canBid(team, on: p, amount: amount, rules: rules, players: players) else { return false }
         state.currentBid = amount
         state.leader = teamId

@@ -49,6 +49,15 @@ struct AuctionView: View {
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Menu {
+                        Picker(selection: Binding(get: { store.game?.rules.bidStep ?? 0 },
+                                                  set: { store.setBidStep($0) })) {
+                            ForEach(Rules.bidSteps, id: \.self) { step in
+                                Text(step == 0 ? "IPL-style" : "+\(Money.format(step)) per bid").tag(step)
+                            }
+                        } label: {
+                            Label("Bid raise", systemImage: "arrow.up.circle")
+                        }
+                        .pickerStyle(.menu)
                         Button { showSquads = true } label: { Label("View squads", systemImage: "person.3") }
                         Button { confirmSim = true } label: { Label("Sim rest of auction", systemImage: "forward.end") }
                         QuitMenuItem(confirm: $confirmQuit)

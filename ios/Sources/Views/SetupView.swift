@@ -42,6 +42,11 @@ struct SetupView: View {
                     Text("12 s").tag(12.0)
                     Text("30 s").tag(30.0)
                 }
+                Picker("Bid raise", selection: $rules.bidStep) {
+                    ForEach(Rules.bidSteps, id: \.self) { step in
+                        Text(step == 0 ? "IPL-style" : "+\(Money.format(step))").tag(step)
+                    }
+                }
                 Picker("Pitches", selection: $rules.pitchMode) {
                     Text("🎲 Mixed venues").tag(PitchMode.mixed)
                     ForEach(Pitch.allCases) { p in
@@ -52,7 +57,7 @@ struct SetupView: View {
             } header: {
                 Text("Rules")
             } footer: {
-                Text(pitchFooter)
+                Text("\(Rules.bidStepLabel(rules.bidStep)). Bigger raises = quicker auction. Can be changed mid-auction from the ••• menu.\n\(pitchFooter)")
             }
 
             Section {
