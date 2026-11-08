@@ -8,6 +8,7 @@ struct TodayView: View {
     @State private var statusFilter: StatusFilter = .all
     @State private var timeFilter: TimeFilter = .all
     @State private var collapsedGroups: Set<String> = []
+    @State private var showConfetti = false
 
     private var stats: Stats { Stats(store: store) }
 
@@ -68,8 +69,20 @@ struct TodayView: View {
             .sheet(isPresented: $showingJournal) {
                 MoodView()
             }
+            .overlay {
+                if showConfetti { ConfettiView() }
+            }
+            .onChange(of: allDone) { done in
+                if done {
+                    Haptics.success()
+                    showConfetti = true
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { showConfetti = false }
+                }
+            }
         }
     }
+
+    private var allDone: Bool { !habits.isEmpty && doneCount == habits.count }
 
     private var doneCount: Int { habits.filter { store.isDone($0, on: selected) }.count }
 
@@ -163,7 +176,8 @@ struct TodayView: View {
                             .numeral(16)
                     }
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(greeting).font(.title3.weight(.bold))
+                        Text(greeting)
+                            .font(.system(.title3, design: .rounded).weight(.bold))
                         Text("\(store.activeHabits.count) active habit\(store.activeHabits.count == 1 ? "" : "s")")
                             .font(.subheadline).foregroundStyle(.secondary)
                     }

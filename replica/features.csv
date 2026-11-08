@@ -48,3 +48,6 @@ Habit frequency daily/weekly/monthly,goals,should,yes,yes,daily/weekly/monthly t
 Adjustable app text size,ux,should,yes,yes,Settings - Dynamic Type small..xlarge
 Capture ideas & issues in-app,feedback,should,no,yes,own idea - notes saved on device
 Today grouped by goal (collapsible),ux,should,no,yes,reduce clutter with multiple goals
+Violet accent + rounded type,ux,should,no,yes,applied design direction
+Spring check-off + haptics,ux,should,no,yes,motion
+Confetti on all-done,ux,should,no,yes,success state

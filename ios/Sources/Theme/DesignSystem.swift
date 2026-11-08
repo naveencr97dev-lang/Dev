@@ -19,10 +19,17 @@ enum DS {
         static let lg: CGFloat = 22
         static let pill: CGFloat = 999
     }
-    // Brand gradient.
+    // Brand gradient (violet).
     static let brand = LinearGradient(
-        colors: [Color(hex: "#5B8DEF"), Color(hex: "#7C6CF0")],
+        colors: [Color(hex: "#9B8CFF"), Color(hex: "#6D5EF6")],
         startPoint: .topLeading, endPoint: .bottomTrailing)
+}
+
+extension Font {
+    /// Friendly rounded display face (SF Rounded) used for titles and numerals.
+    static func display(_ size: CGFloat, weight: Font.Weight = .bold) -> Font {
+        .system(size: size, weight: weight, design: .rounded)
+    }
 }
 
 /// A soft, rounded surface used for grouped content.

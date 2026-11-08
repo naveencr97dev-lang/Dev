@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct HabitRow: View {
     @EnvironmentObject var store: Store
@@ -29,7 +30,10 @@ struct HabitRow: View {
             Spacer()
 
             Button {
-                withAnimation { store.toggle(habit, on: date) }
+                Haptics.tap()
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.6)) {
+                    store.toggle(habit, on: date)
+                }
             } label: { trailingControl }
                 .buttonStyle(.plain)
         }
