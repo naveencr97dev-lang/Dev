@@ -17,3 +17,10 @@ are fictional and not affiliated with any real league or team.
 
 Theme helpers (hex colours, confetti, haptics) and the Codemagic build pipeline
 are reused from this repository's own Streaklet app.
+
+## caveman skills
+
+`.claude/skills/caveman/` and `.claude/skills/ultracave/` are copied unchanged
+from https://github.com/JuliusBrussee/caveman (v4.1.0, commit 1e91f13), MIT
+licensed (see the LICENSE file in each folder). Only the Markdown skills are
+included: none of that project's hooks, scripts or proxy.
