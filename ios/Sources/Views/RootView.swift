@@ -7,6 +7,8 @@ struct RootView: View {
         TabView {
             TodayView()
                 .tabItem { Label("Today", systemImage: "checklist") }
+            GroceriesView()
+                .tabItem { Label("Restock", systemImage: "cart.fill") }
             StatsView()
                 .tabItem { Label("Reports", systemImage: "list.clipboard.fill") }
             MoodView()

@@ -39,3 +39,9 @@ Apple Health sync,platform,could,yes,skip,HealthKit - native only
 HRV stress monitor,platform,could,yes,skip,Watch sensors - native only
 Apple Watch app,platform,could,yes,skip,native only
 Siri / Shortcuts,platform,could,yes,skip,native only
+Grocery restock staples list,groceries,should,no,yes,own idea - recurring weekly staples
+Weekly stock review (in fridge / need order),groceries,should,no,yes,resets each Monday
+Auto shopping list from needed items,groceries,should,no,yes,
+Design system refresh (tokens/cards/rings),ux,should,no,yes,inspired by ShadKit/SwiftUI-Kit (MIT)
+Goals with attached habits,goals,should,no,no,next push
+Habit frequency daily/weekly/monthly,goals,should,yes,no,next push

@@ -77,24 +77,27 @@ struct TodayView: View {
     }
 
     private var headerCard: some View {
-        VStack(spacing: 16) {
-            HStack {
-                ZStack {
-                    ProgressRing(progress: stats.dayProgress(on: selected), lineWidth: 10, size: 64)
-                    Text("\(Int(stats.dayProgress(on: selected) * 100))%")
-                        .font(.headline)
+        AppCard {
+            VStack(spacing: DS.Space.lg) {
+                HStack(spacing: DS.Space.lg) {
+                    ZStack {
+                        ProgressRing(progress: stats.dayProgress(on: selected), lineWidth: 10, size: 68)
+                        Text("\(Int(stats.dayProgress(on: selected) * 100))%")
+                            .numeral(16)
+                    }
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(greeting).font(.title3.weight(.bold))
+                        Text("\(store.activeHabits.count) active habit\(store.activeHabits.count == 1 ? "" : "s")")
+                            .font(.subheadline).foregroundStyle(.secondary)
+                    }
+                    Spacer()
                 }
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(greeting).font(.title3.weight(.bold))
-                    Text("\(store.activeHabits.count) active habit\(store.activeHabits.count == 1 ? "" : "s")")
-                        .font(.subheadline).foregroundStyle(.secondary)
-                }
-                Spacer()
+                WeekStrip(selected: $selected) { stats.dayProgress(on: $0) }
+                filterBar
             }
-            WeekStrip(selected: $selected) { stats.dayProgress(on: $0) }
-            filterBar
         }
-        .padding(16)
+        .padding(.horizontal, DS.Space.lg)
+        .padding(.vertical, DS.Space.sm)
     }
 
     private var filterBar: some View {

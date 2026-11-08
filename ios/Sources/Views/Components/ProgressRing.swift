@@ -9,10 +9,15 @@ struct ProgressRing: View {
     var body: some View {
         ZStack {
             Circle()
-                .stroke(color.opacity(0.18), lineWidth: lineWidth)
+                .stroke(color.opacity(0.15), lineWidth: lineWidth)
             Circle()
                 .trim(from: 0, to: max(0.001, min(progress, 1)))
-                .stroke(color, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
+                .stroke(
+                    AngularGradient(
+                        gradient: Gradient(colors: [color.opacity(0.7), color]),
+                        center: .center,
+                        startAngle: .degrees(0), endAngle: .degrees(360)),
+                    style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
                 .rotationEffect(.degrees(-90))
                 .animation(.easeInOut(duration: 0.3), value: progress)
         }

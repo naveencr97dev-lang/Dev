@@ -6,6 +6,8 @@ final class Store: ObservableObject {
     @Published var habits: [Habit] = []
     @Published var checkins: [Checkin] = []
     @Published var moods: [MoodEntry] = []
+    @Published var groceryItems: [GroceryItem] = []
+    @Published var groceryChecks: [GroceryCheck] = []
     @Published var appearance: AppearanceMode = .system
 
     private let calendar = Calendar.current
@@ -23,6 +25,8 @@ final class Store: ObservableObject {
         var habits: [Habit]
         var checkins: [Checkin]
         var moods: [MoodEntry]
+        var groceryItems: [GroceryItem]?
+        var groceryChecks: [GroceryCheck]?
         var appearance: AppearanceMode
     }
 
@@ -37,11 +41,15 @@ final class Store: ObservableObject {
         habits = snap.habits
         checkins = snap.checkins
         moods = snap.moods
+        groceryItems = snap.groceryItems ?? []
+        groceryChecks = snap.groceryChecks ?? []
         appearance = snap.appearance
     }
 
     func save() {
-        let snap = Snapshot(habits: habits, checkins: checkins, moods: moods, appearance: appearance)
+        let snap = Snapshot(habits: habits, checkins: checkins, moods: moods,
+                            groceryItems: groceryItems, groceryChecks: groceryChecks,
+                            appearance: appearance)
         if let data = try? JSONEncoder().encode(snap) {
             try? data.write(to: fileURL, options: .atomic)
         }
@@ -133,8 +141,96 @@ final class Store: ObservableObject {
         moods.first { calendar.isDate($0.day, inSameDayAs: startOfDay(date)) }
     }
 
+    // MARK: - Groceries
+
+    /// Monday-start of the week containing `date`.
+    func weekStart(_ date: Date = Date()) -> Date {
+        let d = startOfDay(date)
+        let weekday = calendar.component(.weekday, from: d) // 1=Sun...7=Sat
+        let delta = (weekday + 5) % 7                       // days since Monday
+        return calendar.date(byAdding: .day, value: -delta, to: d)!
+    }
+
+    var sortedGroceryItems: [GroceryItem] {
+        groceryItems.sorted { ($0.category, $0.sortIndex) < ($1.category, $1.sortIndex) }
+    }
+
+    func status(for item: GroceryItem, week: Date? = nil) -> StockStatus {
+        let w = week ?? weekStart()
+        return groceryChecks.first {
+            $0.itemId == item.id && calendar.isDate($0.weekStart, inSameDayAs: w)
+        }?.status ?? .unchecked
+    }
+
+    /// Cycle a staple's status for the current week: unchecked -> inStock -> needOrder -> unchecked.
+    func cycleStatus(for item: GroceryItem) {
+        let w = weekStart()
+        let next: StockStatus
+        switch status(for: item, week: w) {
+        case .unchecked: next = .inStock
+        case .inStock: next = .needOrder
+        case .needOrder: next = .unchecked
+        }
+        if let idx = groceryChecks.firstIndex(where: {
+            $0.itemId == item.id && calendar.isDate($0.weekStart, inSameDayAs: w) }) {
+            if next == .unchecked { groceryChecks.remove(at: idx) }
+            else { groceryChecks[idx].status = next }
+        } else if next != .unchecked {
+            groceryChecks.append(GroceryCheck(itemId: item.id, weekStart: w, status: next))
+        }
+        save()
+    }
+
+    func setStatus(_ status: StockStatus, for item: GroceryItem) {
+        let w = weekStart()
+        if let idx = groceryChecks.firstIndex(where: {
+            $0.itemId == item.id && calendar.isDate($0.weekStart, inSameDayAs: w) }) {
+            if status == .unchecked { groceryChecks.remove(at: idx) }
+            else { groceryChecks[idx].status = status }
+        } else if status != .unchecked {
+            groceryChecks.append(GroceryCheck(itemId: item.id, weekStart: w, status: status))
+        }
+        save()
+    }
+
+    /// Items marked "need to order" this week.
+    var shoppingList: [GroceryItem] {
+        sortedGroceryItems.filter { status(for: $0) == .needOrder }
+    }
+
+    /// Items not yet reviewed this week.
+    var uncheckedCount: Int {
+        groceryItems.filter { status(for: $0) == .unchecked }.count
+    }
+
+    func addGroceryItem(_ item: GroceryItem) {
+        var it = item
+        it.sortIndex = (groceryItems.map { $0.sortIndex }.max() ?? 0) + 1
+        groceryItems.append(it)
+        save()
+    }
+
+    func deleteGroceryItem(_ item: GroceryItem) {
+        groceryItems.removeAll { $0.id == item.id }
+        groceryChecks.removeAll { $0.itemId == item.id }
+        save()
+    }
+
+    func seedGroceriesIfEmpty() {
+        guard groceryItems.isEmpty else { return }
+        let samples: [(String, String)] = [
+            ("Milk", "Dairy"), ("Eggs", "Dairy"), ("Bread", "Bakery"),
+            ("Bananas", "Produce"), ("Tomatoes", "Produce"), ("Chicken", "Meat"),
+            ("Rice", "Pantry"), ("Toilet paper", "Household")
+        ]
+        for (n, c) in samples {
+            addGroceryItem(GroceryItem(name: n, emoji: GroceryCategory.emoji(for: c), category: c))
+        }
+    }
+
     func resetAll() {
         habits = []; checkins = []; moods = []
+        groceryItems = []; groceryChecks = []
         save()
     }
 
