@@ -7,6 +7,20 @@ enum HabitKind: String, Codable, CaseIterable, Identifiable {
     var label: String { self == .build ? "Build" : "Quit" }
 }
 
+enum TimeOfDay: String, Codable, CaseIterable, Identifiable {
+    case anytime, morning, afternoon, evening
+    var id: String { rawValue }
+    var label: String { rawValue.capitalized }
+    var symbol: String {
+        switch self {
+        case .anytime: return "clock"
+        case .morning: return "sunrise"
+        case .afternoon: return "sun.max"
+        case .evening: return "moon.stars"
+        }
+    }
+}
+
 /// A habit the user is building or quitting.
 struct Habit: Identifiable, Codable, Equatable {
     var id: UUID = UUID()
@@ -25,6 +39,9 @@ struct Habit: Identifiable, Codable, Equatable {
 
     /// Optional daily reminder time, stored as minutes after midnight.
     var reminderMinutes: Int? = nil
+
+    /// Preferred time of day. Drives the Today-screen time filter.
+    var timeOfDay: TimeOfDay = .anytime
 
     var archived: Bool = false
     var sortIndex: Int = 0

@@ -13,6 +13,13 @@ Edit / archive / delete habit,core,must,yes,no,
 Stats weekly/monthly/yearly,stats,should,yes,no,S05
 Completion % and charts,stats,should,yes,no,
 Reorder habits,core,should,yes,no,
+Time-of-day tag (morning/afternoon/evening/anytime),core,should,yes,yes,from screenshots - home time filter
+Today filters (status All/Unmet/Met + time),core,should,yes,yes,from screenshots
+Habit template library by category,core,should,yes,yes,Popular/Health/Sports/Lifestyle/Quit + Custom
+Reports: Weekly/Monthly/Yearly periods,stats,should,yes,yes,from reports screenshots
+Summary metrics (Met% BestDay TotalDone BestStreak),stats,should,yes,yes,from reports footer
+Weekly habit x weekday grid,stats,should,yes,yes,from weekly report
+Reports premium-gated,monetize,could,yes,no,original gates reports behind Pro
 Reminders (time-based multiple),engage,should,yes,no,web notifications
 Mood tracking,wellbeing,should,yes,no,S06 5-point
 Habit diary / notes,wellbeing,should,yes,no,per-day notes

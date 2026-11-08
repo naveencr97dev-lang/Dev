@@ -4,10 +4,32 @@ struct TodayView: View {
     @EnvironmentObject var store: Store
     @State private var selected = Calendar.current.startOfDay(for: Date())
     @State private var showingNew = false
-    @State private var editing: Habit? = nil
+    @State private var statusFilter: StatusFilter = .all
+    @State private var timeFilter: TimeFilter = .all
 
     private var stats: Stats { Stats(store: store) }
-    private var habits: [Habit] { store.habitsScheduled(on: selected) }
+
+    private var habits: [Habit] {
+        store.habitsScheduled(on: selected).filter { h in
+            switch statusFilter {
+            case .all: break
+            case .met: if !store.isDone(h, on: selected) { return false }
+            case .unmet: if store.isDone(h, on: selected) { return false }
+            }
+            switch timeFilter {
+            case .all: return true
+            case .some(let t): return h.timeOfDay == t
+            }
+        }
+    }
+
+    enum StatusFilter: String, CaseIterable, Identifiable { case all, unmet, met; var id: String { rawValue } }
+    enum TimeFilter: Equatable, Identifiable {
+        case all
+        case some(TimeOfDay)
+        var id: String { if case .some(let t) = self { return t.rawValue }; return "all" }
+        var label: String { if case .some(let t) = self { return t.label }; return "All" }
+    }
 
     var body: some View {
         NavigationStack {
@@ -42,7 +64,7 @@ struct TodayView: View {
                 }
             }
             .sheet(isPresented: $showingNew) {
-                HabitEditView(habit: nil)
+                HabitTemplatePicker()
             }
         }
     }
@@ -70,8 +92,33 @@ struct TodayView: View {
                 Spacer()
             }
             WeekStrip(selected: $selected) { stats.dayProgress(on: $0) }
+            filterBar
         }
         .padding(16)
+    }
+
+    private var filterBar: some View {
+        HStack(spacing: 10) {
+            Picker("Status", selection: $statusFilter) {
+                ForEach(StatusFilter.allCases) { Text($0.rawValue.capitalized).tag($0) }
+            }
+            .pickerStyle(.segmented)
+
+            Menu {
+                Button("All") { timeFilter = .all }
+                ForEach(TimeOfDay.allCases) { t in
+                    Button { timeFilter = .some(t) } label: { Label(t.label, systemImage: t.symbol) }
+                }
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "clock")
+                    Text(timeFilter.label).lineLimit(1)
+                }
+                .font(.subheadline)
+                .padding(.horizontal, 10).padding(.vertical, 7)
+                .background(Capsule().fill(Color.secondary.opacity(0.15)))
+            }
+        }
     }
 
     private var greeting: String {

@@ -164,6 +164,33 @@ Written to `replica/features.csv`. Priority = must / should / could.
 - **Core loop alone (S02 + S03 + S04 + streaks + local persistence):** size **S** — a focused build.
 - **Full web clone (all must + most should, real auth + DB + paywall):** size **M**.
 
+## Addendum — findings from the user's own screenshots (2026-11-08)
+
+Confirmed against the live app (user's device, their account). Functional
+patterns only; no visual assets copied.
+
+- **Reports tab** has three periods — **Weekly / Monthly / Yearly** — and is
+  **premium-gated** ("Demo report, buy premium to unlock. Unlock Now").
+  - Weekly: habit-rows × weekday-columns grid; per-habit **PERFECT** badge at
+    100%; goal habits show e.g. `1/1`; extra rows for **BestDay** and **Mood**.
+  - Monthly: one calendar card per habit, with completion % and active-day count.
+  - Yearly: one year-long heatmap per habit, with % and total days.
+  - Footer metrics: **Met %**, **BestDay** (count of perfect days),
+    **TotalDone**, **BestStreak**.
+- **Home filters:** Status (**All / Unmet / Met**) and Time
+  (**Now / Anytime / Morning / Afternoon / Evening**) → habits carry a
+  **time-of-day** attribute.
+- **New Habit** is a **template library** with category tabs
+  (**Popular / Health / Sports / Lifestyle / Time / Quit**), a favourite (heart)
+  and quick-add (+) per row, and a **Custom Habit** button. Quit habits are a
+  category of their own ("Smoke Less", "Eat Less Sugar", "Less Social App"…).
+- **Bottom nav (5):** Home · Notes · Groups · Reports · Settings.
+
+### Folded into the clone this round
+Time-of-day field + Today filters; habit template picker by category + custom;
+Reports reworked into Weekly/Monthly/Yearly with the four summary metrics and a
+weekly grid. (Reports-as-premium and Groups remain later-stage.)
+
 ## Next step
 
 `/replica-architect` — pick the stack, turn this data model into a real schema,

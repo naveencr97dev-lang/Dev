@@ -6,6 +6,10 @@ struct HabitEditView: View {
 
     /// nil = creating a new habit.
     let habit: Habit?
+    /// Optional starter values for a new habit (from a template).
+    var prefill: Habit? = nil
+    /// Called after a successful save (used to also dismiss a parent picker).
+    var onSaved: (() -> Void)? = nil
 
     @State private var name = ""
     @State private var emoji = "✅"
@@ -18,6 +22,7 @@ struct HabitEditView: View {
     @State private var weekdays: Set<Int> = []
     @State private var hasReminder = false
     @State private var reminderTime = Date()
+    @State private var timeOfDay: TimeOfDay = .anytime
 
     private let weekdaySymbols = Calendar.current.shortStandaloneWeekdaySymbols
 
@@ -45,6 +50,12 @@ struct HabitEditView: View {
                     if hasGoal {
                         Stepper("Target: \(goalTarget)", value: $goalTarget, in: 1...100)
                         TextField("Unit (e.g. glasses, minutes)", text: $goalUnit)
+                    }
+                }
+
+                Section("Time of day") {
+                    Picker("When", selection: $timeOfDay) {
+                        ForEach(TimeOfDay.allCases) { Label($0.label, systemImage: $0.symbol).tag($0) }
                     }
                 }
 
@@ -125,7 +136,7 @@ struct HabitEditView: View {
     }
 
     private func hydrate() {
-        guard let h = habit else { return }
+        guard let h = habit ?? prefill else { return }
         name = h.name
         emoji = h.emoji
         colorHex = h.colorHex
@@ -135,6 +146,7 @@ struct HabitEditView: View {
         goalUnit = h.goalUnit ?? "times"
         everyDay = h.isDaily
         weekdays = h.weekdays
+        timeOfDay = h.timeOfDay
         if let m = h.reminderMinutes {
             hasReminder = true
             reminderTime = Calendar.current.date(bySettingHour: m / 60, minute: m % 60, second: 0, of: Date()) ?? Date()
@@ -150,6 +162,7 @@ struct HabitEditView: View {
         h.goalTarget = hasGoal ? goalTarget : nil
         h.goalUnit = hasGoal ? goalUnit : nil
         h.weekdays = everyDay ? [] : weekdays
+        h.timeOfDay = timeOfDay
         if hasReminder {
             let c = Calendar.current.dateComponents([.hour, .minute], from: reminderTime)
             h.reminderMinutes = (c.hour ?? 0) * 60 + (c.minute ?? 0)
@@ -160,6 +173,7 @@ struct HabitEditView: View {
         if habit == nil { store.addHabit(h) } else { store.updateHabit(h) }
         Reminders.sync(store: store)
         dismiss()
+        onSaved?()
     }
 
     private func archive() {

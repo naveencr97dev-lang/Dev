@@ -8,7 +8,7 @@ struct RootView: View {
             TodayView()
                 .tabItem { Label("Today", systemImage: "checklist") }
             StatsView()
-                .tabItem { Label("Stats", systemImage: "chart.bar.fill") }
+                .tabItem { Label("Reports", systemImage: "list.clipboard.fill") }
             MoodView()
                 .tabItem { Label("Journal", systemImage: "face.smiling") }
             SettingsView()

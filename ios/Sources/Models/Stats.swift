@@ -83,4 +83,46 @@ struct Stats {
         let done = habits.filter { store.isDone($0, on: date) }.count
         return Double(done) / Double(habits.count)
     }
+
+    // MARK: - Period summaries (Met %, BestDay, TotalDone, BestStreak)
+
+    private func days(back n: Int) -> [Date] {
+        let today = calendar.startOfDay(for: Date())
+        return (0..<n).map { calendar.date(byAdding: .day, value: -$0, to: today)! }
+    }
+
+    /// Share of scheduled habit-slots completed over the last `n` days (0...1).
+    func metRate(lastDays n: Int) -> Double {
+        var scheduled = 0, done = 0
+        for day in days(back: n) {
+            for h in store.habitsScheduled(on: day) {
+                scheduled += 1
+                if store.isDone(h, on: day) { done += 1 }
+            }
+        }
+        guard scheduled > 0 else { return 0 }
+        return Double(done) / Double(scheduled)
+    }
+
+    /// Number of fully-completed ("perfect") days in the last `n` days.
+    func bestDays(lastDays n: Int) -> Int {
+        days(back: n).filter { day in
+            let hs = store.habitsScheduled(on: day)
+            return !hs.isEmpty && hs.allSatisfy { store.isDone($0, on: day) }
+        }.count
+    }
+
+    /// Total habit completions in the last `n` days.
+    func totalDone(lastDays n: Int) -> Int {
+        var total = 0
+        for day in days(back: n) {
+            total += store.habitsScheduled(on: day).filter { store.isDone($0, on: day) }.count
+        }
+        return total
+    }
+
+    /// Best streak across all active habits.
+    func bestStreak() -> Int {
+        store.activeHabits.map { longestStreak($0) }.max() ?? 0
+    }
 }
