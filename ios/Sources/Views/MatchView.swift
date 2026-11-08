@@ -11,15 +11,19 @@ struct MatchView: View {
     @State private var shown = 0
     @State private var finished = false
     @State private var speed = 1
+    @State private var showReel = false
     private let clock = Timer.publish(every: 0.06, on: .main, in: .common).autoconnect()
 
     var body: some View {
         Group {
             if let r = result {
-                if finished || log.isEmpty {
-                    MatchResultContent(result: r)
-                } else {
+                if !finished && !log.isEmpty {
                     live(r)
+                } else if showReel && !(r.highlights ?? []).isEmpty {
+                    HighlightsReel(result: r) { withAnimation(.easeInOut) { showReel = false } }
+                        .transition(.opacity)
+                } else {
+                    MatchResultContent(result: r)
                 }
             } else {
                 ProgressView()
@@ -60,6 +64,7 @@ struct MatchView: View {
         withAnimation(.easeInOut) {
             shown = log.count
             finished = true
+            showReel = true
         }
         Haptics.success()
     }
@@ -286,11 +291,18 @@ struct BigCall: View {
 struct ResultScreen: View {
     @EnvironmentObject var store: GameStore
     let resultId: UUID
+    /// Open on the highlights reel (straight after a quick-simmed match).
+    var autoplay = false
+    @State private var reelDone = false
 
     var body: some View {
         Group {
             if let r = store.game?.result(resultId) {
-                MatchResultContent(result: r)
+                if autoplay && !reelDone && !(r.highlights ?? []).isEmpty {
+                    HighlightsReel(result: r) { withAnimation(.easeInOut) { reelDone = true } }
+                } else {
+                    MatchResultContent(result: r)
+                }
             } else {
                 Text("Result not found").foregroundStyle(.secondary)
             }
@@ -304,6 +316,7 @@ struct ResultScreen: View {
 struct MatchResultContent: View {
     @EnvironmentObject var store: GameStore
     let result: MatchResult
+    @State private var showReel = false
 
     var body: some View {
         ScrollView {
@@ -313,12 +326,28 @@ struct MatchResultContent: View {
                     Button("🏆 Trophy ceremony") { store.finishSeason() }
                         .buttonStyle(PrimaryButtonStyle())
                 }
+                if let moments = result.highlights, !moments.isEmpty {
+                    VStack(alignment: .leading, spacing: DS.Space.sm) {
+                        HStack {
+                            SectionLabel(text: "Highlights")
+                            Spacer()
+                            Button { showReel = true } label: {
+                                Label("Watch", systemImage: "play.fill").font(.display(15, weight: .heavy))
+                            }
+                        }
+                        HighlightsList(moments: moments)
+                    }
+                }
                 worm
                 ForEach(Array(result.innings.prefix(2).enumerated()), id: \.offset) { _, inn in
                     InningsCardView(innings: inn)
                 }
             }
             .padding(DS.Space.lg)
+        }
+        .fullScreenCover(isPresented: $showReel) {
+            HighlightsReel(result: result) { showReel = false }
+                .environmentObject(store)
         }
     }
 

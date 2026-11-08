@@ -34,6 +34,9 @@ Franchise names are fictional; the app is not affiliated with any real league.
    the bowler's figures, the chase equation, this over and commentary. You can also skip to
    the scorecard. Points table with NRR, plus Orange and Purple Cap leaderboards. Batting order
    can be changed between matches.
+   After every match a **highlights reel** plays: up to 12 key moments (wickets,
+   sixes, fifties/hundreds, big overs, the winning runs), story-style. Tap to skip ahead,
+   or jump to the scorecard. Every scorecard lists its highlights with a Watch button.
 6. **Playoffs → Final → Trophy ceremony** with awards. Afterwards, **Back to season**
    lets you browse every match, the table and stats.
 

@@ -3,6 +3,7 @@ import SwiftUI
 enum Route: Hashable {
     case match(Int)
     case result(UUID)
+    case highlights(UUID)
     case team(Int)
 }
 
@@ -44,6 +45,7 @@ struct SeasonView: View {
                 switch route {
                 case .match(let id): MatchView(fixtureId: id)
                 case .result(let id): ResultScreen(resultId: id)
+                case .highlights(let id): ResultScreen(resultId: id, autoplay: true)
                 case .team(let id): TeamDetailView(teamId: id)
                 }
             }
@@ -79,7 +81,7 @@ struct SeasonView: View {
                     NextMatchCard(fixture: f, number: matchNumber(g, f)) {
                         path.append(.match(f.id))
                     } quick: {
-                        if let r = store.play(fixtureId: f.id) { path.append(.result(r.id)) }
+                        if let r = store.play(fixtureId: f.id) { path.append(.highlights(r.id)) }
                     }
                     if !g.isHumanFixture(f) {
                         Button {
@@ -164,7 +166,7 @@ struct NextMatchCard: View {
                     side(fixture.away)
                 }
                 Button("Play match ▶︎", action: play).buttonStyle(PrimaryButtonStyle())
-                Button("Just show the result", action: quick).font(.subheadline.weight(.semibold))
+                Button("Skip to highlights", action: quick).font(.subheadline.weight(.semibold))
             }
         }
     }

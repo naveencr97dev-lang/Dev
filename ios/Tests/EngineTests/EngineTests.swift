@@ -146,6 +146,12 @@ final class EngineTests: XCTestCase {
                 XCTAssertTrue(r.innings.allSatisfy { inn in inn.bowlers.allSatisfy { $0.balls <= 24 } })
                 XCTAssertEqual(r.innings[0].runs, r.innings[0].batters.reduce(0) { $0 + $1.runs } + r.innings[0].extras)
                 XCTAssertEqual(r.pitch, pitch)
+                // Highlights: some, capped, in match order, ending with how it was won.
+                let h = r.highlights ?? []
+                XCTAssertFalse(h.isEmpty)
+                XCTAssertLessThanOrEqual(h.count, MatchEngine.maxHighlights)
+                XCTAssertEqual(h.map(\.seq), h.map(\.seq).sorted())
+                XCTAssertTrue([.winningRuns, .defended, .superOver].contains(h.last!.kind), "\(h.last!.kind)")
                 // Live snapshots: two batters (one on strike) until all out, bowler figures add up.
                 for e in log where e.label != "W" {
                     XCTAssertEqual(e.batters.count, 2)
@@ -251,6 +257,18 @@ final class EngineTests: XCTestCase {
     }
 
     func testCodableRoundTrip() throws {
+        // Results saved before highlights existed still decode.
+        var engine = MatchEngine(rng: SeededRNG(seed: 1))
+        let teams = runAuction(teams: 3, rules: Rules(), seed: 1)
+        let sd = sides(teams)
+        var log: [BallEvent] = []
+        let r = engine.play(sd[0], sd[1], stage: .league, pitch: .indianFlat, log: &log)
+        var json = try JSONSerialization.jsonObject(with: JSONEncoder().encode(r)) as! [String: Any]
+        json.removeValue(forKey: "highlights")
+        let old = try JSONDecoder().decode(MatchResult.self, from: JSONSerialization.data(withJSONObject: json))
+        XCTAssertNil(old.highlights)
+        print("sample highlights:", (r.highlights ?? []).map { "\($0.over) \($0.kind.rawValue): \($0.text)" })
+
         var state = AuctionState()
         state.queue = ["a", "b"]; state.cpuLimits = [1: 300]; state.leader = 1; state.currentBid = 250
         let data = try JSONEncoder().encode(state)

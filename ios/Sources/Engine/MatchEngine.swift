@@ -71,8 +71,25 @@ struct MatchResult: Codable, Hashable, Identifiable {
     let potmId: String
     let potmName: String
     let potmTeam: Int
+    /// Key moments, in match order (optional so older saves still load).
+    var highlights: [Highlight]? = nil
 
     var loserId: Int { winnerId == teamA ? teamB : teamA }
+}
+
+/// A key moment kept with the result for the post-match highlights reel.
+struct Highlight: Codable, Hashable {
+    enum Kind: String, Codable {
+        case six, four, wicket, fifty, hundred, bigOver, winningRuns, defended, superOver
+    }
+    let kind: Kind
+    let innings: Int
+    let over: String      // "17.3"
+    let teamId: Int       // batting team at the time
+    let text: String
+    let score: String     // "165/4"
+    let priority: Int
+    let seq: Int
 }
 
 struct LiveBatter: Hashable {
@@ -110,6 +127,19 @@ struct BallEvent: Hashable {
 
 struct MatchEngine {
     var rng: SeededRNG
+    /// Candidate moments collected while simulating; the best are kept.
+    var moments: [Highlight] = []
+
+    init(rng: SeededRNG) { self.rng = rng }
+
+    static let maxHighlights = 12
+
+    private mutating func moment(_ kind: Highlight.Kind, _ innings: Int, balls: Int, team: Int, _ text: String,
+                                 score: String, priority: Int) {
+        guard innings < 2 else { return }   // super-over balls are summarised separately
+        moments.append(Highlight(kind: kind, innings: innings, over: "\(balls / 6).\(balls % 6)", teamId: team,
+                                 text: text, score: score, priority: priority, seq: moments.count))
+    }
 
     struct Side {
         let teamId: Int
@@ -118,6 +148,7 @@ struct MatchEngine {
 
     /// Simulates a full T20 between two XIs.
     mutating func play(_ a: Side, _ b: Side, stage: Stage, pitch: Pitch, log: inout [BallEvent]) -> MatchResult {
+        moments = []
         let tossWinner = rng.unit() < 0.5 ? a : b
         let other = tossWinner.teamId == a.teamId ? b : a
         // Captains bowl first more often when the pitch helps bowlers early.
@@ -146,11 +177,23 @@ struct MatchEngine {
             margin = "won the Super Over"
         }
 
+        if superOver {
+            moment(.superOver, 1, balls: second.balls, team: winner.teamId, "Scores level — decided in a Super Over",
+                   score: second.score, priority: 100)
+        } else if winner.teamId == batFirst.teamId {
+            moment(.defended, 1, balls: second.balls, team: batFirst.teamId, "\(first.runs) defended — \(margin)",
+                   score: second.score, priority: 100)
+        }
+        let picked = moments.sorted { $0.priority > $1.priority }.prefix(MatchEngine.maxHighlights)
+            .sorted { $0.seq < $1.seq }
+
         let potm = playerOfTheMatch([first, second], winnerId: winner.teamId, sides: [a, b])
-        return MatchResult(id: UUID(uuid: uuid()), stage: stage, teamA: a.teamId, teamB: b.teamId, pitch: pitch,
+        var result = MatchResult(id: UUID(uuid: uuid()), stage: stage, teamA: a.teamId, teamB: b.teamId, pitch: pitch,
                            tossWinner: tossWinner.teamId, innings: [first, second], winnerId: winner.teamId,
                            margin: margin, superOver: superOver, potmId: potm.0.id, potmName: potm.0.name,
                            potmTeam: potm.1)
+        result.highlights = Array(picked)
+        return result
     }
 
     private mutating func uuid() -> uuid_t {
@@ -217,6 +260,8 @@ struct MatchEngine {
         overs: for over in 0..<maxOvers {
             let bi = maxOvers == 20 ? MatchEngine.overPlan[over] % attack.count : 0
             let bowler = attack[bi]
+            let runsAtOverStart = card.runs
+            let deathOvers = over >= maxOvers - 4
             var legal = 0
             while legal < 6 {
                 if let t = target, card.runs >= t { break overs }
@@ -229,6 +274,10 @@ struct MatchEngine {
                     log.append(BallEvent(innings: index, over: over, ballInOver: legal, label: "wd",
                                          text: "Wide", score: card.runs, wickets: card.wickets,
                                          batters: snap.0, bowler: snap.1))
+                    if index == 1, let t = target, card.runs >= t {
+                        moment(.winningRuns, index, balls: card.balls, team: batting.teamId,
+                               "A wide from \(bowler.name) seals it!", score: card.score, priority: 100)
+                    }
                     continue
                 }
 
@@ -253,6 +302,8 @@ struct MatchEngine {
                     text = "OUT! \(out.name) \(how) — \(out.runs) (\(out.balls))"
                     if bowlerCredit, let t = bowlTrait { text += " · \(t.icon) \(t.label)" }
                     label = "W"
+                    moment(.wicket, index, balls: card.balls, team: batting.teamId, text, score: card.score,
+                           priority: 40 + min(out.runs, 60) / 2 + (deathOvers ? 5 : 0) + (bowlTrait != nil && bowlerCredit ? 5 : 0))
                     if card.wickets >= maxWickets || nextIn >= batting.xi.count {
                         card.allOut = true
                         let snap = snapshot(bi)
@@ -277,9 +328,28 @@ struct MatchEngine {
                     }
                     if outcome >= 4, let t = batTrait { text += " · \(t.icon) \(t.label)" }
                     let r = card.batters[striker].runs
-                    if r - outcome < 50 && r >= 50 { text += " — FIFTY for \(batter.name)!" }
-                    if r - outcome < 100 && r >= 100 { text += " — HUNDRED for \(batter.name)!" }
+                    let fifty = r - outcome < 50 && r >= 50 && r < 100
+                    let hundred = r - outcome < 100 && r >= 100
+                    if fifty { text += " — FIFTY for \(batter.name)!" }
+                    if hundred { text += " — HUNDRED for \(batter.name)!" }
                     label = "\(outcome)"
+                    let won = index == 1 && target.map { card.runs >= $0 } == true
+                    if won {
+                        let shot = outcome == 6 ? "a SIX" : outcome == 4 ? "a FOUR" : "\(outcome) run\(outcome == 1 ? "" : "s")"
+                        moment(.winningRuns, index, balls: card.balls, team: batting.teamId,
+                               "\(batter.name) finishes it with \(shot)!", score: card.score, priority: 100)
+                    } else if hundred {
+                        moment(.hundred, index, balls: card.balls, team: batting.teamId,
+                               "HUNDRED for \(batter.name)! \(r) off \(card.batters[striker].balls)", score: card.score, priority: 95)
+                    } else if fifty {
+                        moment(.fifty, index, balls: card.balls, team: batting.teamId,
+                               "FIFTY for \(batter.name) — \(r) off \(card.batters[striker].balls)", score: card.score, priority: 70)
+                    } else if outcome == 6 {
+                        moment(.six, index, balls: card.balls, team: batting.teamId, text, score: card.score,
+                               priority: 25 + (deathOvers ? 10 : 0) + (batTrait != nil ? 5 : 0))
+                    } else if outcome == 4 && deathOvers && target != nil {
+                        moment(.four, index, balls: card.balls, team: batting.teamId, text, score: card.score, priority: 20)
+                    }
                     if outcome % 2 == 1 { swap(&striker, &nonStriker) }
                 }
                 let snap = snapshot(bi)
@@ -287,6 +357,12 @@ struct MatchEngine {
                                      score: card.runs, wickets: card.wickets, batters: snap.0, bowler: snap.1))
             }
             card.overRuns.append(card.runs)
+            let overRuns = card.runs - runsAtOverStart
+            let chaseDone = target.map { card.runs >= $0 } ?? false
+            if overRuns >= 16 && maxOvers == 20 && !chaseDone {
+                moment(.bigOver, index, balls: card.balls, team: batting.teamId,
+                       "\(overRuns) runs off the over from \(bowler.name)", score: card.score, priority: 55 + (overRuns - 16) * 3)
+            }
             swap(&striker, &nonStriker)
         }
         if card.overRuns.count < (card.balls + 5) / 6 { card.overRuns.append(card.runs) }
