@@ -27,6 +27,10 @@ struct MatchView: View {
     @State private var breakClock: Double = 0
     @State private var paused = false
     @State private var showReel = false
+    /// Career: the match is previewed, changed while paused, and recorded at the end.
+    @State private var changes: [LiveChange] = []
+    @State private var pendingCommit = false
+    @State private var showCentre = false
     @Environment(\.dismiss) private var dismiss
     private let clock = Timer.publish(every: MatchView.tick, on: .main, in: .common).autoconnect()
 
@@ -52,20 +56,66 @@ struct MatchView: View {
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 if !finished && !log.isEmpty {
-                    Button("Skip ⏭") { finish() }
+                    HStack {
+                        Button { pauseForCentre() } label: { Image(systemName: "list.clipboard") }
+                        Button("Skip ⏭") { finish() }
+                    }
                 }
             }
         }
         .onAppear(perform: start)
+        .onDisappear { if !showCentre { commitIfNeeded() } }
         .onReceive(clock) { _ in advance() }
+        .sheet(isPresented: $showCentre, onDismiss: { paused = false }) {
+            if let r = result {
+                MatchCentreView(result: r, log: log, shown: shown,
+                                userTeam: pendingCommit ? store.careerUserTeam(in: fixtureId) : nil,
+                                tactics: changes.last(where: { $0.tactics != nil })?.tactics ?? store.career?.tactics ?? Tactics(),
+                                apply: applyChange)
+                    .environmentObject(store)
+            }
+        }
         .keepAwake()
     }
 
     private func start() {
         guard result == nil else { return }
-        result = store.play(fixtureId: fixtureId)
-        log = store.log(for: fixtureId)
+        if store.inCareer, let p = store.careerPreview(fixtureId: fixtureId, changes: []) {
+            // Not recorded yet: you can pause and change things; it's recorded at the end.
+            result = p.0
+            log = p.1
+            pendingCommit = true
+        } else {
+            result = store.play(fixtureId: fixtureId)
+            log = store.log(for: fixtureId)
+        }
         if log.isEmpty { finished = true }
+    }
+
+    private func commitIfNeeded() {
+        guard pendingCommit else { return }
+        pendingCommit = false
+        if let r = store.careerCommit(fixtureId: fixtureId, changes: changes) { result = r }
+    }
+
+    private func pauseForCentre() {
+        paused = true
+        showCentre = true
+        Haptics.tap()
+    }
+
+    /// Re-plays the match with one more change; everything already shown must stay the same.
+    private func applyChange(_ change: LiveChange) -> Bool {
+        let next = changes + [change]
+        guard let p = store.careerPreview(fixtureId: fixtureId, changes: next), p.1.count >= shown else { return false }
+        let same = zip(log.prefix(shown), p.1.prefix(shown)).allSatisfy {
+            $0.innings == $1.innings && $0.score == $1.score && $0.label == $1.label && $0.wickets == $1.wickets
+        }
+        guard same else { return false }
+        changes = next
+        result = p.0
+        log = p.1
+        return true
     }
 
     /// How long the ball just shown stays on screen: quick for dots and singles, long for
@@ -158,6 +208,7 @@ struct MatchView: View {
             shown = log.count
             finished = true
         }
+        commitIfNeeded()
         Haptics.success()
     }
 
@@ -220,7 +271,7 @@ struct MatchView: View {
                 }
             }
             HStack(spacing: 10) {
-                Button { paused.toggle() } label: {
+                Button { if paused { paused = false } else { pauseForCentre() } } label: {
                     Image(systemName: paused ? "play.fill" : "pause.fill").frame(width: 30)
                 }
                 .buttonStyle(SecondaryButtonStyle()).frame(width: 64)
@@ -281,7 +332,7 @@ struct MatchView: View {
                         .frame(height: 26)
                         .animation(.spring(response: 0.3, dampingFraction: 0.6), value: thisOver.count)
                         HStack(spacing: 8) {
-                            Button { paused.toggle() } label: {
+                            Button { if paused { paused = false } else { pauseForCentre() } } label: {
                                 Image(systemName: paused ? "play.fill" : "pause.fill").frame(width: 24)
                             }
                             .buttonStyle(SecondaryButtonStyle()).frame(width: 56)

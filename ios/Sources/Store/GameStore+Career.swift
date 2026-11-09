@@ -189,6 +189,22 @@ extension GameStore {
         return err
     }
 
+    // MARK: Live matches (pause and change)
+
+    func careerPreview(fixtureId: Int, changes: [LiveChange]) -> (MatchResult, [BallEvent])? {
+        career?.previewMatch(fixtureId: fixtureId, changes: changes)
+    }
+
+    /// Records the match exactly as previewed with these changes.
+    func careerCommit(fixtureId: Int, changes: [LiveChange]) -> MatchResult? {
+        var out: (MatchResult, [BallEvent])?
+        mutateCareer { out = $0.play(fixtureId: fixtureId, changes: changes) }
+        if let out { logs[fixtureId] = out.1 }
+        return out?.0
+    }
+
+    func careerUserTeam(in fixtureId: Int) -> Int? { career?.userTeam(in: fixtureId) }
+
     // MARK: International
 
     @discardableResult

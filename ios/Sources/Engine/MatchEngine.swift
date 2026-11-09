@@ -191,7 +191,7 @@ struct LiveChange: Codable, Hashable {
 
 enum FieldSetting: String, Codable, CaseIterable {
     case attack, balanced, defend
-    var label: String { rawValue.capitalized }
+    var label: String { self == .attack ? "Aggressive" : (self == .defend ? "Defensive" : "Balanced") }
     var blurb: String {
         switch self {
         case .attack: return "Catchers in: more wickets, more boundaries"

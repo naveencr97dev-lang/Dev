@@ -15,7 +15,7 @@ Read top-down: each level is a part of the one above. The path (for example
 Auction XI
 ├── Shared core ................................. Engine/ (MatchEngine, Models, RNG)
 │   ├── Match engine: ball-by-ball T20, traits, pitches, batting slots, bowling plans,
-│   │   tactics, super overs ................... MatchEngine.swift
+│   │   tactics, super overs, live changes, scorecard so far ... MatchEngine.swift
 │   ├── Players and conditions ................. Models.swift, players.json
 │   └── Determinism (seeded RNG) ............... RNG.swift
 │
@@ -32,6 +32,8 @@ Auction XI
     │   └── Stats: season, all-time, season log, leaders . CareerStatsBook.swift
     ├── Squad .................................. Career.swift (XI, order, plan), MatchEngine (Tactics)
     │   └── Pick XI › Batting order › Bowling plan › Tactics
+    ├── Match day .............................. Career.previewMatch / play(changes:), Views/MatchCentreView
+    │   └── Live view › ⏸ Match centre: scorecard so far, field, intent, batting order, bowlers
     ├── Market ................................. CareerMarket.swift
     │   ├── Contracts and salary cap, bank and ledger
     │   ├── Off-season: retentions › auction (mega every 3rd season) › window
@@ -142,7 +144,9 @@ Open items from playtests and the roadmap's known gaps. Fix the top layers' brea
 
 ### L1 Systems
 - `Career › Market`: AI-to-AI trades, loans.
-- `Career › Match day`: in-match changes (needs a resumable engine: an L0 change, plan first).
+- ~~`Career › Match day`: in-match changes~~ ✅ done with a deterministic replay. A change re-runs the
+  same seed, so the past is identical. The match is previewed and only recorded at the end.
+- `Quick Auction › Match day`: allow changes there too (the scorecard already works).
 - `Career › International`: international stats screen.
 
 ### L5 Extras (new leaves)
