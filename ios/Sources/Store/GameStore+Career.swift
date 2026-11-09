@@ -116,6 +116,13 @@ extension GameStore {
     }
 
     @discardableResult
+    func careerUseRTM() -> SaleLine? {
+        var sale: SaleLine?
+        mutateCareer { sale = $0.useRTM() }
+        return sale
+    }
+
+    @discardableResult
     func careerPassLot() -> SaleLine? {
         var sale: SaleLine?
         mutateCareer { sale = $0.passLot() }
@@ -194,6 +201,7 @@ extension GameStore {
 
     func careerSetDifficulty(_ d: Difficulty) { mutateCareer { $0.settings.difficulty = d } }
     func careerSetMarketAlwaysOpen(_ on: Bool) { mutateCareer { $0.settings.marketAlwaysOpen = on } }
+    func careerSetAssistantPicksXI(_ on: Bool) { mutateCareer { $0.settings.assistantPicksXI = on } }
     func careerExchangeGold(_ amount: Int) -> String? {
         var err: String?
         mutateCareer { err = $0.exchangeGold(amount) }
@@ -266,6 +274,7 @@ extension GameStore {
             // New faces go where they bat best; existing players keep their places.
             let ids = added.isEmpty ? old : TeamSelector.battingOrder(players).map(\.id)
             c.setXI(clubId: c.userClubId, ids: ids)
+            c.settings.assistantPicksXI = false   // the manager picks now
         }
     }
 

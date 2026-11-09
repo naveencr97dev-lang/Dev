@@ -251,6 +251,7 @@ extension Career {
     func simulateIntl(_ f: Fixture, changes: [LiveChange]) -> (MatchResult, [BallEvent], SeededRNG) {
         var engine = MatchEngine(rng: rng)
         engine.liveChanges = changes
+        engine.realisticChase = true
         var log: [BallEvent] = []
         let r = engine.play(intlSide(f.home, pitch: f.pitch), intlSide(f.away, pitch: f.pitch), stage: f.stage, pitch: f.pitch, log: &log)
         return (r, log, engine.rng)

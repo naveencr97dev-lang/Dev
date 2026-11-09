@@ -255,6 +255,9 @@ struct MatchEngine {
 
     /// Playoff match: Big-Match players lift.
     var bigGame = false
+    /// Career mode: chases pace like real ones (no risk-free cruising, fewer suicidal collapses).
+    /// Off by default, so the quick game's calibrated numbers stay unchanged.
+    var realisticChase = false
 
     /// Simulates a full T20 between two XIs.
     mutating func play(_ a: Side, _ b: Side, stage: Stage, pitch: Pitch, log: inout [BallEvent]) -> MatchResult {
@@ -750,11 +753,12 @@ struct MatchEngine {
         if aggression > 0 {
             w[4] *= 1 + 0.5 * aggression
             w[5] *= 1 + aggression
-            w[6] *= 1 + 0.8 * aggression
+            w[6] *= 1 + (realisticChase ? 0.35 : 0.8) * aggression
             w[0] *= 1 + 0.2 * aggression
         } else if aggression < 0 {
             w[5] *= 1 + aggression
-            w[6] *= 1 + 0.7 * aggression
+            // Career: easy chases still lose wickets (mishits, pressure); only boundaries dry up.
+            w[6] *= 1 + (realisticChase ? 0.25 : 0.7) * aggression
             w[4] *= 1 + 0.4 * aggression
             w[1] *= 1 - 0.4 * aggression
         }

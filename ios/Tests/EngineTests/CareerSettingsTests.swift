@@ -63,6 +63,8 @@ extension CareerTests {
         json["schemaVersion"] = 7
         json["settings"] = nil
         let back = try CareerSave.decode(JSONSerialization.data(withJSONObject: json))
-        XCTAssertEqual(back.settings, CareerSettings())
+        var expected = CareerSettings()
+        expected.assistantPicksXI = false   // existing careers keep picking their own XI (v10 → v11)
+        XCTAssertEqual(back.settings, expected)
     }
 }

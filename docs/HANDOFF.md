@@ -1,6 +1,6 @@
 # Handoff: Auction XI (read this first in a new chat)
 
-Last updated 2026-11-09 (after customer-panel round 1) on branch `claude/gracious-davinci-yq0yej`.
+Last updated 2026-11-09 (after customer-panel rounds 1-3) on branch `claude/gracious-davinci-yq0yej`.
 
 ## 1. Where things are
 
@@ -81,7 +81,7 @@ Last updated 2026-11-09 (after customer-panel round 1) on branch `claude/graciou
 - **Swift toolchain:** if `/opt/swift` is missing, install it with
   `curl -sSfL https://download.swift.org/swift-6.0.3-release/ubuntu2404/swift-6.0.3-RELEASE/swift-6.0.3-RELEASE-ubuntu24.04.tar.gz | tar xz --strip-components=1 -C /opt/swift`
   (run `mkdir -p /opt/swift` first). Then `export PATH=/opt/swift/usr/bin:$PATH`.
-- **Engine tests:** `cd ios && swift test` (66 tests, all green). Pipe the output to a file and
+- **Engine tests:** `cd ios && swift test` (73 tests, all green). Pipe the output to a file and
   check the "Executed … with 0 failures" line before committing. One push once went out red because
   a grep in a command chain hid the failure.
 - **Whole-app type-check:** `tools/typecheck/run.sh`. It checks all 48 files against SwiftUI, UIKit
@@ -93,9 +93,10 @@ Last updated 2026-11-09 (after customer-panel round 1) on branch `claude/graciou
 - **`ArchitectureTests`:** no UI imports in the engine, views never mutate the career, every save
   schema has a migration.
 - **Customer panel:** `CUSTOMER_PANEL=1 CUSTOMER_SEASONS=4 swift test -c release -Xswiftc -enable-testing --filter CustomerPanelTests`.
-  Six personas (caster, tinkerer, trader, bidder, veteran, rookie) play the same club through
-  CONTINUE and report presses, idle presses, thrillers and blowouts, pitch pars, banks, objectives and
-  awards. Write each round up in `docs/feedback/ROUNDn.md`. This replaces MiroFish, which needs paid
+  Six personas (caster, tinkerer, trader, bidder, veteran, rookie) play KOL and LKO the way people
+  do (Auto-pick, auction advice, the assistant's tips, Right to Match) and write their own complaints,
+  counted across players at the end. `PANEL_DEBUG=1` dumps the state on a 10-loss run. Write each
+  round up in `docs/feedback/`. This replaces MiroFish, which needs paid
   LLM and Zep keys and can't play an app.
 - **Tuning file:** after changing `CareerTuning` defaults, regenerate it with
   `WRITE_TUNING=1 swift test --filter CareerTests.testWriteTuningFile`.
@@ -103,7 +104,7 @@ Last updated 2026-11-09 (after customer-panel round 1) on branch `claude/graciou
 ## 6. What's built (career mode)
 
 The engine is in `ios/Sources/Engine/Career/`, the screens in `ios/Sources/Views/Career/`, and the
-store glue in `ios/Sources/Store/GameStore+Career.swift`. **Save schema 10**, with a JSON migration
+store glue in `ios/Sources/Store/GameStore+Career.swift`. **Save schema 11**, with a JSON migration
 for each version in `CareerSave.migrations`.
 
 - **Season:** 10 fictional clubs, 36 league matches each, home pitches, IPL playoffs, awards,
@@ -115,6 +116,10 @@ for each version in `CareerSave.migrations`.
   wins, U23 appearances) with XP and gold rewards, board confidence, and Player and Manager of the
   Month. Shown on Home.
 - **Pitches:** per-pitch career batting calibration (`pitchBatBoost`), so pars are near real ones.
+  Career matches use `realisticChase` (chase pacing; the quick game is unchanged).
+- **Assistant manager** (`CareerAssistant.swift`): explains losing runs with fixes, and a retirement
+  watch at season start. Settings › **Assistant picks my XI** (on for new careers; manual picks turn it off).
+- **Mega auction:** **Right to Match** cards (retentions + RTM = 6).
 - **Squad:** XI from about 20 players, batting order, bowling plan of 5, tactics.
 - **Tactics:** field Defensive / Balanced / Aggressive and batting Block / Rotate / Attack, per phase.
 - **Match day:**
@@ -153,7 +158,9 @@ for each version in `CareerSave.migrations`.
 
 ## 7. Next steps and known gaps
 
-Customer-panel round 1 is in `docs/feedback/ROUND1.md` (findings, the SM26 reference, what changed).
+Customer-panel reports: `docs/feedback/ROUND1.md` (the SM26 reference) and `docs/feedback/ROUND2-3.md`.
+Open from the panel: KOL starts too old (age-balance the opening draft); about 40% blowouts (easy-chase
+pacing); casual players ignore the invest objective.
 
 
 The full backlog is in `docs/ARCHITECTURE.md` §4.

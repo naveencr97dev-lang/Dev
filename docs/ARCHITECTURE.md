@@ -39,7 +39,8 @@ Auction XI
     │   ├── Off-season: retentions › auction (mega every 3rd season) › window
     │   ├── Transfers: offers, counters, free agents, release, AI bids, AI windows
     │   ├── AI-to-AI transfers (rich AI clubs buy upgrades each window)
-    │   └── Scout advice on auction lots (improves the XI, fills a gap, or depth only)
+    │   ├── Scout advice on auction lots (improves the XI, fills a gap, or depth only; slots and money)
+    │   └── Right to Match cards at mega auctions
     ├── Development ............................ CareerDevelopment.swift, Career.develop()
     │   ├── Ageing, growth to potential, retirement, youth pool
     │   ├── Training: drills, intensity, focus
@@ -47,8 +48,10 @@ Auction XI
     │   └── Academy: intake, promote, release
     ├── Club and manager ....................... CareerClub.swift
     │   ├── Board ................................ CareerBoard.swift
-    │   │   ├── Season objectives (finish, home wins, U23 appearances), rewards, confidence
+    │   │   ├── Season objectives (finish, home wins, U23 or away wins, invest), rewards, confidence
     │   │   └── Monthly awards: Player and Manager of the Month
+    │   ├── Assistant ............................ CareerAssistant.swift
+    │   │   └── Losing-run diagnosis and advice; retirement watch; "Assistant picks my XI" setting
     │   ├── Facilities (7) and season accounts; weekly tickets + merchandise
     │   ├── Manager XP, levels, 24 perks
     │   └── Gold and the store (tester pack)
@@ -148,8 +151,10 @@ Open items from playtests and the roadmap's known gaps. Fix the top layers' brea
 ### L2 Balance
 - ~~`Shared core › Match engine`: seam and bounce home grounds score about 20 below par~~ ✅ fixed with
   the career-only `pitchBatBoost` (panel round 1: seam 152, turner 156, slow 161, bounce 169, flat 189).
-- `Shared core › Match engine`: about 45% of games are blowouts (panel's loose definition). Look at
-  chase pacing (an L0 change).
+- `Shared core › Match engine`: blowouts 46% → 40% with the career-only `realisticChase`. Next: easy
+  chases end with a median of 15 balls left.
+- `Career › Season`: KOL starts with an old squad and loses 4-7 XI points in its first off-season.
+  Age-balance the opening draft.
 - `Career › Season`: KOL won 7 of 20 titles in the harness. Check auction personality and home pitch.
 - ~~`Career › Club`: AI banks pile up cash~~ ✅ AI-to-AI transfers plus central revenue 95 → 80 Cr
   (AI bank growth about +15 Cr a season, down from +30).

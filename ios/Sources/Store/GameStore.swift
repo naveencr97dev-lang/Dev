@@ -246,12 +246,24 @@ final class GameStore: ObservableObject {
     // MARK: Squads
 
     func setXI(teamId: Int, ids: [String]) {
-        if inCareer { mutateCareer { $0.setXI(clubId: teamId, ids: ids) }; return }
+        if inCareer {
+            mutateCareer { c in
+                c.setXI(clubId: teamId, ids: ids)
+                if teamId == c.userClubId { c.settings.assistantPicksXI = false }   // the manager picks now
+            }
+            return
+        }
         mutate { $0.setXI(teamId: teamId, ids: ids) }
     }
 
     func setBowlingOrder(teamId: Int, ids: [String]) {
-        if inCareer { mutateCareer { $0.setBowlingOrder(clubId: teamId, ids: ids) }; return }
+        if inCareer {
+            mutateCareer { c in
+                c.setBowlingOrder(clubId: teamId, ids: ids)
+                if teamId == c.userClubId { c.settings.assistantPicksXI = false }
+            }
+            return
+        }
         mutate { $0.setBowlingOrder(teamId: teamId, ids: ids) }
     }
 

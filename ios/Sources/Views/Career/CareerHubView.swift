@@ -315,6 +315,7 @@ struct CareerHomeTab: View {
                 if let note {
                     Text(note).font(.display(12, weight: .regular)).foregroundStyle(Palette.muted)
                 }
+                if c.phase == .season { AssistantCard(career: c) }
                 SeasonSummary(career: c, path: $path)
                 BoardObjectivesCard(career: c)
                 NewsFeed(news: Array(c.news.prefix(3)))

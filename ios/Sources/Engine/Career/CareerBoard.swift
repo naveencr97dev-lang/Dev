@@ -12,6 +12,10 @@ struct Objective: Codable, Hashable, Identifiable {
         case homeWins
         /// Players aged 23 or under make this many league appearances.
         case youth
+        /// Win this many away league matches (set instead of youth when the squad has no youngsters).
+        case awayWins
+        /// Start this many facility upgrades (set when the bank is big).
+        case invest
     }
     var id: Int { Objective.Kind.allCases.firstIndex(of: kind) ?? 0 }
     let kind: Kind
@@ -26,6 +30,8 @@ struct Objective: Codable, Hashable, Identifiable {
         case .finish: return target <= 1 ? "Top the league" : "Finish in the top \(target)"
         case .homeWins: return "Win \(target) home matches"
         case .youth: return "Give U23s \(target) appearances"
+        case .awayWins: return "Win \(target) away matches"
+        case .invest: return target == 1 ? "Start a facility upgrade" : "Start \(target) facility upgrades"
         }
     }
 }
@@ -50,6 +56,8 @@ struct BoardState: Codable, Hashable {
     /// 0-100. Meeting objectives raises it, missing them lowers it.
     var confidence = 60
     var awards: [MonthAward] = []
+    /// Schema 11: facility upgrades started this season (the invest objective).
+    var upgradesStarted = 0
 }
 
 extension Career {
@@ -61,13 +69,26 @@ extension Career {
         let rank = (ranked.firstIndex(of: userClubId) ?? 4) + 1
         let finish = rank <= 2 ? 2 : (rank <= 5 ? 4 : (rank <= 8 ? 6 : 8))
         let homeGames = leagueFixtures.filter { $0.home == userClubId }.count
-        let homeWins = Int((Double(homeGames) * (rank <= 3 ? 0.6 : (rank <= 7 ? 0.5 : 0.4))).rounded())
+        let share = rank <= 3 ? 0.6 : (rank <= 7 ? 0.5 : 0.4)
+        let homeWins = Int((Double(homeGames) * share).rounded())
         board.year = year
+        board.upgradesStarted = 0
         board.objectives = [
             Objective(kind: .finish, target: finish, xp: 150, gold: 100),
             Objective(kind: .homeWins, target: max(1, homeWins), xp: 80, gold: 50),
-            Objective(kind: .youth, target: 30, xp: 80, gold: 50),
         ]
+        // Panel round 2: never ask for U23 games from a squad without youngsters.
+        let u23 = squad(userClubId).filter { $0.age(in: year) <= 23 }.count
+        if u23 >= 2 {
+            board.objectives.append(Objective(kind: .youth, target: min(30, u23 * 12), xp: 80, gold: 50))
+        } else {
+            let awayGames = leagueFixtures.filter { $0.away == userClubId }.count
+            board.objectives.append(Objective(kind: .awayWins, target: max(1, Int((Double(awayGames) * (share - 0.1)).rounded())), xp: 80, gold: 50))
+        }
+        // A rich club is told to invest (panel: money piled up with nothing pushing to spend it).
+        if bank(userClubId) >= tuning.investObjectiveBank {
+            board.objectives.append(Objective(kind: .invest, target: 2, xp: 60, gold: 40))
+        }
     }
 
     /// Progress so far: current value and whether it's met (or on track, for the league finish).
@@ -82,6 +103,14 @@ extension Career {
                     && fixtures.first { $0.resultId == r.id }?.home == userClubId
             }.count
             return (n, n >= o.target)
+        case .awayWins:
+            let n = results.filter { r in
+                r.stage == .league && r.winnerId == userClubId
+                    && fixtures.first { $0.resultId == r.id }?.away == userClubId
+            }.count
+            return (n, n >= o.target)
+        case .invest:
+            return (board.upgradesStarted, board.upgradesStarted >= o.target)
         case .youth:
             var n = 0
             for r in results where r.stage == .league && (r.teamA == userClubId || r.teamB == userClubId) {

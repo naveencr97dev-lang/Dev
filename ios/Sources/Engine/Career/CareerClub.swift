@@ -209,6 +209,7 @@ extension Career {
         post(userClubId, "\(k.label) upgrade", -cost)
         facilities.building = k.rawValue
         facilities.weeksLeft = upgradeWeeks(k)
+        if phase == .season { board.upgradesStarted += 1 }
         addNews(.info, "🏗️ Work starts on the \(k.label) (level \(facility(k) + 1)) — ready in \(facilities.weeksLeft) weeks.")
         return nil
     }

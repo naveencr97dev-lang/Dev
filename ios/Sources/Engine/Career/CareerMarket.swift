@@ -73,6 +73,10 @@ struct OffseasonState: Codable, Hashable {
     var stage: OffseasonStage
     var mega: Bool
     var auction = CareerAuctionState()
+    /// Mega auction: the user's players released at retention, and Right to Match cards left
+    /// (retentions + RTM cards = maxRetentions, as in the IPL). Optional, so older saves load.
+    var released: [String]? = nil
+    var rtmLeft: Int? = nil
 }
 
 enum OfferOutcome: Hashable {
@@ -232,6 +236,10 @@ extension Career {
                     players[id]?.contract = nil
                 }
             }
+            if club.id == userClubId, offseason?.mega == true {
+                offseason?.released = club.squad.filter { !keepIds.contains($0) }
+                offseason?.rtmLeft = max(0, tuning.maxRetentions - keepIds.count)
+            }
             clubs[ci].squad = club.squad.filter { keepIds.contains($0) }
             clubs[ci].xi = club.xi.filter { keepIds.contains($0) }
             clubs[ci].bowlingOrder = []
@@ -309,6 +317,8 @@ extension Career {
         let i = roles.firstIndex(of: p.role) ?? 3
         let deficit = tuning.squadShape[i] - squad.filter { $0.role == p.role }.count
         var need = deficit > 0 ? 1.35 : (deficit <= -2 ? 0.6 : 1.0)
+        // The user's staff (auto-bid) chase players who walk into the XI, like a manager would.
+        if club.id == userClubId, scoutAdvice(p).text.hasPrefix("Walks into") { need = max(need, 1.35) * 1.15 }
         if squad.count < tuning.minSquad { need *= 1.15 }
         if squad.count >= tuning.auctionSquadTarget { need *= 0.5 }
         // Personality nudges bids (±10%) without letting one club buy every star.
@@ -352,18 +362,15 @@ extension Career {
             winner = userClubId
             price = bid
         } else {
-            let floor = a.bid ?? base
-            let interested = clubs.indices.filter { a.aiMax[$0] >= floor }.sorted { a.aiMax[$0] != a.aiMax[$1] ? a.aiMax[$0] > a.aiMax[$1] : $0 < $1 }
-            if let top = interested.first {
-                winner = clubs[top].id
-                if interested.count > 1 {
-                    let second = a.aiMax[interested[1]]
-                    price = min(a.aiMax[top], second + increment(after: second))
-                } else {
-                    price = floor
-                }
-                price = max(price, floor)
-            }
+            (winner, price) = aiSettle(a, base: base)
+        }
+        // Staff in charge: they use a Right to Match card on a former player worth keeping.
+        if a.userAuto, let w = winner, w != userClubId, isRTMLot(id), (offseason?.rtmLeft ?? 0) > 0,
+           Double(price) <= Double(p.value(in: year)) * 1.3, canAfford(userClubId, p, amount: price), scoutAdvice(p).good {
+            winner = userClubId
+            let cards = offseason?.rtmLeft ?? 1
+            offseason?.rtmLeft = cards - 1
+            addNews(.squad, "🃏 Right to Match: your staff keep \(p.name) at \(Money.format(price)).")
         }
         let sale = SaleLine(playerId: id, clubId: winner, price: price)
         a.sales.append(sale)
@@ -376,6 +383,51 @@ extension Career {
         openLot()
         if offseason?.auction.finished == true { afterAuction() }
         return sale
+    }
+
+    /// Who the AI clubs would sell the current lot to, and for how much, if the user stops now.
+    func aiSettle(_ a: CareerAuctionState, base: Int) -> (Int?, Int) {
+        let floor = a.bid ?? base
+        let interested = clubs.indices.filter { a.aiMax[$0] >= floor }
+            .sorted { a.aiMax[$0] != a.aiMax[$1] ? a.aiMax[$0] > a.aiMax[$1] : $0 < $1 }
+        guard let top = interested.first else { return (nil, 0) }
+        var price = floor
+        if interested.count > 1 {
+            let second = a.aiMax[interested[1]]
+            price = min(a.aiMax[top], second + increment(after: second))
+        }
+        return (clubs[top].id, max(price, floor))
+    }
+
+    /// Right to Match price: what the winning AI club would pay for the current lot (nil if no AI
+    /// club wants him, or the user already leads).
+    var rtmPrice: Int? {
+        guard let a = offseason?.auction, let id = a.currentId, let p = players[id], a.leader != userClubId else { return nil }
+        let (winner, price) = aiSettle(a, base: p.basePrice(in: year))
+        guard let w = winner, w != userClubId else { return nil }
+        return price
+    }
+
+    /// Was this lot the user's player last season (mega auction)?
+    func isRTMLot(_ playerId: String) -> Bool { offseason?.released?.contains(playerId) ?? false }
+
+    /// The user can match the leading AI bid on a former player with a Right to Match card.
+    var canUseRTM: Bool {
+        guard let os = offseason, os.stage == .auction, !os.auction.userAuto, let id = os.auction.currentId,
+              isRTMLot(id), (os.rtmLeft ?? 0) > 0, let price = rtmPrice, let p = players[id] else { return false }
+        return userBidBlock(p, amount: price) == nil
+    }
+
+    /// Uses a Right to Match card: the player stays at the current bid.
+    @discardableResult
+    mutating func useRTM() -> SaleLine? {
+        guard canUseRTM, let id = offseason?.auction.currentId, let price = rtmPrice else { return nil }
+        offseason?.auction.bid = price
+        offseason?.auction.leader = userClubId
+        let cards = offseason?.rtmLeft ?? 1
+            offseason?.rtmLeft = cards - 1
+        addNews(.squad, "🃏 Right to Match: you keep \(players[id]?.name ?? id).")
+        return passLot()
     }
 
     /// Settles every remaining lot. With `autoBid`, the user's staff bid for them like an AI club.
@@ -480,15 +532,26 @@ extension Career {
     mutating func patchXI(clubId: Int) {
         guard let ci = clubs.firstIndex(where: { $0.id == clubId }) else { return }
         clubs[ci].xi = clubs[ci].xi.filter { clubs[ci].squad.contains($0) }
+        var added = false
         while clubs[ci].xi.count < 11 {
             let xi = clubs[ci].xi
-            let overseas = xi.compactMap { players[$0] }.filter(\.overseas).count
-            let options = clubs[ci].squad.compactMap { players[$0] }
+            let inXI = xi.compactMap { player($0) }
+            let overseas = inXI.filter(\.overseas).count
+            let options = clubs[ci].squad.compactMap { player($0) }
                 .filter { !xi.contains($0.id) && (!$0.overseas || overseas < tuning.maxOverseasXI) }
-                .sorted { $0.rating != $1.rating ? $0.rating > $1.rating : $0.id < $1.id }
-            guard let pick = options.first else { break }
+            // Fill what the XI is missing first (a keeper, five bowling options), then the best player.
+            // Panel round 3: filling by rating alone put bowlers in the top order and caused collapses.
+            let needKeeper = !inXI.contains { $0.role == .WK }
+            let needBowler = inXI.filter(\.isBowlingOption).count < 5
+            let value = { (p: Player) in max(p.bat, p.bowl) + min(p.bat, p.bowl) / 2 }
+            let fits = options.filter { (needKeeper && $0.role == .WK) || (!needKeeper && needBowler && $0.isBowlingOption) }
+            let pool = fits.isEmpty ? options : fits
+            guard let pick = pool.max(by: { value($0) != value($1) ? value($0) < value($1) : $0.id > $1.id }) else { break }
             clubs[ci].xi.append(pick.id)
+            added = true
         }
+        // Newcomers bat where they bat best (as in Pick XI), so nobody bats out of position.
+        if added { clubs[ci].xi = TeamSelector.battingOrder(clubs[ci].xi.compactMap { player($0) }).map(\.id) }
         clubs[ci].bowlingOrder = clubs[ci].bowlingOrder.filter { clubs[ci].xi.contains($0) }
         if clubs[ci].bowlingOrder.count != 5 { clubs[ci].bowlingOrder = [] }
     }
@@ -664,8 +727,14 @@ extension Career {
 
     /// Staff advice for an auction lot or a transfer target: does the player improve the XI, fill
     /// a gap in the squad shape, or only add depth? (Panel feedback: blind bidding wrecked squads.)
-    func scoutAdvice(_ p: CareerPlayer) -> (text: String, good: Bool) {
+    func scoutAdvice(_ p: CareerPlayer, fee: Int? = nil) -> (text: String, good: Bool) {
         let mine = squad(userClubId)
+        if mine.count >= tuning.maxSquad { return ("Squad full (\(tuning.maxSquad)): sell or release first", false) }
+        if p.overseas && !mine.contains(where: { $0.id == p.id }) && mine.filter(\.overseas).count >= tuning.maxOverseasSquad {
+            return ("No overseas slot left (\(tuning.maxOverseasSquad)/\(tuning.maxOverseasSquad))", false)
+        }
+        if let fee, fee > bank(userClubId) { return ("Can't afford: fee \(Money.format(fee)), bank \(Money.format(bank(userClubId)))", false) }
+        if let fee, userWageDemand(p) > capRoom(userClubId) { _ = fee; return ("His wage would break the salary cap", false) }
         let xi = userClub.xi.compactMap { id in players[id].flatMap { $0.clubId == userClubId ? $0 : nil } }
         let sameRole = mine.filter { $0.role == p.role }.count
         let shapeIndex = [Role.WK, .BAT, .AR, .BOWL].firstIndex(of: p.role) ?? 0

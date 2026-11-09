@@ -308,7 +308,7 @@ struct ObjectiveRow: View {
         let value: String = {
             switch objective.kind {
             case .finish: return Career.ordinal(p.value)
-            case .homeWins, .youth: return "\(p.value)/\(objective.target)"
+            case .homeWins, .youth, .awayWins, .invest: return "\(p.value)/\(objective.target)"
             }
         }()
         HStack(spacing: 12) {
@@ -324,5 +324,29 @@ struct ObjectiveRow: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 11)
+    }
+}
+
+/// Home: the assistant manager speaks up during a losing run (Career › Club › Assistant).
+struct AssistantCard: View {
+    let career: Career
+
+    var body: some View {
+        if let report = career.assistantReport() {
+            VStack(alignment: .leading, spacing: DS.Space.sm) {
+                SectionLabel(text: "Assistant manager")
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(report.diagnosis).font(.display(15, weight: .regular)).foregroundStyle(.white)
+                    ForEach(report.advice, id: \.self) { line in
+                        Label(line, systemImage: "arrow.turn.down.right")
+                            .font(.display(13, weight: .regular)).foregroundStyle(Palette.muted)
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .gameFrame()
+            }
+        }
     }
 }

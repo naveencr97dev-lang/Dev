@@ -208,6 +208,10 @@ struct CareerAuctionView: View {
                     if !p.traits.isEmpty { TraitChips(traits: p.traits, inline: true) }
                     Text("Value \(Money.format(p.value(in: c.year))) · base \(Money.format(p.basePrice(in: c.year)))")
                         .font(.caption).foregroundStyle(Palette.muted)
+                    if c.isRTMLot(p.id) {
+                        Text("Your player last season · Right to Match cards: \(c.offseason?.rtmLeft ?? 0)")
+                            .font(.caption.weight(.semibold)).foregroundStyle(Palette.accent)
+                    }
                     let advice = c.scoutAdvice(p)
                     Label(advice.text, systemImage: advice.good ? "checkmark.circle" : "info.circle")
                         .font(.caption.weight(.semibold))
@@ -236,6 +240,13 @@ struct CareerAuctionView: View {
             .disabled(block != nil || leading)
             .opacity(block != nil || leading ? 0.5 : 1)
             if let block { Text(block).font(.caption.weight(.bold)).foregroundStyle(.orange) }
+            if c.canUseRTM, let price = c.rtmPrice {
+                Button("Right to Match: keep him at \(Money.format(price))") {
+                    lastSale = store.careerUseRTM()
+                    Haptics.success()
+                }
+                .buttonStyle(SecondaryButtonStyle())
+            }
             Button(leading ? "Hammer ▶︎ (no one beat you)" : "Pass ▶︎") {
                 lastSale = store.careerPassLot()
                 Haptics.heavy()

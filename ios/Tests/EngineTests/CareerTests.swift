@@ -261,7 +261,7 @@ final class CareerTests: XCTestCase {
         XCTAssertEqual(c.userClubId, 6)
         XCTAssertEqual(c.clubs.filter { !$0.isCPU }.map(\.id), [6])
         XCTAssertEqual(c.clubs.map { c.strength($0.id) }, strengths, "squads unchanged")
-        XCTAssertEqual(c.news.count, 1)
+        XCTAssertLessThanOrEqual(c.news.count, 2, "the takeover, plus the retirement watch if anyone is close")
         XCTAssertTrue(c.news[0].text.contains("Naveen"))
         XCTAssertEqual(c.userFixtures.count, 36)
         XCTAssertEqual(c.totalRounds, 36)

@@ -55,7 +55,7 @@ struct CareerFlags: Codable, Hashable {
 /// The whole career save. A pure value type: every rule lives here or in the engines, so the
 /// career can be unit-tested and simulated headlessly.
 struct Career: Codable {
-    static let currentSchema = 10
+    static let currentSchema = 11
     static let maxNews = 80
 
     var schemaVersion = Career.currentSchema
@@ -216,6 +216,7 @@ struct Career: Codable {
         for i in clubs.indices { clubs[i].isCPU = clubs[i].id != clubId }
         news = []
         if !fixtures.isEmpty { setObjectives() }
+        announceRetirementWatch()
         addNews(.info, "\(managerName) takes charge of \(userClub.name). The \(year) season starts on \(CareerCalendar.label(tuning.roundDays.first ?? 10)).")
     }
 
@@ -325,6 +326,7 @@ struct Career: Codable {
         }
         for k in players.keys { players[k]?.form = 0 }
         setObjectives()
+        announceRetirementWatch()
     }
 
     /// Picks the XI from the squad (AI clubs before every match; the user's when theirs is invalid).
@@ -404,6 +406,7 @@ struct Career: Codable {
         fixtures[fi].resultId = r.id
         record(r)
         checkMonthEnd(after: f)
+        assistantAfterMatch(r)
         defer { marketTick() }
 
         if f.stage == .final {
@@ -428,7 +431,8 @@ struct Career: Codable {
     /// AI clubs (and an invalid user XI) pick their XI before a match.
     mutating func prepareSides(_ f: Fixture) {
         for tid in [f.home, f.away] {
-            if let ci = clubs.firstIndex(where: { $0.id == tid }), clubs[ci].isCPU || !xiIssues(tid).isEmpty {
+            let assistant = tid == userClubId && settings.assistantPicksXI
+            if let ci = clubs.firstIndex(where: { $0.id == tid }), clubs[ci].isCPU || assistant || !xiIssues(tid).isEmpty {
                 autoPickXI(clubIndex: ci)
             }
         }
@@ -438,6 +442,7 @@ struct Career: Codable {
     func simulate(_ f: Fixture, changes: [LiveChange]) -> (MatchResult, [BallEvent], SeededRNG) {
         var engine = MatchEngine(rng: rng)
         engine.liveChanges = changes
+        engine.realisticChase = true
         var log: [BallEvent] = []
         let r = engine.play(side(f.home, fixture: f), side(f.away, fixture: f), stage: f.stage, pitch: f.pitch, log: &log)
         return (r, log, engine.rng)
@@ -668,6 +673,16 @@ struct Career: Codable {
     }
 
     /// Yearly development, ageing and retirement.
+    /// Chance a player retires at this age (the retirement watch uses the same rule).
+    func retireChance(_ p: CareerPlayer, age: Int) -> Double {
+        let paceBowler = !p.primaryIsBat && p.bowlType == .pace
+        let threshold = tuning.retireAge - (paceBowler ? tuning.paceRetireOffset : 0)
+        var chance = 0.0
+        if age >= threshold { chance = tuning.retireBase + tuning.retirePerYear * Double(age - threshold) }
+        if age >= 31 && p.rating < tuning.weakVeteranRating { chance = max(chance, 0.5) }
+        return chance
+    }
+
     mutating func develop() -> RolloverReport {
         var report = RolloverReport()
         for id in players.keys.sorted() {
@@ -693,11 +708,7 @@ struct Career: Codable {
             p.form = 0
 
             // Retirement.
-            let paceBowler = !p.primaryIsBat && p.bowlType == .pace
-            let threshold = tuning.retireAge - (paceBowler ? tuning.paceRetireOffset : 0)
-            var chance = 0.0
-            if age >= threshold { chance = tuning.retireBase + tuning.retirePerYear * Double(age - threshold) }
-            if age >= 31 && p.rating < tuning.weakVeteranRating { chance = max(chance, 0.5) }
+            var chance = retireChance(p, age: age)
             // Unsigned journeymen drift out of the game.
             let unsigned = p.clubId == nil && p.generated && p.academyOf == nil
             if unsigned && age >= 26 && (p.rating < 50 || age >= 30) { chance = max(chance, 0.6) }
@@ -773,6 +784,22 @@ enum CareerSave {
 
     /// JSON migrations, keyed by the version they upgrade from.
     static let migrations: [Int: ([String: Any]) -> [String: Any]] = [
+        // v10 → v11: board upgrade counter, retirement watch, RTM cards; new tuning keys.
+        10: { json in
+            var j = json
+            var board = j["board"] as? [String: Any] ?? [:]
+            board["upgradesStarted"] = 0
+            j["board"] = board
+            // Existing careers keep picking their own XI.
+            var settings = j["settings"] as? [String: Any] ?? [:]
+            settings["assistantPicksXI"] = false
+            j["settings"] = settings
+            var tuning = j["tuning"] as? [String: Any] ?? [:]
+            let standard = CareerSave.jsonObject(CareerTuning.standard) as? [String: Any] ?? [:]
+            for (k, v) in standard where tuning[k] == nil { tuning[k] = v }
+            j["tuning"] = tuning
+            return j
+        },
         // v9 → v10: board objectives and monthly awards; new tuning keys (the app reloads tuning).
         9: { json in
             var j = json

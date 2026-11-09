@@ -74,6 +74,8 @@ struct CareerTuning: Codable, Hashable {
     var aiReserveBank = 2_500
     var aiDealsPerWindow = 2
     var aiUpgradeMargin = 3
+    /// Bank (lakhs) at season start above which the board sets an invest objective.
+    var investObjectiveBank = 10_000
 
     // Training, scouting, academy (M3)
     var trainingSlots = 3

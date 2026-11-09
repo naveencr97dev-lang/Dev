@@ -32,6 +32,9 @@ struct CareerSettings: Codable, Hashable {
     var marketAlwaysOpen = true
     /// Schema 9.
     var ticketPrice: TicketPrice = .normal
+    /// Schema 11: the assistant picks the best XI before each match (panel round 3: CONTINUE-only
+    /// players fielded a clearly weaker side in 45% of matches). Picking the XI by hand turns it off.
+    var assistantPicksXI = true
 }
 
 extension Career {

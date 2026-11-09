@@ -23,13 +23,13 @@ built, and the next steps. Key points:
 - **Build:** no Mac. Codemagic builds an unsigned IPA, then Signulous installs it on an iPhone 17 Pro Max.
   Landscape (about 830 × 420 pt) must fit with no scrolling.
 - **Checks:** run `tools/typecheck/run.sh` (whole app, SwiftUI stubs) and `cd ios && swift test`
-  (66 tests). Install Swift 6.0.3 into /opt/swift if it's missing (command in HANDOFF.md).
+  (73 tests). Install Swift 6.0.3 into /opt/swift if it's missing (command in HANDOFF.md).
 - **Docs:** `docs/ARCHITECTURE.md` (feature tree and layers; fix in the lowest-risk layer),
   `docs/MOBILE-DESIGN.md` (clean native look, banned AI tells), `docs/career/GDD.md`,
   `docs/career/ROADMAP.md`.
 - **Skills:** repo skills `caveman` (on by default; check it's active) and `ultracave`. The design
   reference is taste-mobile-app-skill (github.com/orbitextechlab/taste-mobile-app-skill).
-- **Career save schema:** 10, with a JSON migration per version.
+- **Career save schema:** 11, with a JSON migration per version.
 - **User preferences:**
   - Replies use the "OPTIMIZED PROMPT (CO-STAR) + results" format, in the terse caveman voice.
   - Work in layers (80/20); generic first versions are fine; fix the user's device feedback first.

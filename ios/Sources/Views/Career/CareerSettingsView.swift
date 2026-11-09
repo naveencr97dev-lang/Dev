@@ -22,6 +22,16 @@ struct CareerSettingsView: View {
             .listRowBackground(GameRowBackground())
 
             Section {
+                Toggle("Assistant picks my XI", isOn: Binding(get: { c?.settings.assistantPicksXI ?? true },
+                                                              set: { store.careerSetAssistantPicksXI($0) }))
+            } header: {
+                Text("Team selection")
+            } footer: {
+                Text("On: your assistant fields the best XI and batting order before every match. Picking the XI yourself turns this off.")
+            }
+            .listRowBackground(GameRowBackground())
+
+            Section {
                 Toggle("Market always open", isOn: Binding(get: { c?.settings.marketAlwaysOpen ?? true },
                                                            set: { store.careerSetMarketAlwaysOpen($0) }))
             } header: {
