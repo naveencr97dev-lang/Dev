@@ -499,7 +499,7 @@ extension Career {
 
 
     /// The user bids for a player: fee to their club (none for free agents) and a wage.
-    mutating func makeOffer(playerId: String, fee: Int, wage: Int) -> OfferOutcome {
+    mutating func makeOffer(playerId: String, fee: Int, wage: Int, role: SquadRole? = nil) -> OfferOutcome {
         guard windowOpen else { return .rejected("The transfer window is closed.") }
         guard let p = players[playerId], !p.retired, p.clubId != userClubId else { return .rejected("Not available.") }
         let mine = squad(userClubId)
@@ -511,7 +511,9 @@ extension Career {
         if used >= 3 { return .rejected("They've stopped talking to you until the next window.") }
         market.talks[playerId] = used + 1
 
-        let demand = userWageDemand(p)
+        // Promising a role changes the wage he asks for (a bigger role buys a cheaper deal).
+        let demand = role.map { wageDemand(p, promising: $0) } ?? userWageDemand(p)
+        let promised = role ?? expectedRole(p)
         let accept = manager.has(.starMagnet) ? 0.8 : 1.0
         var counterFee = fee
         if let cid = p.clubId, let seller = club(cid) {
@@ -525,6 +527,9 @@ extension Career {
                             "Close! They'd do it for \(Money.format(counterFee)) with a wage of \(Money.format(max(wage, demand))).")
         }
         completeTransfer(playerId: playerId, to: userClubId, fee: fee, wage: wage)
+        players[playerId]?.squadRole = promised
+        players[playerId]?.rolePromised = role != nil
+        players[playerId]?.morale = 75
         return .accepted("Done! \(p.name) joins for \(fee > 0 ? Money.format(fee) : "free") on \(Money.format(wage)) a season.")
     }
 
@@ -568,6 +573,10 @@ extension Career {
         }
         if fee > 0 { post(buyer, "Signed \(p.name)", -fee) }
         sign(playerId, to: bi, wage: wage)
+        if buyer != userClubId {
+            players[playerId]?.squadRole = nil
+            players[playerId]?.morale = nil
+        }
         market.listed[playerId] = nil
         market.offers.removeAll { $0.playerId == playerId }
         let buyerName = club(buyer)?.short ?? ""

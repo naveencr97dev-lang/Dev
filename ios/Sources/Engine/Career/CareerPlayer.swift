@@ -123,6 +123,12 @@ struct CareerPlayer: Codable, Identifiable, Hashable {
     var academyOf: Int? = nil
     /// Finished seasons, oldest first (schema 7; optional so older saves load).
     var seasonLog: [SeasonLine]? = nil
+    /// Schema 12: the role promised to the player at the user's club, and morale 0-100 (optional, so
+    /// older saves load; nil means "not set yet").
+    var squadRole: SquadRole? = nil
+    var morale: Int? = nil
+    /// The role was promised (at signing or set by the manager), so the season reset keeps it.
+    var rolePromised: Bool? = nil
 
     var bat: Int { attr.bat }
     var bowl: Int { attr.bowl }

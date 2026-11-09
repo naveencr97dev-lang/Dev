@@ -40,6 +40,12 @@ struct CareerSquadTab: View {
                     }
                     Hairline(inset: 54)
                     NavigationLink { AcademyView() } label: { DashTile(icon: "graduationcap", title: "Academy", subtitle: "\(c.academy.count) prospects") }
+                    Hairline(inset: 54)
+                    NavigationLink { CareerScreen(title: "Squad report") { SquadReportView() } } label: {
+                        let unhappy = squad.filter { c.morale($0) < 45 }.count
+                        DashTile(icon: "list.bullet.clipboard", title: "Squad report",
+                                 subtitle: unhappy > 0 ? "\(unhappy) unhappy with their role" : "Strengths and weak spots")
+                    }
                 }
                 .gameFrame()
                 .buttonStyle(.plain)
@@ -234,6 +240,7 @@ struct CareerPlayerView: View {
             if let c = store.career, let p = c.players[playerId] {
                 VStack(alignment: .leading, spacing: DS.Space.lg) {
                     header(c, p)
+                    if p.clubId == c.userClubId { RoleMoraleCard(career: c, player: p) }
                     if !p.traits.isEmpty {
                         SectionLabel(text: "Traits")
                         AppCard { TraitChips(traits: p.traits, showBlurb: true) }
@@ -361,5 +368,111 @@ struct CareerClubView: View {
         .background(AppBackground())
         .navigationTitle(store.career?.club(clubId)?.short ?? "")
         .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+/// Career › Squad › Roles and morale: the promised role, morale, playing time and the player's future.
+struct RoleMoraleCard: View {
+    @EnvironmentObject var store: GameStore
+    let career: Career
+    let player: CareerPlayer
+
+    var body: some View {
+        let c = career, p = player
+        let m = c.morale(p)
+        let share = c.playedShare(p.id)
+        VStack(alignment: .leading, spacing: DS.Space.sm) {
+            SectionLabel(text: "Role and morale")
+            VStack(spacing: 0) {
+                HStack {
+                    Text("Squad role").font(.display(16, weight: .regular))
+                    Spacer()
+                    Menu {
+                        ForEach(SquadRole.allCases) { r in
+                            Button { store.careerSetSquadRole(p.id, r) } label: {
+                                if r == c.squadRole(p) { Label(r.label, systemImage: "checkmark") } else { Text(r.label) }
+                            }
+                        }
+                    } label: {
+                        HStack(spacing: 4) {
+                            Text(c.squadRole(p).label)
+                            Image(systemName: "chevron.up.chevron.down").font(.system(size: 12 * TextScale.factor, weight: .semibold))
+                        }
+                        .font(.display(16, weight: .semibold)).foregroundStyle(Palette.accent)
+                    }
+                }
+                .padding(.horizontal, 16).padding(.vertical, 12)
+                Hairline(inset: 16)
+                InfoRow(label: "Morale", value: "\(m) · \(c.future(p))", color: MoraleStyle.color(m), chevron: false)
+                Hairline(inset: 16)
+                InfoRow(label: "Playing time", value: share.map { "\(Int($0 * 100))% of recent matches (expects \(Int(c.squadRole(p).expectedShare * 100))%)" } ?? "Not enough matches yet",
+                        chevron: false)
+            }
+            .gameFrame()
+            Text("Playing less than his role promises lowers morale. Very unhappy players ask to leave. A demotion costs 10 morale a step.")
+                .font(.display(12, weight: .regular)).foregroundStyle(Palette.muted)
+        }
+    }
+}
+
+enum MoraleStyle {
+    static func color(_ m: Int) -> Color { m >= 70 ? Palette.accent : (m >= 45 ? .white : (m >= 25 ? .orange : Palette.wicket)) }
+}
+
+/// Career › Squad › Squad report: averages, the three best players, strengths and weak spots.
+struct SquadReportView: View {
+    @EnvironmentObject var store: GameStore
+
+    var body: some View {
+        if let c = store.career {
+            let r = c.squadReport()
+            VStack(alignment: .leading, spacing: DS.Space.lg) {
+                HStack(spacing: 0) {
+                    stat("\(r.averageRating)", "AVG RATING")
+                    stat("\(c.squad(c.userClubId).count)", "SQUAD")
+                    stat(String(format: "%.1f", r.averageAge), "AVG AGE")
+                    stat(Money.format(r.totalValue), "VALUE")
+                }
+                .padding(.vertical, DS.Space.sm)
+                .background(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous).fill(Palette.surface))
+                SectionLabel(text: "Best players")
+                VStack(spacing: 8) {
+                    ForEach(r.stars) { p in
+                        NavigationLink { CareerPlayerView(playerId: p.id) } label: { CareerPlayerRow(player: p, year: c.year) }
+                            .buttonStyle(.plain)
+                    }
+                }
+                .padding(DS.Space.md)
+                .gameFrame()
+                SectionLabel(text: "Strengths")
+                lines(r.strengths, icon: "checkmark", color: Palette.accent)
+                SectionLabel(text: "Weak spots")
+                lines(r.weaknesses.isEmpty ? ["Nothing stands out."] : r.weaknesses, icon: "xmark", color: Palette.wicket)
+            }
+        }
+    }
+
+    private func stat(_ v: String, _ l: String) -> some View {
+        VStack(spacing: 2) {
+            Text(v).font(.display(18)).lineLimit(1).minimumScaleFactor(0.6)
+            Text(l).font(.display(9, weight: .heavy)).foregroundStyle(Palette.muted)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private func lines(_ items: [String], icon: String, color: Color) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            ForEach(Array(items.enumerated()), id: \.offset) { i, line in
+                if i > 0 { Hairline(inset: 44) }
+                HStack(alignment: .top, spacing: 12) {
+                    Image(systemName: icon).font(.system(size: 14 * TextScale.factor, weight: .bold)).foregroundStyle(color)
+                        .frame(width: 16)
+                    Text(line).font(.display(15, weight: .regular)).foregroundStyle(.white)
+                    Spacer(minLength: 0)
+                }
+                .padding(.horizontal, 16).padding(.vertical, 11)
+            }
+        }
+        .gameFrame()
     }
 }

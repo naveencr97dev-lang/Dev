@@ -69,7 +69,8 @@ extension Career {
         let rank = (ranked.firstIndex(of: userClubId) ?? 4) + 1
         let finish = rank <= 2 ? 2 : (rank <= 5 ? 4 : (rank <= 8 ? 6 : 8))
         let homeGames = leagueFixtures.filter { $0.home == userClubId }.count
-        let share = rank <= 3 ? 0.6 : (rank <= 7 ? 0.5 : 0.4)
+        // Panel round 4: Normal players met 85%+ of objectives, so the home targets went up a notch.
+        let share = rank <= 3 ? 0.65 : (rank <= 7 ? 0.55 : 0.45)
         let homeWins = Int((Double(homeGames) * share).rounded())
         board.year = year
         board.upgradesStarted = 0

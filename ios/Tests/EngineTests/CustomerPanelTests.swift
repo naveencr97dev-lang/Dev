@@ -68,6 +68,7 @@ final class CustomerPanelTests: XCTestCase {
         var youthGrowth: [Int] = []
         var tacticChanges = 0
         var assistantNotes = 0, retirementWarnings = 0, rtmUsed = 0
+        var unhappyNotes = 0, transferRequests = 0, moraleEnd = 0, unhappyEnd = 0
     }
 
     func testCustomerPanel() {
@@ -121,6 +122,8 @@ final class CustomerPanelTests: XCTestCase {
                 if n.text.hasPrefix("📋 Assistant") { r.assistantNotes += 1 }
                 if n.text.hasPrefix("🕰️ Retirement watch") { r.retirementWarnings += 1 }
                 if n.text.hasPrefix("🃏") { r.rtmUsed += 1 }
+                if n.text.hasPrefix("😠") { r.unhappyNotes += 1 }
+                if n.text.hasPrefix("📝") { r.transferRequests += 1 }
             }
             lastNews = max(lastNews, c.news.map(\.id).max() ?? 0)
             r.presses += 1
@@ -176,6 +179,9 @@ final class CustomerPanelTests: XCTestCase {
         r.strength.append(c.strength(c.userClubId))
         r.aiStrength = c.clubs.filter { $0.id != c.userClubId }.map { c.strength($0.id) }
         r.managerLevel = c.manager.level
+        let sq = c.squad(c.userClubId)
+        r.moraleEnd = sq.map { c.morale($0) }.reduce(0, +) / max(1, sq.count)
+        r.unhappyEnd = sq.filter { c.morale($0) < 45 }.count
         r.monthAwards = c.board.awards.filter { $0.managerClub == c.userClubId }.count
         return (r, c)
     }
@@ -282,8 +288,10 @@ final class CustomerPanelTests: XCTestCase {
             .sorted { $0.rating != $1.rating ? $0.rating > $1.rating : $0.id < $1.id }
         for t in targets.prefix(2) {
             r.offerTries += 1
-            var outcome = c.makeOffer(playerId: t.id, fee: t.clubId == nil ? 0 : c.askingPrice(t), wage: c.userWageDemand(t))
-            if case .counter(let fee, let wage, _) = outcome { outcome = c.makeOffer(playerId: t.id, fee: fee, wage: wage) }
+            // Promise a key role: it's the cheapest wage (the panel tests whether that backfires).
+            var outcome = c.makeOffer(playerId: t.id, fee: t.clubId == nil ? 0 : c.askingPrice(t),
+                                      wage: c.wageDemand(t, promising: .key), role: .key)
+            if case .counter(let fee, let wage, _) = outcome { outcome = c.makeOffer(playerId: t.id, fee: fee, wage: wage, role: .key) }
             switch outcome {
             case .accepted: r.signings += 1; return
             case .counter(_, _, let m), .rejected(let m):
@@ -372,6 +380,13 @@ final class CustomerPanelTests: XCTestCase {
         if !r.starsRetired.isEmpty, persona == .caster, r.retirementWarnings == 0 {
             out["stars vanish"] = "\(r.starsRetired.count) of my players retired; I only noticed in the news."
         }
+        if !persona.managesSquad && persona != .bidder && r.transferRequests >= 2 {
+            out["unfair morale"] = "\(r.transferRequests) players asked to leave and I never touched the squad."
+        }
+        if persona == .trader && r.transferRequests >= 4 {
+            out["promises backfired"] = "\(r.transferRequests) players I promised a key role asked to leave."
+        }
+        if r.unhappyEnd >= 5 { out["unhappy dressing room"] = "\(r.unhappyEnd) players unhappy at the end (average morale \(r.moraleEnd))." }
         if persona.difficulty == .legend && r.trophies > 0 { out["legend too soft"] = "Won \(r.trophies) titles on Legend." }
         if persona.difficulty == .easy && r.trophies == 0 { out["easy too hard"] = "No title on Easy in \(r.finishes.count) seasons." }
         return out
@@ -383,7 +398,7 @@ final class CustomerPanelTests: XCTestCase {
         print("\n## \(persona.rawValue) @ \(club) — \"\(persona.quote)\"")
         print("  finishes: \(r.finishes.joined(separator: ", ")) · trophies \(r.trophies) · level \(r.managerLevel)")
         print("  record \(r.userWins)/\(r.userGames) (\(pct(r.userWins, g))%) · thrillers \(pct(r.thrillers, g))% · blowouts \(pct(r.blowouts, g))% · longest losing run \(r.longestLosingRun)")
-        print("  assistant notes \(r.assistantNotes) · retirement warnings \(r.retirementWarnings) · RTM \(r.rtmUsed)")
+        print("  assistant notes \(r.assistantNotes) · retirement warnings \(r.retirementWarnings) · RTM \(r.rtmUsed) · unhappy notes \(r.unhappyNotes) · transfer requests \(r.transferRequests) · morale \(r.moraleEnd) (\(r.unhappyEnd) unhappy)")
         print("  presses \(r.presses), idle \(pct(r.idlePresses, r.presses))% · stale XI \(r.staleXIMatches) · tactic changes \(r.tacticChanges)")
         print("  training \(r.trainingSessions) (empty \(r.emptySessions)) · bids \(r.offerTries) (failed \(r.offerFails) \(r.failReasons)) · signed \(r.signings) · sold \(r.sold) · lots \(r.lotsWon) · auction ΔXI \(r.auctionDeltas)")
         print("  objectives \(r.objectivesMet)/\(r.objectivesSet) \(r.objectiveLog) · MotM ×\(r.monthAwards)")

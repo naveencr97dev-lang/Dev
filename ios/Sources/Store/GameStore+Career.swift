@@ -10,6 +10,7 @@ extension GameStore {
         c.tuning = careerTuning
         // A save from before objectives existed: the board sets this season's now.
         if c.phase == .season && c.board.year != c.year { c.setObjectives() }
+        c.assignDefaultRoles()   // saves from before roles existed
         career = c
     }
 
@@ -142,9 +143,9 @@ extension GameStore {
 
     // MARK: Transfers
 
-    func careerMakeOffer(playerId: String, fee: Int, wage: Int) -> OfferOutcome {
+    func careerMakeOffer(playerId: String, fee: Int, wage: Int, role: SquadRole? = nil) -> OfferOutcome {
         var out = OfferOutcome.rejected("No career")
-        mutateCareer { out = $0.makeOffer(playerId: playerId, fee: fee, wage: wage) }
+        mutateCareer { out = $0.makeOffer(playerId: playerId, fee: fee, wage: wage, role: role) }
         return out
     }
 
@@ -201,6 +202,7 @@ extension GameStore {
 
     func careerSetDifficulty(_ d: Difficulty) { mutateCareer { $0.settings.difficulty = d } }
     func careerSetMarketAlwaysOpen(_ on: Bool) { mutateCareer { $0.settings.marketAlwaysOpen = on } }
+    func careerSetSquadRole(_ id: String, _ role: SquadRole) { mutateCareer { $0.setSquadRole(id, role) } }
     func careerSetAssistantPicksXI(_ on: Bool) { mutateCareer { $0.settings.assistantPicksXI = on } }
     func careerExchangeGold(_ amount: Int) -> String? {
         var err: String?

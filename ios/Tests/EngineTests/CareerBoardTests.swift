@@ -188,6 +188,23 @@ extension CareerTests {
         XCTAssertEqual(back.board.upgradesStarted, 0)
         XCTAssertFalse(back.settings.assistantPicksXI, "existing careers keep picking their own XI")
         XCTAssertTrue(c.settings.assistantPicksXI, "new careers start with the assistant on")
+    }
+
+    func testMigrationFromSchema11() throws {
+        let c = newCareer(seed: 407)
+        var json = try JSONSerialization.jsonObject(with: CareerSave.encode(c)) as! [String: Any]
+        json["schemaVersion"] = 11
+        var players = json["players"] as! [String: Any]
+        for (k, v) in players {
+            var p = v as! [String: Any]
+            p["squadRole"] = nil; p["morale"] = nil; p["rolePromised"] = nil
+            players[k] = p
+        }
+        json["players"] = players
+        var back = try CareerSave.decode(JSONSerialization.data(withJSONObject: json))
+        XCTAssertNil(back.players.values.first { $0.clubId == back.userClubId }?.squadRole)
+        back.assignDefaultRoles()   // the store does this on load
+        XCTAssertTrue(back.squad(back.userClubId).allSatisfy { $0.squadRole != nil && $0.morale != nil })
         XCTAssertEqual(back.tuning.investObjectiveBank, CareerTuning.standard.investObjectiveBank)
     }
 }

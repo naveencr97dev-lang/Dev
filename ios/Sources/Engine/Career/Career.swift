@@ -55,7 +55,7 @@ struct CareerFlags: Codable, Hashable {
 /// The whole career save. A pure value type: every rule lives here or in the engines, so the
 /// career can be unit-tested and simulated headlessly.
 struct Career: Codable {
-    static let currentSchema = 11
+    static let currentSchema = 12
     static let maxNews = 80
 
     var schemaVersion = Career.currentSchema
@@ -217,6 +217,7 @@ struct Career: Codable {
         news = []
         if !fixtures.isEmpty { setObjectives() }
         announceRetirementWatch()
+        assignDefaultRoles()
         addNews(.info, "\(managerName) takes charge of \(userClub.name). The \(year) season starts on \(CareerCalendar.label(tuning.roundDays.first ?? 10)).")
     }
 
@@ -327,6 +328,7 @@ struct Career: Codable {
         for k in players.keys { players[k]?.form = 0 }
         setObjectives()
         announceRetirementWatch()
+        assignDefaultRoles(refresh: true)
     }
 
     /// Picks the XI from the squad (AI clubs before every match; the user's when theirs is invalid).
@@ -406,6 +408,7 @@ struct Career: Codable {
         fixtures[fi].resultId = r.id
         record(r)
         checkMonthEnd(after: f)
+        moraleTick(after: r)
         assistantAfterMatch(r)
         defer { marketTick() }
 
@@ -784,6 +787,9 @@ enum CareerSave {
 
     /// JSON migrations, keyed by the version they upgrade from.
     static let migrations: [Int: ([String: Any]) -> [String: Any]] = [
+        // v11 → v12: squad roles and morale (optional player fields: nothing to convert; roles are
+        // assigned on the next load or season start).
+        11: { json in json },
         // v10 → v11: board upgrade counter, retirement watch, RTM cards; new tuning keys.
         10: { json in
             var j = json

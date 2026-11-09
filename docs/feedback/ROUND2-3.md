@@ -66,3 +66,24 @@ the same off-season.
 - Losing runs of 10-11 remain for 40-45% teams. That's statistically plausible over 144 matches, but
   watch the form spiral.
 - Money: casual players ignore the invest objective. Consider an "owner invests" option.
+
+## Round 4: roles and morale (from the SM26 recon)
+
+- **First cut was too harsh.** Casual players, who never touch the squad, got 6–14 transfer requests
+  in 4 seasons. Default roles came from rating rank (a second keeper ranked "First Team" but never
+  plays), and rotation expected football-style playing time.
+- **Fixes:**
+  - Default roles come from the best XI.
+  - Rotation expects 20% and backup 0%.
+  - Unpromised roles are re-derived each season.
+  - Unpromised players lose morale more slowly.
+  - **Only broken promises end in transfer requests.**
+- **Result:**
+  - Casual transfer requests 6–14 → 0.
+  - Average end morale 82–92.
+  - The "unfair morale" complaint went from 4 to 0.
+  - The trader who promises every signing a key role still gets requests ("promises backfired"):
+    intended, and the bid screen now warns when you over-promise.
+- Also found: the negotiation bar showed "close" at exactly the asking wage (floating-point rounding).
+  Fixed. Objectives were met 85%+ on Normal by 5 players, so home-win targets went up a notch
+  ("too easy" 5 → 2).
