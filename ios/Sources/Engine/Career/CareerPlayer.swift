@@ -121,6 +121,8 @@ struct CareerPlayer: Codable, Identifiable, Hashable {
     var contract: Contract? = nil
     /// In this club's youth academy (not in the squad, not a free agent).
     var academyOf: Int? = nil
+    /// Finished seasons, oldest first (schema 7; optional so older saves load).
+    var seasonLog: [SeasonLine]? = nil
 
     var bat: Int { attr.bat }
     var bowl: Int { attr.bowl }

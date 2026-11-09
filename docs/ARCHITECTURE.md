@@ -27,7 +27,8 @@ Auction XI
     ├── Season ................................. Career.swift
     │   ├── League (36 matches each, 10 clubs), home pitches, IPL playoffs
     │   ├── Calendar and international windows
-    │   └── Awards, history, news, form, career stats
+    │   ├── Awards, history, news, form
+    │   └── Stats: season, all-time, season log, leaders . CareerStatsBook.swift
     ├── Squad .................................. Career.swift (XI, order, plan), MatchEngine (Tactics)
     │   └── Pick XI › Batting order › Bowling plan › Tactics
     ├── Market ................................. CareerMarket.swift
@@ -62,6 +63,7 @@ Auction XI
 | Development | CareerDevelopmentViews |
 | Club | CareerClubViews |
 | International | CareerWorldViews |
+| Stats (profile, market, leaderboards) | CareerStatsViews |
 | Look | CareerTheme |
 
 ---

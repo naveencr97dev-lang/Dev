@@ -277,8 +277,7 @@ struct CareerPlayerView: View {
                             }
                         }
                     }
-                    SectionLabel(text: "Career")
-                    careerStats(p.stats)
+                    PlayerStatsSection(career: c, player: p)
                     SectionLabel(text: "Transfer")
                     TransferActions(playerId: playerId)
                     GoldActions(playerId: playerId)
@@ -325,25 +324,6 @@ struct CareerPlayerView: View {
             Text(label).font(.display(10, weight: .heavy)).foregroundStyle(Palette.muted)
         }
         .frame(maxWidth: .infinity)
-    }
-
-    private func careerStats(_ s: CareerStats) -> some View {
-        AppCard {
-            VStack(spacing: DS.Space.md) {
-                HStack(spacing: 0) {
-                    big("\(s.matches)", "MATCHES", .white)
-                    big("\(s.runs)", "RUNS", .white)
-                    big("\(s.highScore)", "BEST", .white)
-                    big(String(format: "%.0f", s.strikeRate), "SR", .white)
-                }
-                HStack(spacing: 0) {
-                    big("\(s.fifties)/\(s.hundreds)", "50s/100s", .white)
-                    big("\(s.wickets)", "WICKETS", .white)
-                    big(s.ballsBowled == 0 ? "–" : String(format: "%.1f", s.economy), "ECON", .white)
-                    big("\(s.titles)", "TITLES", .white)
-                }
-            }
-        }
     }
 }
 

@@ -164,6 +164,9 @@ struct CareerDashboard: View {
                 NavigationLink { CareerScreen(title: "League") { CareerTableTab(path: $path) } } label: {
                     DashTile(icon: "list.number", title: "League", subtitle: "You're \(pos) · table & caps")
                 }
+                NavigationLink { StatsCentreView() } label: {
+                    DashTile(icon: "chart.bar.fill", title: "Stats", subtitle: "Season & all-time leaders")
+                }
                 NavigationLink { CareerScreen(title: "World") { CareerWorldTab(path: $path) } } label: {
                     DashTile(icon: "globe", title: "International", subtitle: c.intl.job.map { "Coach of \($0)" } ?? "\(c.intl.offers.count) job offer\(c.intl.offers.count == 1 ? "" : "s")",
                              badge: c.intl.job == nil && !c.intl.offers.isEmpty ? "\(c.intl.offers.count)" : nil)

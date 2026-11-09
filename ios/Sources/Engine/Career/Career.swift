@@ -55,7 +55,7 @@ struct CareerFlags: Codable, Hashable {
 /// The whole career save. A pure value type: every rule lives here or in the engines, so the
 /// career can be unit-tested and simulated headlessly.
 struct Career: Codable {
-    static let currentSchema = 6
+    static let currentSchema = 7
     static let maxNews = 80
 
     var schemaVersion = Career.currentSchema
@@ -548,6 +548,7 @@ struct Career: Codable {
                                     purpleCap: line(purple) { "\($0.wickets) wickets" },
                                     mvp: line(mvp) { "\(Int($0.mvpPoints)) pts" }))
         if let i = clubInfo.firstIndex(where: { $0.id == champ }) { clubInfo[i].titles += 1 }
+        archiveSeasonStats()
         payPrizeMoney()
         if champ == userClubId {
             gainXP(300, reason: nil)
@@ -710,6 +711,8 @@ enum CareerSave {
 
     /// JSON migrations, keyed by the version they upgrade from.
     static let migrations: [Int: ([String: Any]) -> [String: Any]] = [
+        // v6 → v7: players' season logs (an optional field: nothing to convert).
+        6: { json in json },
         // v5 → v6: tactics.
         5: { json in
             var j = json

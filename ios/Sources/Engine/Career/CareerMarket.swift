@@ -439,13 +439,6 @@ extension Career {
         return Career.round5(Double(p.value(in: year)) * mult)
     }
 
-    /// Players the user could sign, best first.
-    func marketPlayers(role: Role? = nil, freeAgentsOnly: Bool = false, limit: Int = 80) -> [CareerPlayer] {
-        players.values
-            .filter { !$0.retired && $0.clubId != userClubId && (role == nil || $0.role == role) && (!freeAgentsOnly || $0.clubId == nil) }
-            .sorted { $0.rating != $1.rating ? $0.rating > $1.rating : $0.id < $1.id }
-            .prefix(limit).map { $0 }
-    }
 
     /// The user bids for a player: fee to their club (none for free agents) and a wage.
     mutating func makeOffer(playerId: String, fee: Int, wage: Int) -> OfferOutcome {

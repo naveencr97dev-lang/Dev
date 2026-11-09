@@ -284,6 +284,8 @@ struct CareerMarketTab: View {
     @EnvironmentObject var store: GameStore
     @State private var roleIndex = 0
     @State private var freeOnly = false
+    @State private var sort: MarketSort = .rating
+    @State private var scope: StatScope = .season
 
     private static let roles: [Role?] = [nil, .BAT, .WK, .AR, .BOWL]
 
@@ -334,11 +336,25 @@ struct CareerMarketTab: View {
                 .pickerStyle(.segmented)
                 Toggle("Free agents only (no fee)", isOn: $freeOnly)
                     .font(.subheadline)
-                let list = c.marketPlayers(role: Self.roles[roleIndex], freeAgentsOnly: freeOnly, limit: 50)
+                HStack {
+                    Picker("Sort by", selection: $sort) {
+                        ForEach(MarketSort.allCases) { s in Text(s.label).tag(s) }
+                    }
+                    .pickerStyle(.menu)
+                    Spacer()
+                    Picker("Stats", selection: $scope) {
+                        Text("Season").tag(StatScope.season)
+                        Text("All-time").tag(StatScope.allTime)
+                    }
+                    .pickerStyle(.segmented)
+                    .frame(maxWidth: 200)
+                }
+                let season = c.seasonStatLines
+                let list = c.marketPlayers(role: Self.roles[roleIndex], freeAgentsOnly: freeOnly, sort: sort, scope: scope, limit: 50)
                 VStack(spacing: DS.Space.sm) {
                     ForEach(list) { p in
                         NavigationLink { CareerPlayerView(playerId: p.id) } label: {
-                            MarketRow(career: c, player: p)
+                            MarketRow(career: c, player: p, scope: scope, season: season)
                         }
                         .buttonStyle(.plain)
                     }
@@ -351,12 +367,18 @@ struct CareerMarketTab: View {
 struct MarketRow: View {
     let career: Career
     let player: CareerPlayer
+    var scope: StatScope = .season
+    var season: [String: StatLine] = [:]
 
     var body: some View {
         let c = career
         let club = player.clubId.flatMap { c.club($0) }
         VStack(alignment: .leading, spacing: 4) {
             CareerPlayerRow(player: player, year: c.year)
+            Text((scope == .season ? "Season: " : "All-time: ") + StatText.line(c.statLine(player.id, scope: scope, season: season), role: player.role))
+                .font(.caption.weight(.semibold).monospacedDigit())
+                .foregroundStyle(Palette.accent)
+                .lineLimit(1).minimumScaleFactor(0.8)
             HStack(spacing: 6) {
                 if let club { TeamBadge(team: club, size: 18) }
                 Text(club?.short ?? "FREE AGENT").font(.caption2.weight(.bold))
