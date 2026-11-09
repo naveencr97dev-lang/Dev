@@ -32,7 +32,8 @@ Auction XI
     │   └── Stats: season, all-time, season log, leaders . CareerStatsBook.swift
     ├── Squad .................................. Career.swift (XI, order, plan), MatchEngine (Tactics)
     │   ├── Pick XI › Batting order › Bowling plan › Tactics
-    │   └── Form card, squad report, offer mood .. CareerSquadReport.swift
+    │   ├── Form card, squad report, offer mood .. CareerSquadReport.swift
+    │   └── Squad planner (depth chart per job) .. CareerPlanner.swift (views: CareerPlannerViews)
     ├── Match day .............................. Career.previewMatch / play(changes:), Views/MatchCentreView
     │   └── Live view › ⏸ Match centre: scorecard so far, field, intent, batting order, bowlers
     ├── Market ................................. CareerMarket.swift

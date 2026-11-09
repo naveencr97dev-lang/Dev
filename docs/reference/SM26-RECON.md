@@ -34,6 +34,20 @@ The SM26 Team section is a left rail: Squad / Reports / Stats / Opposition / Squ
 XI's Squad tab now has Development, Club stats and Squad report tiles. Still to do: Opposition (a
 scouting report on the next opponent) and Squad Planner.
 
+### Batch 3: Squad Planner
+
+| SM26 element | Mechanic | Auction XI |
+|---|---|---|
+| Pitch with a formation; each position holds a stack of players with a count badge | A depth chart per position | ✅ **Squad planner**: 7 cricket jobs (Openers 2, Top order 2, Finishers 2, Keeper 1, All-rounder 1, Spinner 1, Seamers 2 = 11), up to 4 deep, as a grid of cards (no pitch art) |
+| Slot panel: ▲▼ reorder, delete, Add Players, Clear, sort | Edit a depth chart | ✅ Job screen: reorder, remove, add from eligible squad players (ranked by job score), clear |
+| Summary: position, rating gauge, age gauge | Slot health | ✅ Starters' job rating and age, plus a **succession warning** (a starter 33+ with no backup 28 or under) |
+| Suggested signing card with a gold price | A target for the slot | ✅ **Scout's target**: the best affordable player who'd start in that job (no gold shortcut) |
+| Magic wand | Auto-fill | ✅ Auto-fill (scarce jobs first, overseas cap respected, always 11), plus **Use as my XI** (batting order from slot fit) |
+
+Panel: a tinkerer who runs the team through the planner won 66% / 62% of matches, against 61% / 52%
+with Auto-pick. It had 0 illegal plans and 0 weaker-XI matches. The job-aware XI (openers open,
+finishers finish) beats Auto-pick.
+
 ## Built from this recon
 
 > **Update (schema 13):** the owner chose to replace morale with **form**. Squad roles, morale and
@@ -57,6 +71,8 @@ scouting report on the next opponent) and Squad Planner.
 
 ## Next from the recon
 
+0. Consider making the assistant's XI pick use the planner's job logic (it beat Auto-pick in the
+   panel). This changes balance for casual players, so run the 20-season harness and the panel first.
 1. Opposition report (next opponent: form, best players, home pitch, how to beat them).
 2. Squad list column switcher (General / Contract / Stats).
 2. Hub tiles: a mini table around your position; league-wide big transfers; a spotlight player.

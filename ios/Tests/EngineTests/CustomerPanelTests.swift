@@ -69,6 +69,7 @@ final class CustomerPanelTests: XCTestCase {
         var tacticChanges = 0
         var assistantNotes = 0, retirementWarnings = 0, rtmUsed = 0
         var formEnd = 0, coldEnd = 0
+        var planFailures = 0
     }
 
     func testCustomerPanel() {
@@ -268,7 +269,15 @@ final class CustomerPanelTests: XCTestCase {
             }
         }
         if persona == .trader { trade(&c, &r) }
-        if persona.managesSquad && ![3, 6, 9, 12].contains(r.losingRun) { c.autoPickXI(clubIndex: c.userClubIndex) }
+        if persona.managesSquad && ![3, 6, 9, 12].contains(r.losingRun) {
+            if persona == .tinkerer {
+                // The tinkerer runs the team through the squad planner.
+                c.autoPlan()
+                if !c.applyPlan().isEmpty { r.planFailures += 1; c.autoPickXI(clubIndex: c.userClubIndex) }
+            } else {
+                c.autoPickXI(clubIndex: c.userClubIndex)
+            }
+        }
     }
 
     private func trade(_ c: inout Career, _ r: inout Report) {
@@ -375,6 +384,10 @@ final class CustomerPanelTests: XCTestCase {
         if pct(r.idlePresses, r.presses) >= 25 { out["too much tapping"] = "\(pct(r.idlePresses, r.presses))% of presses were just waiting." }
         if !r.starsRetired.isEmpty, persona == .caster, r.retirementWarnings == 0 {
             out["stars vanish"] = "\(r.starsRetired.count) of my players retired; I only noticed in the news."
+        }
+        if r.planFailures > 0 { out["planner broke"] = "The squad planner couldn't name a legal XI \(r.planFailures) times." }
+        if persona == .tinkerer, r.staleXIMatches > r.userGames / 10 {
+            out["planner weaker"] = "My planned XI was clearly weaker than Auto-pick in \(r.staleXIMatches) matches."
         }
         if persona.difficulty == .legend && r.trophies > 0 { out["legend too soft"] = "Won \(r.trophies) titles on Legend." }
         if persona.difficulty == .easy && r.trophies == 0 { out["easy too hard"] = "No title on Easy in \(r.finishes.count) seasons." }

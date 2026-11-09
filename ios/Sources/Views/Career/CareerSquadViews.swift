@@ -41,6 +41,10 @@ struct CareerSquadTab: View {
                     Hairline(inset: 54)
                     NavigationLink { AcademyView() } label: { DashTile(icon: "graduationcap", title: "Academy", subtitle: "\(c.academy.count) prospects") }
                     Hairline(inset: 54)
+                    NavigationLink { CareerScreen(title: "Squad planner") { SquadPlannerView() } } label: {
+                        DashTile(icon: "square.grid.3x3", title: "Squad planner", subtitle: "Depth chart for every job in the XI")
+                    }
+                    Hairline(inset: 54)
                     NavigationLink { CareerScreen(title: "Development") { DevelopmentReportView() } } label: {
                         DashTile(icon: "chart.line.uptrend.xyaxis", title: "Development", subtitle: "Young players this season")
                     }
