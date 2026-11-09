@@ -1,6 +1,7 @@
 # Auction XI: Career Mode, Game Design Document (GDD)
 
-This document is the single source of truth for Career Mode. If code and the GDD disagree, fix
+This document is the single source of truth for Career Mode. How it maps onto code layers
+(and where to make a change) is in [../ARCHITECTURE.md](../ARCHITECTURE.md). If code and the GDD disagree, fix
 one of them in the same change. Build order is in [ROADMAP.md](ROADMAP.md).
 
 > Status: **v0.2**, 2026-11-09 (M0 and M1 built; see ROADMAP).

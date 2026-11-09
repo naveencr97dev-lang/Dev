@@ -24,6 +24,9 @@ one owner and one AI developer.
 
 ## Layers (80/20)
 
+The code and feature hierarchy, with where each change goes, is in [../ARCHITECTURE.md](../ARCHITECTURE.md).
+The backlog lives there, sorted by layer.
+
 Build in layers. The first 20% of effort makes the app run and every main system work; tuning
 comes later, driven by playtests.
 

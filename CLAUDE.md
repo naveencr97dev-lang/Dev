@@ -33,6 +33,11 @@ it off for a session, or `/ultracave` for maximum compression.
 - Players: `tools/players_curated.py` → `ios/Resources/players.json` (172 stars and legends).
 - Live match: per-ball pacing by excitement, wagon wheel, runs-per-over bars, innings break,
   post-match scorecard → runs per over → highlights.
+- **Architecture: read `docs/ARCHITECTURE.md` first.** It covers the game as a feature tree (paths like
+  `Career › Market › Auction`) and the code layers: L0 foundation, L1 systems, L2 content/balance,
+  L3 store glue, L4 screens. Fix every change in the lowest-risk layer (content, then screens, then
+  system, then foundation) and run that layer's guardrails. `ArchitectureTests` enforces: no UI in
+  the engine, views never mutate the career, every schema version has a migration.
 - **Next big project: Career Mode** (a cricket manager in the style of football manager games).
   Design: `docs/career/GDD.md`. Build order and milestone gates: `docs/career/ROADMAP.md`.
   Work milestone by milestone and keep the GDD in sync with the code. M0–M6 are built as a generic
