@@ -8,6 +8,31 @@ Qualifier 1, Eliminator, Qualifier 2 and the Final.
 SwiftUI, iOS 16+, no third-party dependencies, works fully offline.
 Franchise names are fictional; the app is not affiliated with any real league.
 
+## Career mode
+
+Run one franchise season after season. The design is in `docs/career/GDD.md` and the build order in
+`docs/career/ROADMAP.md`.
+
+- **Start:** name yourself, then pick one of 10 clubs from a fair draft (20-player squads). The
+  Legends era option adds retired greats to the pool.
+- **Season:** each pair meets 4 times, so 36 league matches each and 180 in total, from January to
+  November. The league pauses in April and August for international windows (from M5). Home
+  matches use your club's home pitch. IPL playoffs follow.
+- **Hub tabs:**
+  - Home: next match, Continue (sims other games to yours), news, form.
+  - Squad: pick the XI from the squad, batting order, bowling plan, player profiles with full attributes.
+  - Fixtures.
+  - Table: standings, playoffs, cap races.
+  - Club: history and roll of honour.
+- **Between seasons:**
+  - Players age a year and develop towards their potential, or decline.
+  - Veterans retire.
+  - A youth intake joins the pool.
+  - Squads are topped back up to 18.
+- **Coming next:** auctions and the transfer market (M2), scouting, training and youth (M3),
+  facilities, finances, manager traits and gold (M4), international management (M5), and the 2D
+  match view (M6).
+
 ## How a game goes
 
 1. **Setup**: 3–10 franchises (default is 4). Mark each one 👤 Human or 🤖 CPU. Pick the purse,

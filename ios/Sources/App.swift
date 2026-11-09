@@ -27,7 +27,9 @@ struct RootView: View {
     var body: some View {
         ZStack {
             AppBackground()
-            if let phase = store.game?.phase {
+            if store.inCareer && store.career != nil {
+                CareerHubView()
+            } else if let phase = store.game?.phase {
                 switch phase {
                 case .setup: NavigationStack { SetupView() }
                 case .auction: AuctionView()
@@ -40,5 +42,6 @@ struct RootView: View {
             }
         }
         .animation(.easeInOut(duration: 0.25), value: store.game?.phase)
+        .animation(.easeInOut(duration: 0.25), value: store.inCareer)
     }
 }

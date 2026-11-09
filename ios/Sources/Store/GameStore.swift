@@ -7,6 +7,13 @@ final class GameStore: ObservableObject {
     let book: PlayerBook
 
     @Published private(set) var game: GameState?
+    /// Career mode (its own save file). `inCareer` decides which mode the screens show.
+    @Published var career: Career?
+    @Published var inCareer = false
+    /// Career resources: birth years for the curated players, and balance numbers.
+    let careerBorn: [String: Int]
+    let careerTuning: CareerTuning
+    let careerURL: URL
     // Auction clock (not saved).
     @Published var timeLeft: Double = 0
     @Published var banner: SaleRecord? = nil
@@ -14,7 +21,7 @@ final class GameStore: ObservableObject {
     @Published var paused = false
 
     /// Ball-by-ball logs for matches played this session, by fixture id (not saved).
-    private(set) var logs: [Int: [BallEvent]] = [:]
+    var logs: [Int: [BallEvent]] = [:]
 
     private var cpuDelay: Double = 1
     private var bannerDelay: Double = 0
@@ -26,7 +33,23 @@ final class GameStore: ObservableObject {
         book = PlayerBook(players)
         let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         fileURL = docs.appendingPathComponent("auctionxi-game-v2.json")   // v2: curated player pool
+        careerURL = docs.appendingPathComponent("auctionxi-career.json")
+        if let metaURL = Bundle.main.url(forResource: "career_meta", withExtension: "json"),
+           let data = try? Data(contentsOf: metaURL),
+           let meta = try? JSONDecoder().decode([String: [String: Int]].self, from: data) {
+            careerBorn = meta.compactMapValues { $0["born"] }
+        } else {
+            careerBorn = [:]
+        }
+        if let tuningURL = Bundle.main.url(forResource: "career_tuning", withExtension: "json"),
+           let data = try? Data(contentsOf: tuningURL),
+           let tuning = try? JSONDecoder().decode(CareerTuning.self, from: data) {
+            careerTuning = tuning
+        } else {
+            careerTuning = .standard
+        }
         load()
+        loadCareer()
         if game?.phase == .auction {
             // Saved right after a hammer: move on to the next lot.
             if game?.auction.lotClosed == true { mutate { $0.nextLot(book: book) } }
@@ -43,6 +66,7 @@ final class GameStore: ObservableObject {
     }
 
     func save() {
+        saveCareer()
         guard let game else {
             try? FileManager.default.removeItem(at: fileURL)
             return
@@ -61,8 +85,9 @@ final class GameStore: ObservableObject {
 
     // MARK: Lookups
 
-    func team(_ id: Int) -> Franchise? { game?.team(id) }
-    func player(_ id: String) -> Player? { book[id] }
+    func team(_ id: Int) -> Franchise? { inCareer ? career?.club(id) : game?.team(id) }
+    func player(_ id: String) -> Player? { inCareer ? career?.player(id) : book[id] }
+    func result(_ id: UUID) -> MatchResult? { inCareer ? career?.result(id) : game?.result(id) }
 
     var currentPlayer: Player? {
         guard let id = game?.auction.currentPlayerId, game?.auction.finished == false else { return nil }
@@ -221,10 +246,12 @@ final class GameStore: ObservableObject {
     // MARK: Squads
 
     func setXI(teamId: Int, ids: [String]) {
+        if inCareer { mutateCareer { $0.setXI(clubId: teamId, ids: ids) }; return }
         mutate { $0.setXI(teamId: teamId, ids: ids) }
     }
 
     func setBowlingOrder(teamId: Int, ids: [String]) {
+        if inCareer { mutateCareer { $0.setBowlingOrder(clubId: teamId, ids: ids) }; return }
         mutate { $0.setBowlingOrder(teamId: teamId, ids: ids) }
     }
 
@@ -237,6 +264,7 @@ final class GameStore: ObservableObject {
     /// Plays the fixture if it hasn't been played yet; returns its result.
     @discardableResult
     func play(fixtureId: Int) -> MatchResult? {
+        if inCareer { return playCareer(fixtureId: fixtureId) }
         guard let g = game else { return nil }
         if let f = g.fixtures.first(where: { $0.id == fixtureId }), let r = g.result(f.resultId) { return r }
         var out: (MatchResult, [BallEvent])?

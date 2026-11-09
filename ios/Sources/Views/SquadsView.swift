@@ -393,7 +393,8 @@ struct BowlingPlanView: View {
         }
         .onAppear {
             guard order.isEmpty, let t = store.team(teamId) else { return }
-            let squad = t.squad.compactMap { store.player($0) }
+            // Bowlers come from the playing XI (career squads are bigger than the XI).
+            let squad = (t.xi.count == 11 ? t.xi : t.squad).compactMap { store.player($0) }
             let plan = t.bowlingOrder.count == 5 ? t.bowlingOrder.compactMap { store.player($0) } : MatchEngine.autoAttack(squad, pitch: nil)
             let rest = squad.filter { p in !plan.contains(p) }.sorted { $0.bowl > $1.bowl }
             order = (plan + rest).map(\.id)

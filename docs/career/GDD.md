@@ -3,7 +3,8 @@
 This document is the single source of truth for Career Mode. If code and the GDD disagree, fix
 one of them in the same change. Build order is in [ROADMAP.md](ROADMAP.md).
 
-> Status: **v0.1 draft**, 2026-11-08. Owner: Naveen. The genre and mechanics follow football
+> Status: **v0.2**, 2026-11-09 (M0 and M1 built; see ROADMAP).
+> Earlier draft: v0.1, 2026-11-08. Owner: Naveen. The genre and mechanics follow football
 > manager games (reference: Soccer Manager 2027). Names, art, UI and copy are all original.
 
 ---
@@ -61,6 +62,8 @@ Career loop (many years)
 | Points | Win 2, no result 1, loss 0. Tiebreaks: points, then NRR, then wins, then head-to-head. |
 | Playoffs | IPL style: Qualifier 1 (1st v 2nd), Eliminator (3rd v 4th), Qualifier 2, Final. |
 | Relegation | **None.** Pressure comes from owner expectations (playoffs and finances). |
+| Home ground | Every club has a home pitch (for example a dusty turner or an English seamer). Home league matches are played on it, so squads should suit it. Playoff venues are drawn at random. |
+| Starting squads | A balanced snake draft of 20 players per club (2 WK, 6 BAT, 4 AR, 8 BOWL, max 8 overseas). You then pick a club, as in football manager games. Auctions take over from season 2 (M2). |
 | Squad | 18–25 players, max 8 overseas. A playing XI has max 4 overseas. |
 | Salary cap | Auction purse of ₹120 Cr. Wages count against it. |
 | Impact player | Optional rule toggle, off by default. |
@@ -117,6 +120,12 @@ The league pauses during international windows, so franchises never lose players
 
 The existing match ratings (bat and bowl overall) are **derived** from these attributes, so
 `MatchEngine` keeps working unchanged. Form, fatigue and morale apply as small modifiers.
+
+- **Form (M1):** each match moves form by −2…+4 from runs and wickets, decaying 1 per match. Up to
+  ±3 bat and bowl.
+- **Engine calibration:** career XIs have more depth players and fewer trait-laden stars than the
+  quick game, so the engine adds `engineBatBoost` (tuning, default +8) to batting **inside matches
+  only**. The ratings you see stay true.
 
 ### 4.2 Player database
 

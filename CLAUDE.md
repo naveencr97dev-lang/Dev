@@ -21,8 +21,11 @@ it off for a session, or `/ultracave` for maximum compression.
   `claude/reverse-engineer-repo-rnfy93`; both apps use `ios/`.
 - Build: no Mac. Codemagic builds an unsigned IPA (workflow in `codemagic.yaml`) → the user
   signs and installs it with Signulous. SwiftUI can't be compiled here: parse-check with
-  `swiftc -parse` and unit-test the engine with `swift test` (Swift toolchain for Linux:
-  download swift-6.0.3 for ubuntu24.04 into /opt/swift if it's missing).
+  `swiftc -parse`, type-check with `tools/typecheck/run.sh` (SwiftUI/UIKit stubs; add stub APIs as new
+  views need them, and keep `tools/typecheck/AppDecls.swift` in step with MatchView), and unit-test the
+  engine with `swift test` (Swift toolchain for Linux: download swift-6.0.3 for ubuntu24.04 into
+  /opt/swift if it's missing). Fast career balance run:
+  `CAREER_SEASONS=20 swift test -c release -Xswiftc -enable-testing --filter CareerTests`.
 - Target device: iPhone 17 Pro Max, portrait and landscape (landscape is about 830 × 420 pt inside
   the safe area). It's used for casting, so landscape must fit with no scrolling.
 - Game rules: 11-player squads (max 4 overseas), pool = 11 × teams + 12, configurable bid
@@ -32,6 +35,8 @@ it off for a session, or `/ultracave` for maximum compression.
   post-match scorecard → runs per over → highlights.
 - **Next big project: Career Mode** (a cricket manager in the style of football manager games).
   Design: `docs/career/GDD.md`. Build order and milestone gates: `docs/career/ROADMAP.md`.
-  Work milestone by milestone and keep the GDD in sync with the code.
+  Work milestone by milestone and keep the GDD in sync with the code. M0 and M1 are built
+  (engine in `ios/Sources/Engine/Career`, screens in `ios/Sources/Views/Career`). Next is M2:
+  contracts, auctions and the transfer market.
 - User preferences: replies in the "OPTIMIZED PROMPT (CO-STAR) + results" format, terse
   (caveman). Commit and push every change to the working branch. Tell the user to rebuild in Codemagic.

@@ -3,7 +3,7 @@
 #
 # Setup (one time — skip if Codemagic is already connected to this repo):
 #   1. https://codemagic.io -> your app for naveencr97dev-lang/Dev.
-#   2. Start new build -> branch claude/beautiful-keller-qgp1vc -> workflow "Auction XI unsigned IPA".
+#   2. Start new build -> branch claude/gracious-davinci-yq0yej -> workflow "Auction XI unsigned IPA".
 #   3. Download AuctionXI-unsigned.ipa from the build artifacts -> upload to Signulous.
 
 workflows:

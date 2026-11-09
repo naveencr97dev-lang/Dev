@@ -125,6 +125,10 @@ final class CareerTests: XCTestCase {
         XCTAssertNil(c.play(fixtureId: 1), "no matches after the season")
         let champ = c.championId!
         XCTAssertEqual(c.info(champ)?.titles, 1)
+        // Biggest save: a full season of results before rollover.
+        let fullSave = try! CareerSave.encode(c)
+        print("Save size at season end: \(fullSave.count / 1024) KB")
+        XCTAssertLessThan(fullSave.count, 5_000_000)
         // Form moves during a season.
         XCTAssertTrue(c.players.values.contains { $0.form != 0 })
         // Career stats were recorded.
@@ -243,6 +247,27 @@ final class CareerTests: XCTestCase {
         }
         XCTAssertGreaterThanOrEqual(p.bat, 72)
         XCTAssertLessThanOrEqual(p.bat, 86)
+    }
+
+    func testTakeChargeAndHubHelpers() {
+        var c = newCareer(seed: 4, club: 0)
+        let strengths = c.clubs.map { c.strength($0.id) }
+        c.takeCharge(clubId: 6, managerName: "Naveen")
+        XCTAssertEqual(c.userClubId, 6)
+        XCTAssertEqual(c.clubs.filter { !$0.isCPU }.map(\.id), [6])
+        XCTAssertEqual(c.clubs.map { c.strength($0.id) }, strengths, "squads unchanged")
+        XCTAssertEqual(c.news.count, 1)
+        XCTAssertTrue(c.news[0].text.contains("Naveen"))
+        XCTAssertEqual(c.userFixtures.count, 36)
+        XCTAssertEqual(c.totalRounds, 36)
+        XCTAssertEqual(c.round(of: c.leagueFixtures[0]), 1)
+        XCTAssertEqual(c.round(of: c.leagueFixtures[179]), 36)
+        XCTAssertTrue(c.userForm().isEmpty)
+        c.simUntilUserMatch()
+        c.play(fixtureId: c.nextUserFixture!.id)
+        XCTAssertEqual(c.userForm().count, 1)
+        XCTAssertTrue((1...10).contains(c.position(of: 6)))
+        XCTAssertTrue(c.news.contains { $0.kind == .result })
     }
 
     func testCalendarLabels() {

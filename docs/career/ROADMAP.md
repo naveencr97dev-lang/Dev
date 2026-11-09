@@ -25,7 +25,8 @@ one owner and one AI developer.
 ## Definition of done (every feature)
 
 - [ ] The engine logic has unit tests, and `swift test` passes.
-- [ ] `swiftc -parse` is clean on all views.
+- [ ] `swiftc -parse` is clean on all views, and `tools/typecheck/run.sh` (SwiftUI stubs, type-checks the
+      store, theme and career screens on Linux) passes.
 - [ ] Portrait fits, and landscape fits the 830 × 420 pt safe area with no scrolling.
 - [ ] Old saves still load.
 - [ ] The GDD is updated if behaviour changed.
@@ -33,7 +34,20 @@ one owner and one AI developer.
 
 ## Milestones
 
-### M0: Pre-production (1 sprint)
+### M0: Pre-production (1 sprint) ✅ done
+- **Spike results (recorded 2026-11-09):**
+  - Quick-sim: a full 184-match season takes **0.25 s** in a release build on Linux (budget 2 s). The
+    debug test build takes about 2 s.
+  - Save size: **1.3 MB** at the end of a season (all results kept), about 0.35 MB after rollover. Budget 5 MB.
+  - Determinism: same seed and same choices give the same career (`testDeterministic`). Dictionary
+    iteration is randomised in Swift, so every rng-consuming loop iterates sorted ids.
+  - Store: `MockStore` deferred to M4 with the rest of the economy.
+  - 2D ground prototype: deferred to M6 (the wagon wheel already proves the drawing approach).
+- **Built:** `Career` save root with `schemaVersion` and JSON migrations (`CareerSave`),
+  `career_tuning.json` generated from `CareerTuning` defaults (and checked by a test), and
+  `career_meta.json` birth years.
+
+### M0 plan (original)
 - **Must:**
   - This GDD and roadmap.
   - The `Career` save schema and `career_tuning.json` skeleton.
@@ -44,7 +58,18 @@ one owner and one AI developer.
   - The `MockStore` flow.
 - **Gate:** spike numbers recorded here, and the schema reviewed.
 
-### M1: Vertical slice, the core loop (2 sprints)
+### M1: Vertical slice, the core loop (2 sprints) ✅ built, waiting for an on-device playtest
+- **Built:** Career / Quick Auction choice on the home screen. Create a manager and draft the league
+  (a balanced snake draft, not an auction, so you pick a club like in football manager games).
+  36-match calendar with home pitches, quick-sim of AI matches, the live view for your own matches,
+  table, playoffs, awards and history. Rollover: ageing, development, retirements, youth intake,
+  squad top-ups. Save and load.
+- **Balance (20-season harness):** 9 different champions, nobody above 40% of titles. Average first
+  innings: flat 187, bouncy 149, slow 141, turner 135, seam 126 (quick-game pars: 200 / 171 / 149 /
+  152 / 147). Seam and bounce homes are still about 20 runs low; tune in Beta.
+- **Gate still open:** play 2 seasons on the phone.
+
+### M1 plan (original)
 - **Must:**
   - A Career / Quick Auction mode picker.
   - Create a manager and pick 1 of 10 franchises.
@@ -124,7 +149,7 @@ one owner and one AI developer.
 
 | Metric | Target |
 |---|---|
-| Average first-innings score by pitch | Within ±8 of the par in the README |
+| Average first-innings score by pitch | Within ±8 of the quick-game par (measured: 200 / 147 / 171 / 152 / 149 for flat / seam / bounce / turner / slow) |
 | Champions over 20 seasons | At least 6 different franchises, none with more than 40% of titles |
 | Potential-80 player at 18 | Overall rating 74–82 by age 24 with normal training |
 | Player who has peaked, aged 33 | Loses 2–5 overall per year |

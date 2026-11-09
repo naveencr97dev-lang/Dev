@@ -166,6 +166,16 @@ struct Career: Codable {
         clubs[clubIndex].squad.append(playerId)
     }
 
+    /// Hands a club to the user (the setup screen drafts first, then lets the user pick a club).
+    mutating func takeCharge(clubId: Int, managerName: String) {
+        guard clubs.contains(where: { $0.id == clubId }) else { return }
+        userClubId = clubId
+        self.managerName = managerName
+        for i in clubs.indices { clubs[i].isCPU = clubs[i].id != clubId }
+        news = []
+        addNews(.info, "\(managerName) takes charge of \(userClub.name). The \(year) season starts on \(CareerCalendar.label(tuning.roundDays.first ?? 10)).")
+    }
+
     // MARK: - Lookups
 
     var userClub: Franchise { clubs[userClubIndex] }
@@ -212,6 +222,26 @@ struct Career: Codable {
     }
 
     func isUserFixture(_ f: Fixture) -> Bool { f.involves(userClubId) }
+
+    /// 1-based league round of a fixture ("Round 7"), or nil for playoffs.
+    func round(of f: Fixture) -> Int? {
+        guard f.stage == .league else { return nil }
+        let perRound = max(1, clubs.count / 2)
+        return (f.id - 1) / perRound + 1
+    }
+
+    var totalRounds: Int { leagueFixtures.count / max(1, clubs.count / 2) }
+
+    /// League position, 1-based.
+    func position(of clubId: Int) -> Int { (table.firstIndex { $0.teamId == clubId } ?? clubs.count - 1) + 1 }
+
+    /// The user's recent results, oldest first (true = won).
+    func userForm(last n: Int = 5) -> [Bool] {
+        Array(results.filter { $0.teamA == userClubId || $0.teamB == userClubId }.suffix(n).map { $0.winnerId == userClubId })
+    }
+
+    /// The user's fixtures in date order.
+    var userFixtures: [Fixture] { fixtures.filter(isUserFixture) }
 
     // MARK: - Season
 

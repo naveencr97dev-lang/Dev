@@ -4,6 +4,8 @@ struct HomeView: View {
     @EnvironmentObject var store: GameStore
     @Environment(\.verticalSizeClass) private var vSize
     @State private var appear = false
+    @State private var showCareerSetup = false
+    @State private var confirmNewCareer = false
 
     var body: some View {
         let wide = vSize == .compact
@@ -22,9 +24,24 @@ struct HomeView: View {
                 step("01", "Live auction", "Pass the phone. Tap your crest to bid.")
                 step("02", "League", "Ball-by-ball sims on five kinds of pitch.")
                 step("03", "Playoffs", "Q1, Eliminator, Q2 — then the Final.")
-                Button("New Game") { store.newGame() }
-                    .buttonStyle(PrimaryButtonStyle())
-                    .padding(.top, DS.Space.sm)
+                step("04", "Career", "Run a franchise for years: 36-match seasons, ageing, youth.")
+                if store.hasCareer {
+                    Button("Continue career") { store.continueCareer() }
+                        .buttonStyle(PrimaryButtonStyle())
+                        .padding(.top, DS.Space.sm)
+                    HStack(spacing: DS.Space.sm) {
+                        Button("Quick auction") { store.newGame() }
+                            .buttonStyle(SecondaryButtonStyle())
+                        Button("New career") { confirmNewCareer = true }
+                            .buttonStyle(SecondaryButtonStyle())
+                    }
+                } else {
+                    Button("Career mode") { showCareerSetup = true }
+                        .buttonStyle(PrimaryButtonStyle())
+                        .padding(.top, DS.Space.sm)
+                    Button("Quick auction") { store.newGame() }
+                        .buttonStyle(SecondaryButtonStyle())
+                }
             }
             .frame(maxWidth: 420)
         }
@@ -38,6 +55,14 @@ struct HomeView: View {
             }
         }
         .onAppear { withAnimation(.spring(response: 0.6, dampingFraction: 0.75)) { appear = true } }
+        .sheet(isPresented: $showCareerSetup) {
+            CareerSetupView().environmentObject(store)
+        }
+        .confirmationDialog("Start a new career? Your current career will be replaced when you start.",
+                            isPresented: $confirmNewCareer, titleVisibility: .visible) {
+            Button("New career", role: .destructive) { showCareerSetup = true }
+            Button("Cancel", role: .cancel) {}
+        }
     }
 
     private func step(_ n: String, _ title: String, _ text: String) -> some View {

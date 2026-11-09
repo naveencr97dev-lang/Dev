@@ -496,7 +496,7 @@ struct ResultScreen: View {
 
     var body: some View {
         Group {
-            if let r = store.game?.result(resultId) {
+            if let r = store.result(resultId) {
                 if autoplay && !reelDone && !(r.highlights ?? []).isEmpty {
                     HighlightsReel(result: r) { withAnimation(.easeInOut) { reelDone = true } }
                 } else {
@@ -521,7 +521,7 @@ struct MatchResultContent: View {
         ScrollView {
             VStack(spacing: DS.Space.lg) {
                 header
-                if result.stage == .final, store.game?.phase == .season, store.game?.championId != nil {
+                if result.stage == .final, !store.inCareer, store.game?.phase == .season, store.game?.championId != nil {
                     Button("🏆 Trophy ceremony") { store.finishSeason() }
                         .buttonStyle(PrimaryButtonStyle())
                 }
