@@ -37,7 +37,8 @@ extension CareerTests {
         c.beginOffseason()
         let ledger = c.finance[c.userClubId].ledger
         XCTAssertTrue(ledger.contains { $0.text == "Wages" && $0.amount == -wages })
-        XCTAssertTrue(ledger.contains { $0.text.hasPrefix("Gate money (1") || $0.text.hasPrefix("Gate money (2") }, "18 home league games plus any home playoffs")
+        XCTAssertTrue(ledger.contains { $0.text.hasPrefix("Tickets:") || $0.text == "Merchandise sales" }, "weekly income")
+        XCTAssertFalse(ledger.contains { $0.text.hasPrefix("Gate money") }, "the user's gate is paid weekly, not again at season end")
         XCTAssertTrue(ledger.contains { $0.text == "Facility upkeep" })
         XCTAssertNotEqual(c.bank(c.userClubId), before)
         // Revenue roughly covers a full payroll: no club is wildly in debt after a season.

@@ -105,6 +105,7 @@ extension CareerTests {
 
     func testTransferMarket() {
         var c = newCareer(seed: 8)
+        c.settings.marketAlwaysOpen = false   // this test is about the real windows
         XCTAssertTrue(c.windowOpen, "window open for the first two rounds")
         let me = c.userClubId
         // Free agent at his asking wage.
