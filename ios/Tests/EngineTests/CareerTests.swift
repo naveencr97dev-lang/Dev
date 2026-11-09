@@ -26,6 +26,8 @@ final class CareerTests: XCTestCase {
             XCTAssertLessThanOrEqual(squad.filter(\.overseas).count, c.tuning.maxOverseasSquad, "\(club.short) overseas", file: file, line: line)
             XCTAssertTrue(squad.allSatisfy { $0.clubId == club.id && !$0.retired }, file: file, line: line)
             XCTAssertTrue(c.xiIssues(club.id).isEmpty, "\(club.short) XI: \(c.xiIssues(club.id))", file: file, line: line)
+            XCTAssertLessThanOrEqual(c.payroll(club.id), c.tuning.salaryCap, "\(club.short) over the cap", file: file, line: line)
+            XCTAssertTrue(squad.allSatisfy { $0.contract != nil }, "\(club.short) uncontracted player", file: file, line: line)
             for id in club.squad {
                 XCTAssertFalse(seen.contains(id), "\(id) in two squads", file: file, line: line)
                 seen.insert(id)
@@ -210,6 +212,7 @@ final class CareerTests: XCTestCase {
                 let xis = c.clubs.map { c.side($0.id).xi }
                 let bat7 = xis.flatMap { $0.prefix(7).map(\.bat) }
                 let bowl5 = xis.flatMap { MatchEngine.autoAttack($0, pitch: nil).map(\.bowl) }
+                print("  banks \(c.clubs.map { c.bank($0.id) / 100 }) Cr, payroll \(c.clubs.map { c.payroll($0.id) / 100 }) Cr")
                 print("  \(c.year): flat \(flat.reduce(0, +) / max(1, flat.count)) seam \(seam.reduce(0, +) / max(1, seam.count)) top7 bat \(bat7.reduce(0, +) / bat7.count) attack \(bowl5.reduce(0, +) / bowl5.count) str \(c.clubs.map { c.strength($0.id) })")
             }
             champions.append(c.championId!)

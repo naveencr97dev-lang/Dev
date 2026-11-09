@@ -13,6 +13,8 @@ enum CareerPhase: String, Codable {
     case season
     /// Final played: review the season, then roll over.
     case seasonEnd
+    /// Between seasons: retentions (mega-auction years), the auction, then the transfer window.
+    case offseason
 }
 
 struct AwardLine: Codable, Hashable {
@@ -53,7 +55,7 @@ struct CareerFlags: Codable, Hashable {
 /// The whole career save. A pure value type: every rule lives here or in the engines, so the
 /// career can be unit-tested and simulated headlessly.
 struct Career: Codable {
-    static let currentSchema = 1
+    static let currentSchema = 2
     static let maxNews = 80
 
     var schemaVersion = Career.currentSchema
@@ -78,6 +80,11 @@ struct Career: Codable {
     var nextPlayerId: Int
     var nextNewsId = 1
     var rng: SeededRNG
+    // Schema 2 (M2): money, the transfer market and the off-season.
+    /// Indexed by club id.
+    var finance: [ClubFinance] = []
+    var market = MarketState()
+    var offseason: OffseasonState? = nil
 
     /// Home grounds, by franchise template order.
     static let homePitches: [Pitch] = [.indianFlat, .dustyTurner, .indianFlat, .caribbeanSlow, .englishSeam,
@@ -124,6 +131,8 @@ struct Career: Codable {
                        rules: rules, tuning: tuning, flags: flags, clubs: clubs, clubInfo: info,
                        players: players, nextPlayerId: tuning.depthPlayers + 1, rng: rng)
         c.draftSquads()
+        c.finance = c.clubs.map { _ in ClubFinance(bank: tuning.startingBank) }
+        c.assignDraftContracts()
         for i in c.clubs.indices { c.autoPickXI(clubIndex: i) }
         c.startSeason()
         c.addNews(.info, "\(managerName) takes charge of \(c.clubs[clubIndex].name). The \(year) season starts on \(CareerCalendar.label(c.tuning.roundDays.first ?? 10)).")
@@ -161,9 +170,14 @@ struct Career: Codable {
         }
     }
 
-    private mutating func sign(_ playerId: String, to clubIndex: Int) {
+    /// Adds a player to a club. With a wage, also writes a contract to the next mega auction.
+    mutating func sign(_ playerId: String, to clubIndex: Int, wage: Int? = nil) {
         players[playerId]?.clubId = clubs[clubIndex].id
         clubs[clubIndex].squad.append(playerId)
+        if let wage {
+            let until = nextMegaYear(after: year)
+            players[playerId]?.contract = Contract(wage: wage, until: until)
+        }
     }
 
     /// Hands a club to the user (the setup screen drafts first, then lets the user pick a club).
@@ -333,6 +347,7 @@ struct Career: Codable {
         results.append(r)
         fixtures[fi].resultId = r.id
         record(r)
+        defer { marketTick() }
 
         if f.stage == .final {
             championId = r.winnerId
@@ -467,6 +482,7 @@ struct Career: Codable {
                                     purpleCap: line(purple) { "\($0.wickets) wickets" },
                                     mvp: line(mvp) { "\(Int($0.mvpPoints)) pts" }))
         if let i = clubInfo.firstIndex(where: { $0.id == champ }) { clubInfo[i].titles += 1 }
+        payPrizeMoney()
         for id in club(champ)?.squad ?? [] { players[id]?.stats.titles += 1 }
         phase = .seasonEnd
         let name = club(champ)?.name ?? ""
@@ -483,11 +499,23 @@ struct Career: Codable {
         var youth = 0
     }
 
-    /// Ages and develops every player, retires veterans, adds a youth intake, tops up squads
-    /// and starts the next season.
+    /// Runs the whole off-season automatically (headless sims and tests): the user keeps their best
+    /// players at a mega auction and doesn't bid. The app walks through the same steps one by one.
     @discardableResult
     mutating func startNextSeason() -> RolloverReport {
         guard phase == .seasonEnd else { return RolloverReport() }
+        var report = beginOffseason()
+        if offseason?.stage == .retention {
+            confirmRetention(userKeeps: suggestedRetentions())
+        }
+        simRestOfAuction(autoBid: true)
+        report.signed += startSeasonFromOffseason()
+        return report
+    }
+
+    /// Old one-step rollover, kept for reference by `beginOffseason`: ages, develops and retires,
+    /// adds the youth intake.
+    mutating func ageAndRefreshPool() -> RolloverReport {
         year += 1
         var report = develop()
         let taken = Set(players.values.map(\.name))
@@ -496,12 +524,7 @@ struct Career: Codable {
         for p in intake { players[p.id] = p }
         nextPlayerId += intake.count
         report.youth = intake.count
-        report.signed = topUpSquads()
-        for i in clubs.indices where clubs[i].isCPU || !xiIssues(clubs[i].id).isEmpty {
-            autoPickXI(clubIndex: i)
-        }
-        startSeason()
-        addNews(.season, "Season \(year) begins. \(report.retired.count) players retired, \(report.youth) youngsters entered the pool.")
+        addNews(.season, "Off-season \(year): \(report.retired.count) players retired, \(report.youth) youngsters entered the pool.")
         if !report.userRetired.isEmpty {
             addNews(.squad, "Retired from your squad: \(report.userRetired.joined(separator: ", ")).")
         }
@@ -509,7 +532,7 @@ struct Career: Codable {
     }
 
     /// Yearly development, ageing and retirement.
-    private mutating func develop() -> RolloverReport {
+    mutating func develop() -> RolloverReport {
         var report = RolloverReport()
         for id in players.keys.sorted() {
             guard var p = players[id], !p.retired else { continue }
@@ -548,8 +571,11 @@ struct Career: Codable {
                     clubs[ci].xi.removeAll { $0 == id }
                     clubs[ci].bowlingOrder.removeAll { $0 == id }
                     if cid == userClubId { report.userRetired.append(p.name) }
+                    players[id] = p
+                    patchXI(clubId: cid)
                 }
                 p.clubId = nil
+                p.contract = nil
                 report.retired.append(p.name)
                 if p.rating >= 75 && !p.generated {
                     addNews(.squad, "\(p.name) retires at \(age) after \(p.stats.matches) matches and \(p.stats.runs) runs, \(p.stats.wickets) wickets.")
@@ -566,7 +592,7 @@ struct Career: Codable {
 
     /// Fills every squad back up to the minimum from the free-agent pool.
     /// Returns "Name → CLUB" lines for the user's club.
-    private mutating func topUpSquads() -> [String] {
+    mutating func topUpSquads() -> [String] {
         var signedForUser: [String] = []
         let roles: [Role] = [.WK, .BAT, .AR, .BOWL]
         for ci in clubs.indices {
@@ -578,9 +604,14 @@ struct Career: Codable {
                     (r, Double(tuning.squadShape[i]) - Double(squad.filter { $0.role == r }.count))
                 }
                 let need = deficits.max { $0.1 < $1.1 }?.0 ?? .BOWL
-                let free = freeAgents.filter { !$0.overseas || overseas < tuning.maxOverseasSquad }
-                guard let pick = free.first(where: { $0.role == need }) ?? free.first else { break }
-                sign(pick.id, to: ci)
+                let room = capRoom(clubs[ci].id)
+                let free = freeAgents.filter {
+                    (!$0.overseas || overseas < tuning.maxOverseasSquad) && wageDemand($0) <= room
+                }
+                // Cheapest decent option: best rating among those asking the least.
+                guard let pick = free.first(where: { $0.role == need }) ?? free.first
+                        ?? freeAgents.filter({ !$0.overseas || overseas < tuning.maxOverseasSquad }).last else { break }
+                sign(pick.id, to: ci, wage: min(wageDemand(pick), max(tuning.minWage, room)))
                 if clubs[ci].id == userClubId { signedForUser.append(pick.name) }
             }
         }
@@ -597,7 +628,17 @@ enum CareerSave {
     enum LoadError: Error { case tooNew(Int), notACareer }
 
     /// JSON migrations, keyed by the version they upgrade from.
-    static let migrations: [Int: ([String: Any]) -> [String: Any]] = [:]
+    static let migrations: [Int: ([String: Any]) -> [String: Any]] = [
+        // v1 → v2: money and the transfer market. Contracts are filled in after decoding.
+        1: { json in
+            var j = json
+            let clubs = (j["clubs"] as? [Any])?.count ?? 10
+            let bank = CareerTuning.standard.startingBank
+            j["finance"] = (0..<clubs).map { _ in ["bank": bank, "ledger": [Any]()] as [String: Any] }
+            j["market"] = (try? JSONSerialization.jsonObject(with: JSONEncoder().encode(MarketState()))) ?? [String: Any]()
+            return j
+        },
+    ]
 
     static func encode(_ c: Career) throws -> Data { try JSONEncoder().encode(c) }
 
@@ -612,6 +653,8 @@ enum CareerSave {
             json["schemaVersion"] = v
         }
         let upgraded = try JSONSerialization.data(withJSONObject: json)
-        return try JSONDecoder().decode(Career.self, from: upgraded)
+        var c = try JSONDecoder().decode(Career.self, from: upgraded)
+        c.repairContracts()
+        return c
     }
 }

@@ -48,6 +48,25 @@ struct CareerTuning: Codable, Hashable {
     var youthIntake = 30
     var youthGemChance = 0.08
 
+    // Money (lakhs; 100 = ₹1 Cr)
+    /// Salary cap: a club's total wages (the IPL purse).
+    var salaryCap = 12_000
+    var startingBank = 2_500
+    var minWage = 20
+    /// Paid to every club after each season, plus prize money by finish.
+    var seasonRevenue = 1_200
+    var prizeMoney = [2_000, 1_300, 700, 650]   // champion, runner-up, lost Q2, lost Eliminator
+    /// Mega auction every N seasons (up to `maxRetentions` kept); mini auctions in between.
+    var megaAuctionEvery = 3
+    var maxRetentions = 6
+    /// Target squad size clubs bid towards at auction.
+    var auctionSquadTarget = 21
+    /// Transfer-market multipliers on market value.
+    var askXIMultiplier = 1.5
+    var askBenchMultiplier = 1.15
+    var counterThreshold = 0.75
+    var releaseCompensation = 0.5
+
     // Form
     var formDecay = 1
     var formCap = 10

@@ -1,4 +1,8 @@
 {
+  "askBenchMultiplier" : 1.15,
+  "askXIMultiplier" : 1.5,
+  "auctionSquadTarget" : 21,
+  "counterThreshold" : 0.75,
   "depthBat" : [
     58,
     76
@@ -64,9 +68,12 @@
   ],
   "maxOverseasSquad" : 8,
   "maxOverseasXI" : 4,
+  "maxRetentions" : 6,
   "maxSquad" : 25,
   "meetings" : 4,
+  "megaAuctionEvery" : 3,
   "minSquad" : 18,
+  "minWage" : 20,
   "paceRetireOffset" : 1,
   "playoffDays" : [
     316,
@@ -74,10 +81,19 @@
     320,
     323
   ],
+  "prizeMoney" : [
+    2000,
+    1300,
+    700,
+    650
+  ],
+  "releaseCompensation" : 0.5,
   "retireAge" : 35,
   "retireBase" : 0.3,
   "retirePerYear" : 0.2,
   "roundGap" : 6,
+  "salaryCap" : 12000,
+  "seasonRevenue" : 1200,
   "secondTraitChance" : 0.25,
   "squadShape" : [
     2,
@@ -86,6 +102,7 @@
     8
   ],
   "startSquad" : 20,
+  "startingBank" : 2500,
   "traitChance" : 0.5,
   "weakVeteranRating" : 56,
   "youthGemChance" : 0.08,

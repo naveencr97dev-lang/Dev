@@ -117,6 +117,8 @@ struct CareerPlayer: Codable, Identifiable, Hashable {
     var clubId: Int?
     var retired = false
     var stats = CareerStats()
+    /// Wage and expiry (nil for free agents; optional so v1 saves still decode).
+    var contract: Contract? = nil
 
     var bat: Int { attr.bat }
     var bowl: Int { attr.bowl }
