@@ -340,6 +340,7 @@ extension Picker where L == Text {
 }
 public struct Toggle: View {
     public init(_ title: String, isOn: Binding<Bool>) {}
+    public init<L: View>(isOn: Binding<Bool>, @ViewBuilder label: () -> L) {}
     public var body: Never { fatalError() }
 }
 public struct Stepper: View {

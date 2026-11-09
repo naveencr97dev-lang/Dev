@@ -63,8 +63,16 @@ struct MatchView: View {
                 }
             }
         }
-        .onAppear(perform: start)
-        .onDisappear { if !showCentre { commitIfNeeded() } }
+        .onAppear {
+            start()
+            GameAudio.shared.play(.crowd)
+        }
+        .onDisappear {
+            if !showCentre {
+                commitIfNeeded()
+                GameAudio.shared.play(.theme)
+            }
+        }
         .onReceive(clock) { _ in advance() }
         .sheet(isPresented: $showCentre, onDismiss: { paused = false }) {
             if let r = result {
@@ -195,6 +203,7 @@ struct MatchView: View {
         case "6", "4": Haptics.tap()
         default: break
         }
+        GameAudio.shared.ball(log[shown - 1].label)
         if shown >= log.count { finish() }
     }
 
@@ -210,6 +219,9 @@ struct MatchView: View {
         }
         commitIfNeeded()
         Haptics.success()
+        // The victory sting: your win in career, any finish in the pass-and-play game.
+        let userTeam = store.inCareer ? store.career?.userTeam(in: fixtureId) : nil
+        if !store.inCareer || (userTeam != nil && result?.winnerId == userTeam) { GameAudio.shared.effect(.win, volume: 0.8) }
     }
 
     // MARK: Live ticker

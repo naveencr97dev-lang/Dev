@@ -54,6 +54,7 @@ struct SeasonView: View {
                     Menu {
                         Button { showSquads = true } label: { Label("Squads & batting order", systemImage: "person.3") }
                         TextSizePicker()
+                        SoundToggles()
                         QuitMenuItem(confirm: $confirmQuit)
                     } label: { Image(systemName: "ellipsis.circle") }
                 }

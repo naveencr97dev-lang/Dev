@@ -58,6 +58,7 @@ struct HomeView: View {
         .overlay(alignment: .topTrailing) {
             Menu {
                 TextSizePicker()
+                SoundToggles()
             } label: {
                 Image(systemName: "textformat.size")
                     .font(.title3)

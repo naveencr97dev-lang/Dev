@@ -12,6 +12,8 @@ swiftc -parse-as-library -emit-module -module-name SwiftUI -emit-module-path "$O
   tools/typecheck/SwiftUI.swift
 swiftc -parse-as-library -emit-module -module-name UIKit -emit-module-path "$OUT/UIKit.swiftmodule" \
   tools/typecheck/UIKit.swift
+swiftc -parse-as-library -emit-module -module-name AVFoundation -emit-module-path "$OUT/AVFoundation.swiftmodule" \
+  tools/typecheck/AVFoundation.swift
 swiftc -parse-as-library -emit-module -module-name Charts -emit-module-path "$OUT/Charts.swiftmodule" \
   -I "$OUT" tools/typecheck/Charts.swift
 

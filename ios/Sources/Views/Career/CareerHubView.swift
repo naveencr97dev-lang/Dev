@@ -81,6 +81,7 @@ struct CareerHubView: View {
                             }
                         }
                         TextSizePicker()
+                        SoundToggles()
                         Button { store.exitCareer() } label: {
                             Label("Main menu", systemImage: "house")
                         }

@@ -45,6 +45,15 @@ struct CareerSettingsView: View {
                 TextSizePicker()
             }
             .listRowBackground(GameRowBackground())
+
+            Section {
+                SoundToggles()
+            } header: {
+                Text("Sound")
+            } footer: {
+                Text("Original music and match sounds. They follow your iPhone's silent switch and play alongside your own music.")
+            }
+            .listRowBackground(GameRowBackground())
         }
         .darkList()
         .navigationTitle("Settings")

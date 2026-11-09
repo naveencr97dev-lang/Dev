@@ -11,8 +11,10 @@ struct AuctionXIApp: App {
                 .environmentObject(store)
                 .preferredColorScheme(.dark)
                 .tint(Palette.accent)
+                .onAppear { GameAudio.shared.play(.theme) }
         }
         .onChange(of: scenePhase) { phase in
+            if phase == .active { GameAudio.shared.resume() }
             if phase != .active {
                 store.paused = true
                 store.save()
