@@ -12,54 +12,44 @@ struct CareerSquadTab: View {
             let issues = c.xiIssues(club.id)
             let bench = squad.filter { !club.xi.contains($0.id) }.sorted { $0.rating > $1.rating }
             VStack(alignment: .leading, spacing: DS.Space.lg) {
-                AppCard {
-                    VStack(alignment: .leading, spacing: DS.Space.md) {
-                        HStack {
-                            Text("\(squad.count) players · \(squad.filter(\.overseas).count)/\(c.tuning.maxOverseasSquad) overseas · wages \(Money.format(c.payroll(club.id)))")
-                                .font(.subheadline)
-                            Spacer()
-                            Text("STR \(c.strength(club.id))").font(.display(18)).foregroundStyle(Palette.accent)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Squad").font(.display(28, weight: .bold))
+                    Text("\(squad.count) players · \(squad.filter(\.overseas).count)/\(c.tuning.maxOverseasSquad) overseas · wages \(Money.format(c.payroll(club.id))) · strength \(c.strength(club.id))")
+                        .font(.display(14, weight: .regular)).foregroundStyle(Palette.muted)
+                }
+                if !issues.isEmpty {
+                    VStack(alignment: .leading, spacing: 2) {
+                        ForEach(issues, id: \.self) { issue in
+                            Label(issue, systemImage: "exclamationmark.triangle.fill").font(.display(14, weight: .semibold)).foregroundStyle(.orange)
                         }
-                        if !issues.isEmpty {
-                            VStack(alignment: .leading, spacing: 2) {
-                                ForEach(issues, id: \.self) { issue in
-                                    Label(issue, systemImage: "exclamationmark.triangle.fill").font(.caption.weight(.bold)).foregroundStyle(.orange)
-                                }
-                                Text("The best XI will be picked automatically until this is fixed.")
-                                    .font(.caption2).foregroundStyle(Palette.muted)
-                            }
-                        }
-                        HStack(spacing: DS.Space.sm) {
-                            NavigationLink { PickXIView() } label: {
-                                SquadAction(icon: "checklist", text: "Pick XI")
-                            }
-                            NavigationLink { BattingOrderView(teamId: club.id) } label: {
-                                SquadAction(icon: "arrow.up.arrow.down", text: "Order")
-                            }
-                            NavigationLink { BowlingPlanView(teamId: club.id) } label: {
-                                SquadAction(icon: "figure.cricket", text: "Bowling")
-                            }
-                        }
-                        HStack(spacing: DS.Space.sm) {
-                            NavigationLink { TrainingView() } label: {
-                                SquadAction(icon: "dumbbell", text: "Training")
-                            }
-                            NavigationLink { AcademyView() } label: {
-                                SquadAction(icon: "graduationcap", text: "Academy \(c.academy.count)")
-                            }
-                            NavigationLink { TacticsView() } label: {
-                                SquadAction(icon: "slider.horizontal.3", text: "Tactics")
-                            }
-                        }
-                        Button {
-                            store.careerAutoXI()
-                            Haptics.success()
-                        } label: {
-                            Label("Auto-pick best XI and order", systemImage: "sparkles")
-                                .font(.subheadline.weight(.semibold))
-                        }
+                        Text("The best XI is picked automatically until this is fixed.")
+                            .font(.display(12, weight: .regular)).foregroundStyle(Palette.muted)
                     }
                 }
+                VStack(spacing: 0) {
+                    NavigationLink { PickXIView() } label: { DashTile(icon: "checklist", title: "Pick XI") }
+                    Hairline(inset: 54)
+                    NavigationLink { BattingOrderView(teamId: club.id) } label: { DashTile(icon: "arrow.up.arrow.down", title: "Batting order") }
+                    Hairline(inset: 54)
+                    NavigationLink { BowlingPlanView(teamId: club.id) } label: { DashTile(icon: "figure.cricket", title: "Bowling plan") }
+                    Hairline(inset: 54)
+                    NavigationLink { TacticsView() } label: { DashTile(icon: "slider.horizontal.3", title: "Tactics") }
+                    Hairline(inset: 54)
+                    NavigationLink { TrainingView() } label: {
+                        DashTile(icon: "dumbbell", title: "Training", subtitle: c.trainingDoneThisWeek ? "Done this week" : "Session ready")
+                    }
+                    Hairline(inset: 54)
+                    NavigationLink { AcademyView() } label: { DashTile(icon: "graduationcap", title: "Academy", subtitle: "\(c.academy.count) prospects") }
+                }
+                .gameFrame()
+                .buttonStyle(.plain)
+                Button {
+                    store.careerAutoXI()
+                    Haptics.success()
+                } label: {
+                    Label("Auto-pick best XI and order", systemImage: "sparkles")
+                }
+                .buttonStyle(SecondaryButtonStyle())
 
                 SectionLabel(text: "Playing XI · batting order")
                 AppCard(padding: DS.Space.md) {

@@ -282,9 +282,8 @@ struct CareerHomeTab: View {
 
     var body: some View {
         if let c = store.career {
-            VStack(alignment: .leading, spacing: DS.Space.lg) {
-                ClubHeaderCard(career: c)
-
+            VStack(alignment: .leading, spacing: DS.Space.xl) {
+                // The one thing to do now.
                 if c.phase == .seasonEnd {
                     SeasonEndCard(career: c) {
                         let report = store.careerBeginOffseason()
@@ -297,135 +296,137 @@ struct CareerHomeTab: View {
                     OffseasonCard(career: c) { signed in
                         note = signed.isEmpty ? "Season \(c.year) is under way." : "The board filled your squad: \(signed.joined(separator: ", "))."
                     }
-                } else if let f = c.nextFixture {
-                    if c.isUserFixture(f) {
-                        NextMatchCard(fixture: f, number: CareerText.fixtureLabel(c, f)) {
-                            path.append(.match(f.id))
-                        } quick: {
-                            if let r = store.play(fixtureId: f.id) { path.append(.result(r.id)) }
-                        }
-                    } else if let mine = c.nextUserFixture {
-                        UpcomingCard(career: c, fixture: mine) {
-                            let n = store.careerSimUntilUserMatch()
-                            note = "Simulated \(n) other match\(n == 1 ? "" : "es") around the league."
-                            Haptics.tap()
-                        }
-                    } else {
-                        Text("You're out of the playoffs. Watch the rest, or sim to the end of the season.")
-                            .font(.subheadline).foregroundStyle(Palette.muted)
-                        NextMatchCard(fixture: f, number: CareerText.fixtureLabel(c, f)) {
-                            path.append(.match(f.id))
-                        } quick: {
-                            if let r = store.play(fixtureId: f.id) { path.append(.result(r.id)) }
-                        }
-                        Button("Sim to season end") { store.careerSimToSeasonEnd() }
-                            .buttonStyle(SecondaryButtonStyle())
+                } else if let f = c.nextUserFixture {
+                    NextMatchHero(career: c, fixture: f) {
+                        if let r = store.play(fixtureId: f.id) { path.append(.result(r.id)) }
+                    }
+                } else if c.nextFixture != nil {
+                    VStack(alignment: .leading, spacing: DS.Space.sm) {
+                        Text("You're out of the playoffs").font(.display(20, weight: .bold))
+                        Text("Watch the remaining matches with Continue, or sim to the end.").font(.display(14, weight: .regular)).foregroundStyle(Palette.muted)
+                        Button("Sim to season end") { store.careerSimToSeasonEnd() }.buttonStyle(SecondaryButtonStyle())
                     }
                 }
-
                 if let note {
-                    Text(note).font(.footnote).foregroundStyle(.secondary)
+                    Text(note).font(.display(12, weight: .regular)).foregroundStyle(Palette.muted)
                 }
-
-                SeasonMoneyCard(career: c)
-
-                let mine = c.results.filter { $0.teamA == c.userClubId || $0.teamB == c.userClubId }.suffix(3).reversed()
-                if !mine.isEmpty {
-                    SectionLabel(text: "Your recent results")
-                    VStack(spacing: DS.Space.sm) {
-                        ForEach(Array(mine), id: \.id) { r in
-                            Button { path.append(.result(r.id)) } label: { ResultRow(result: r) }
-                                .buttonStyle(.plain)
-                        }
-                    }
-                }
-
+                SeasonSummary(career: c, path: $path)
                 NewsFeed(news: Array(c.news.prefix(3)))
                 if c.news.count > 3 {
                     NavigationLink { NewsScreen() } label: {
-                        Text("All news (\(c.news.count)) ›").font(.subheadline.weight(.bold)).foregroundStyle(CareerPalette.gold)
+                        Text("All news").font(.display(14, weight: .semibold)).foregroundStyle(Palette.accent)
                     }
+                    .padding(.leading, 4)
                 }
             }
         }
     }
 }
 
-struct ClubHeaderCard: View {
-    let career: Career
-
-    var body: some View {
-        let c = career
-        let club = c.userClub
-        let row = c.table.first { $0.teamId == c.userClubId }
-        AppCard(tint: Color(hex: club.colorHex)) {
-            VStack(alignment: .leading, spacing: DS.Space.sm) {
-                HStack(spacing: 0) {
-                    stat(Career.ordinal(c.position(of: c.userClubId)), "POSITION")
-                    stat("\(row?.points ?? 0)", "POINTS")
-                    stat("\(row?.won ?? 0)-\(row?.lost ?? 0)", "W-L")
-                    stat("\(c.strength(c.userClubId))", "STRENGTH")
-                }
-                HStack(spacing: 6) {
-                    Text("FORM").font(.display(12, weight: .heavy)).foregroundStyle(Palette.muted)
-                    let form = c.userForm()
-                    if form.isEmpty {
-                        Text("No matches yet").font(.caption).foregroundStyle(Palette.muted)
-                    }
-                    ForEach(Array(form.enumerated()), id: \.offset) { _, won in
-                        Text(won ? "W" : "L")
-                            .font(.display(13, weight: .heavy))
-                            .foregroundStyle(Palette.ink)
-                            .frame(width: 22, height: 22)
-                            .background(RoundedRectangle(cornerRadius: 5).fill(won ? Palette.accent : Palette.wicket))
-                    }
-                    Spacer()
-                    Text("\(c.gold) · Lv \(c.manager.level) · \(c.leaguePlayed)/\(c.leagueFixtures.count) played")
-                        .font(.caption2).foregroundStyle(Palette.muted)
-                }
-            }
-        }
-    }
-
-    private func stat(_ value: String, _ label: String) -> some View {
-        VStack(spacing: 2) {
-            Text(value).font(.display(24)).lineLimit(1).minimumScaleFactor(0.6)
-            Text(label).font(.display(10, weight: .heavy)).foregroundStyle(Palette.muted)
-        }
-        .frame(maxWidth: .infinity)
-    }
-}
-
-/// The user's next match when other games come first.
-struct UpcomingCard: View {
+/// Home hero: the next match, big and plain.
+struct NextMatchHero: View {
     let career: Career
     let fixture: Fixture
-    let onContinue: () -> Void
+    let quickSim: () -> Void
 
     var body: some View {
         let c = career
-        let oppId = fixture.home == c.userClubId ? fixture.away : fixture.home
         let home = fixture.home == c.userClubId
-        AppCard {
-            VStack(alignment: .leading, spacing: DS.Space.md) {
-                Text("NEXT · \(CareerText.fixtureLabel(c, fixture).uppercased())")
-                    .font(.display(15, weight: .heavy)).foregroundStyle(Palette.accent)
-                if let opp = c.club(oppId) {
-                    HStack(spacing: 10) {
-                        TeamBadge(team: opp, size: 40)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("\(home ? "vs" : "at") \(opp.name)").font(.headline)
-                            Text("\(fixture.pitch.icon) \(fixture.pitch.label) · \(Career.ordinal(c.position(of: oppId))) in the table")
-                                .font(.caption).foregroundStyle(Palette.muted)
-                        }
+        let oppId = home ? fixture.away : fixture.home
+        let isNext = c.nextFixture?.id == fixture.id
+        VStack(alignment: .leading, spacing: DS.Space.md) {
+            Text("NEXT MATCH · \(CareerText.fixtureLabel(c, fixture).uppercased())")
+                .font(.display(12, weight: .semibold)).foregroundStyle(Palette.muted)
+            if let opp = c.club(oppId) {
+                HStack(spacing: DS.Space.md) {
+                    TeamBadge(team: opp, size: 52)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("\(home ? "vs" : "at") \(opp.name)").font(.display(28, weight: .bold)).lineLimit(1).minimumScaleFactor(0.7)
+                        Text("\(home ? "Home" : "Away") · \(fixture.pitch.label) · they're \(Career.ordinal(c.position(of: oppId)))")
+                            .font(.display(14, weight: .regular)).foregroundStyle(Palette.muted).lineLimit(1)
                     }
                 }
-                Button("Continue ▶︎", action: onContinue).buttonStyle(PrimaryButtonStyle())
-                Text("Plays the other clubs' matches up to yours.").font(.caption2).foregroundStyle(Palette.muted)
             }
+            if isNext {
+                Button("Sim result instead", action: quickSim)
+                    .font(.display(14, weight: .semibold)).foregroundStyle(Palette.accent)
+            } else {
+                Text("Other matches come first: Continue plays them.").font(.display(12, weight: .regular)).foregroundStyle(Palette.muted)
+            }
+        }
+        .padding(DS.Space.lg)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .gameFrame()
+    }
+}
+
+/// Home: the season at a glance, one grouped list.
+struct SeasonSummary: View {
+    let career: Career
+    @Binding var path: [Route]
+
+    var body: some View {
+        let c = career
+        let row = c.table.first { $0.teamId == c.userClubId }
+        let last = c.results.last { $0.teamA == c.userClubId || $0.teamB == c.userClubId }
+        let net = MoneyCategory.allCases.reduce(0) { $0 + c.seasonTotal($1) }
+        VStack(alignment: .leading, spacing: DS.Space.sm) {
+            SectionLabel(text: "Season \(String(c.year))")
+            VStack(spacing: 0) {
+                NavigationLink { CareerScreen(title: "League") { CareerTableTab(path: $path) } } label: {
+                    InfoRow(label: "League", value: "\(Career.ordinal(c.position(of: c.userClubId))) · \(row?.points ?? 0) pts · \(row?.won ?? 0)–\(row?.lost ?? 0)")
+                }
+                Hairline(inset: 16)
+                InfoRow(label: "Form", value: c.userForm().isEmpty ? "–" : c.userForm().map { $0 ? "W" : "L" }.joined(separator: " "), chevron: false)
+                if let last {
+                    Hairline(inset: 16)
+                    Button { path.append(.result(last.id)) } label: {
+                        InfoRow(label: "Last result",
+                                value: "\(last.winnerId == c.userClubId ? "Won" : "Lost") vs \(c.club(last.teamA == c.userClubId ? last.teamB : last.teamA)?.short ?? "")",
+                                color: last.winnerId == c.userClubId ? Palette.accent : Palette.wicket)
+                    }
+                }
+                Hairline(inset: 16)
+                NavigationLink { CareerScreen(title: "Money") { SeasonMoneyCard(career: c) } } label: {
+                    InfoRow(label: "Money this season", value: (net >= 0 ? "+" : "−") + Money.format(abs(net)),
+                            color: net >= 0 ? Palette.accent : Palette.wicket)
+                }
+                if c.phase == .season {
+                    Hairline(inset: 16)
+                    NavigationLink { TrainingView() } label: {
+                        InfoRow(label: "Training", value: c.trainingDoneThisWeek ? "Done this week" : "Session ready")
+                    }
+                }
+            }
+            .gameFrame()
+            .buttonStyle(.plain)
         }
     }
 }
+
+/// Label on the left, value on the right, optional chevron.
+struct InfoRow: View {
+    let label: String
+    let value: String
+    var color: Color = .white
+    var chevron = true
+
+    var body: some View {
+        HStack {
+            Text(label).font(.display(16, weight: .regular)).foregroundStyle(.white)
+            Spacer(minLength: 8)
+            Text(value).font(.score(16, weight: .regular)).foregroundStyle(color == .white ? Palette.muted : color).lineLimit(1)
+            if chevron {
+                Image(systemName: "chevron.right").font(.system(size: 13 * TextScale.factor, weight: .semibold)).foregroundStyle(Palette.stroke)
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 13)
+        .contentShape(Rectangle())
+    }
+}
+
+
 
 struct SeasonEndCard: View {
     let career: Career

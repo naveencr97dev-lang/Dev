@@ -43,6 +43,17 @@ tables), not the decoration.
 | `HubTabBar` | Native-style bottom bar: hairline on top, SF Symbols, accent for the selected tab. |
 | `CareerTopBar` | Large title (club), secondary line (manager and date), then money, gold and level as small values. |
 
+## Screens (archetypes)
+
+| Screen | Focal point | Below it |
+|---|---|---|
+| **Home** ("today's work") | One hero: the next match, or the current step (off-season, window, season end). CONTINUE does it. | One grouped list: league, form, last result, money, training. Then 3 headlines. |
+| **Squad** | Large title with a one-line summary | Actions as one grouped list. The XI in batting order, then the bench. |
+| **Transfers** | Filters | One continuous list of players separated by hairlines, not a stack of cards. |
+| **Money** | Its own screen, opened from Home | Breakdown, the next home match estimate, the ticket price. |
+
+Long explanations live on detail screens, never on Home.
+
 ## Banned (AI tells)
 
 - Emoji as icons. Use SF Symbols; domain glyphs such as pitch and trait icons are allowed as content.

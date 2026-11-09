@@ -370,14 +370,16 @@ struct CareerMarketTab: View {
                 let list = c.marketPlayers(role: Self.roles[roleIndex], slot: Self.slots[slotIndex], bowlType: Self.bowls[bowlIndex],
                                            freeAgentsOnly: freeOnly, sort: sort, scope: scope)
                 Text("\(list.count) players").font(.caption).foregroundStyle(Palette.muted)
-                LazyVStack(spacing: DS.Space.sm) {
+                LazyVStack(spacing: 0) {
                     ForEach(list) { p in
                         NavigationLink { CareerPlayerView(playerId: p.id) } label: {
                             MarketRow(career: c, player: p, scope: scope, season: season)
                         }
                         .buttonStyle(.plain)
+                        Hairline(inset: DS.Space.lg)
                     }
                 }
+                .gameFrame()
             }
         }
     }
@@ -411,8 +413,8 @@ struct MarketRow: View {
                     .font(.caption2.weight(.bold).monospacedDigit()).foregroundStyle(Palette.four)
             }
         }
-        .padding(DS.Space.md)
-        .background(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous).fill(Palette.surface))
+        .padding(.horizontal, DS.Space.lg)
+        .padding(.vertical, DS.Space.md)
     }
 }
 
