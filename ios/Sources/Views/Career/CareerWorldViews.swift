@@ -208,7 +208,7 @@ struct NationalSquadView: View {
             } footer: {
                 Text("The best XI is chosen from your 15 for each match.")
             }
-            .listRowBackground(Palette.surface)
+            .listRowBackground(CareerPalette.panel)
             Section("Eligible players") {
                 ForEach(pool) { p in
                     Button {
@@ -227,7 +227,7 @@ struct NationalSquadView: View {
                     .buttonStyle(.plain)
                 }
             }
-            .listRowBackground(Palette.surface)
+            .listRowBackground(CareerPalette.panel)
         }
         .darkList()
         .navigationTitle("National squad")

@@ -161,9 +161,19 @@ extension View {
         }
     }
 
-    /// Standard list styling on the dark background.
-    func darkList() -> some View {
-        self.scrollContentBackground(.hidden).background(AppBackground())
+    /// Standard list styling on the dark background (navy in career mode).
+    func darkList() -> some View { modifier(DarkListBackground()) }
+}
+
+struct DarkListBackground: ViewModifier {
+    @Environment(\.careerTheme) private var careerTheme
+
+    func body(content: Content) -> some View {
+        content
+            .scrollContentBackground(.hidden)
+            .background(Group {
+                if careerTheme { ManagerBackground() } else { AppBackground() }
+            })
     }
 }
 

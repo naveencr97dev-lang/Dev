@@ -54,7 +54,7 @@ struct ManagerView: View {
             } footer: {
                 Text("Earn XP by winning matches, reaching the playoffs, titles, finishing a season in profit and upgrading facilities. Each level gives a point. Tier 2 perks cost 2 and need 2 perks from the same tree; tier 3 cost 3 and need 4. Perks apply to this career only.")
             }
-            .listRowBackground(Palette.surface)
+            .listRowBackground(CareerPalette.panel)
 
             ForEach(PerkTree.allCases, id: \.self) { tree in
                 Section(tree.label) {
@@ -65,7 +65,7 @@ struct ManagerView: View {
                         }
                     }
                 }
-                .listRowBackground(Palette.surface)
+                .listRowBackground(CareerPalette.panel)
             }
         }
         .darkList()
@@ -129,7 +129,7 @@ struct FacilitiesView: View {
             } footer: {
                 Text("One project at a time. Building time is counted in your matches (4 weeks pass in each off-season). Each level adds yearly upkeep.")
             }
-            .listRowBackground(Palette.surface)
+            .listRowBackground(CareerPalette.panel)
 
             Section("Facilities") {
                 ForEach(FacilityKind.allCases) { k in
@@ -141,7 +141,7 @@ struct FacilitiesView: View {
                     }
                 }
             }
-            .listRowBackground(Palette.surface)
+            .listRowBackground(CareerPalette.panel)
         }
         .darkList()
         .navigationTitle("Facilities")
@@ -192,7 +192,7 @@ struct StoreView: View {
                 Text("Earn gold from manager levels, titles and every match. Spend it to finish builds, boost training, scout instantly or freshen a player's form.")
                     .font(.caption).foregroundStyle(Palette.muted)
             }
-            .listRowBackground(Palette.surface)
+            .listRowBackground(CareerPalette.panel)
 
             Section {
                 ForEach(StorePack.allCases) { pack in
@@ -218,7 +218,7 @@ struct StoreView: View {
                      ? "TEST MODE: no real purchases. Every pack is free, and the Tester Pack can be bought any number of times. Real in-app purchases need an App Store or TestFlight build."
                      : "Purchases are charged to your Apple account.")
             }
-            .listRowBackground(Palette.surface)
+            .listRowBackground(CareerPalette.panel)
         }
         .darkList()
         .navigationTitle("Store")

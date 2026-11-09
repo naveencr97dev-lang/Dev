@@ -294,6 +294,18 @@ maintenance. Gold can speed up a build.
   budget: one full season of 180 matches simulates in under 2 seconds on device.
 - **Weather** (stretch): dew in night matches helps the chasing team, and rain brings DLS.
 
+### 11.0 Career look (manager-game style)
+
+- Navy "manager's desk" theme for career screens (`CareerTheme.swift`): panels with header strips.
+  Shared cards switch to navy through the `careerTheme` environment value.
+- **Top bar:** club crest, club, manager, level, national job, date, bank and gold.
+- **Home:** the desk (status, next match, recent results, news), then a dashboard of tiles grouped
+  as Club, Competition and Office. Each tile pushes its screen.
+- **CONTINUE:** one big button pinned to the bottom always does the next thing (`Career.nextAction`):
+  play your match, sim to it, open an international window, retentions, the auction room, start
+  the season, or go to the off-season. The journey test presses the same button.
+- These are genre conventions only. All art, names and layout details are original.
+
 ### 11.1 2D match view
 
 - A top-down ground showing 11 fielders placed by the field setting, the batter and the bowler.

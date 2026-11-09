@@ -1,39 +1,17 @@
 import XCTest
 @testable import AuctionEngine
 
-/// Layer-2 smoke test: plays a career the way the Home screen offers actions, through three
+/// Layer-2 smoke test: plays a career by pressing CONTINUE (`Career.nextAction`), through three
 /// seasons (including a mega auction and both international windows), and fails on any dead end.
 extension CareerTests {
-    /// What the Home tab would offer next. Mirrors CareerHomeTab / WindowCard / OffseasonCard.
-    enum HomeAction: Equatable { case goToOffseason, openWindow, playIntl(Int), simWindow, retention, auction, startSeason, playMatch(Int), continueToMatch, watchOther(Int), none }
-
-    func homeAction(_ c: Career) -> HomeAction {
-        if c.phase == .seasonEnd { return .goToOffseason }
-        if c.pendingWindow != nil {
-            if c.intl.event?.key != c.pendingWindow { return .openWindow }
-            if let f = c.nextIntlFixture, c.isUserNationFixture(f) { return .playIntl(f.id) }
-            return .simWindow
-        }
-        if c.phase == .offseason {
-            switch c.offseason?.stage ?? .window {
-            case .retention: return .retention
-            case .auction: return .auction
-            case .window: return .startSeason
-            }
-        }
-        guard let f = c.nextFixture else { return .none }
-        if c.isUserFixture(f) { return .playMatch(f.id) }
-        if c.nextUserFixture != nil { return .continueToMatch }
-        return .watchOther(f.id)
-    }
-
     func testPlayerJourneyHasNoDeadEnds() {
         var c = newCareer(seed: 77)
         var steps = 0, userMatches = 0, intlMatches = 0, bids = 0
         var seen = Set<String>()
         while c.year < 2031 && steps < 5_000 {
             steps += 1
-            let action = homeAction(c)
+            let action = c.nextAction
+            XCTAssertFalse(c.nextActionLabel.title.isEmpty)
             seen.insert("\(action)".components(separatedBy: "(").first!)
             let before = (c.year, c.phase, c.results.count, c.intl.results.count, c.offseason?.stage, c.offseason?.auction.index)
             switch action {

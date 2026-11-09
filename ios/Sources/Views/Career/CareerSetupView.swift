@@ -22,7 +22,7 @@ struct CareerSetupView: View {
                 } footer: {
                     Text("10 franchises. Each pair meets four times: 36 league matches through the year, then IPL playoffs. No relegation. Players age, develop and retire; youngsters come through every season. Legends era adds retired greats to the pool.")
                 }
-                .listRowBackground(Palette.surface)
+                .listRowBackground(CareerPalette.panel)
 
                 if let d = draft {
                     Section {
@@ -40,7 +40,7 @@ struct CareerSetupView: View {
                     } footer: {
                         Text("Squads were drafted fairly (20 players, max 8 overseas). Your home ground's pitch is used for your home matches, so build a squad that suits it.")
                     }
-                    .listRowBackground(Palette.surface)
+                    .listRowBackground(CareerPalette.panel)
                 }
 
                 Section {
@@ -52,7 +52,7 @@ struct CareerSetupView: View {
                         .listRowBackground(Color.clear)
                         .listRowInsets(EdgeInsets())
                 }
-                .listRowBackground(Palette.surface)
+                .listRowBackground(CareerPalette.panel)
             }
             .darkList()
             .navigationTitle("New career")

@@ -1,48 +1,38 @@
 import SwiftUI
 
-/// Career home: tabs for the manager's desk, squad, fixtures, table and club.
+/// Career home in manager-game style: status bar, the desk (next match, news), a dashboard of
+/// tiles, and one CONTINUE button that always does the next thing.
 struct CareerHubView: View {
     @EnvironmentObject var store: GameStore
-    @State private var tab = 0
     @State private var path: [Route] = []
     @State private var note: String? = nil
     @State private var confirmSimSeason = false
+    @State private var showRetention = false
+    @State private var showAuction = false
 
     var body: some View {
         NavigationStack(path: $path) {
-            VStack(spacing: 0) {
-                Picker("View", selection: $tab) {
-                    Text("Home").tag(0)
-                    Text("Squad").tag(1)
-                    Text("Market").tag(5)
-                    Text("Games").tag(2)
-                    Text("Table").tag(3)
-                    Text("World").tag(6)
-                    Text("Club").tag(4)
-                }
-                .pickerStyle(.segmented)
-                .padding(.horizontal, DS.Space.lg)
-                .padding(.vertical, DS.Space.sm)
-
+            ZStack(alignment: .bottom) {
+                ManagerBackground()
                 ScrollView {
-                    Group {
-                        switch tab {
-                        case 0: CareerHomeTab(path: $path, note: $note)
-                        case 1: CareerSquadTab()
-                        case 2: CareerFixturesTab(path: $path)
-                        case 3: CareerTableTab(path: $path)
-                        case 5: CareerMarketTab()
-                        case 6: CareerWorldTab(path: $path)
-                        default: CareerClubTab(path: $path)
+                    if let c = store.career {
+                        VStack(alignment: .leading, spacing: DS.Space.md) {
+                            CareerTopBar(career: c)
+                            CareerHomeTab(path: $path, note: $note)
+                            CareerDashboard(career: c, path: $path)
                         }
+                        .padding(.horizontal, DS.Space.md)
+                        .padding(.top, DS.Space.sm)
+                        .padding(.bottom, 96)
+                        .frame(maxWidth: 900)
+                        .frame(maxWidth: .infinity)
                     }
-                    .padding(DS.Space.lg)
-                    .frame(maxWidth: 760)
-                    .frame(maxWidth: .infinity)
+                }
+                if let c = store.career {
+                    ContinueBar(career: c) { perform(c.nextAction) }
                 }
             }
-            .background(AppBackground())
-            .navigationTitle(title)
+            .navigationTitle("Career")
             .navigationBarTitleDisplayMode(.inline)
             .navigationDestination(for: Route.self) { route in
                 switch route {
@@ -52,6 +42,8 @@ struct CareerHubView: View {
                 case .team(let id): CareerClubView(clubId: id)
                 }
             }
+            .navigationDestination(isPresented: $showRetention) { RetentionView() }
+            .navigationDestination(isPresented: $showAuction) { CareerAuctionView() }
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Menu {
@@ -70,19 +62,131 @@ struct CareerHubView: View {
             }
             .confirmationDialog("Simulate every remaining match, yours included?", isPresented: $confirmSimSeason,
                                 titleVisibility: .visible) {
-                Button("Sim to season end") {
-                    store.careerSimToSeasonEnd()
-                    tab = 0
-                }
+                Button("Sim to season end") { store.careerSimToSeasonEnd() }
                 Button("Cancel", role: .cancel) {}
             }
         }
     }
 
-    private var title: String {
-        guard let c = store.career else { return "Career" }
-        if c.phase == .offseason { return "\(c.userClub.short) · \(c.year) off-season" }
-        return "\(c.userClub.short) · \(c.year) · \(CareerCalendar.label(c.currentDay))"
+    /// What CONTINUE does.
+    private func perform(_ action: CareerAction) {
+        Haptics.tap()
+        switch action {
+        case .goToOffseason: note = CareerText.rollover(store.careerBeginOffseason())
+        case .openWindow: store.careerEnsureWindow()
+        case .playIntl(let id), .playMatch(let id), .watchOther(let id): path.append(.match(id))
+        case .simWindow:
+            let n = store.careerSimWindow(stopAtUser: true)
+            note = "Simulated \(n) international match\(n == 1 ? "" : "es")."
+        case .retention: showRetention = true
+        case .auction: showAuction = true
+        case .startSeason:
+            let signed = store.careerStartSeason()
+            note = signed.isEmpty ? "The season is under way!" : "The board filled your squad: \(signed.joined(separator: ", "))."
+        case .continueToMatch:
+            let n = store.careerSimUntilUserMatch()
+            note = "Simulated \(n) match\(n == 1 ? "" : "es") around the league."
+        case .none: break
+        }
+    }
+}
+
+/// The big CONTINUE button pinned to the bottom.
+struct ContinueBar: View {
+    let career: Career
+    let action: () -> Void
+
+    var body: some View {
+        let label = career.nextActionLabel
+        Button(action: action) {
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(label.title.uppercased()).font(.display(22))
+                    if !label.detail.isEmpty {
+                        Text(label.detail).font(.caption.weight(.semibold)).lineLimit(1)
+                    }
+                }
+                Spacer()
+                Image(systemName: "chevron.right.2").font(.title2.weight(.black))
+            }
+            .foregroundStyle(Palette.ink)
+            .padding(.horizontal, 18)
+            .padding(.vertical, 12)
+            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Palette.accent))
+            .shadow(color: Palette.accent.opacity(0.4), radius: 14, y: 4)
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, DS.Space.md)
+        .padding(.bottom, DS.Space.sm)
+        .frame(maxWidth: 640)
+    }
+}
+
+/// Tiles to every part of the club.
+struct CareerDashboard: View {
+    let career: Career
+    @Binding var path: [Route]
+
+    var body: some View {
+        let c = career
+        let columns = [GridItem(.adaptive(minimum: 150), spacing: 10)]
+        let pos = Career.ordinal(c.position(of: c.userClubId))
+        VStack(alignment: .leading, spacing: DS.Space.sm) {
+            SectionLabel(text: "Club")
+            LazyVGrid(columns: columns, spacing: 10) {
+                NavigationLink { CareerScreen(title: "Squad") { CareerSquadTab() } } label: {
+                    DashTile(icon: "person.3.fill", title: "Squad", subtitle: "\(c.userClub.squad.count) players · XI & order",
+                             badge: c.xiIssues(c.userClubId).isEmpty ? nil : "!")
+                }
+                NavigationLink { TacticsView() } label: {
+                    DashTile(icon: "slider.horizontal.3", title: "Tactics", subtitle: "Field & batting intent")
+                }
+                NavigationLink { TrainingView() } label: {
+                    DashTile(icon: "dumbbell.fill", title: "Training", subtitle: "\(c.trainingSlots) drill slots · \(c.training.intensity.label)")
+                }
+                NavigationLink { CareerScreen(title: "Transfers") { CareerMarketTab() } } label: {
+                    DashTile(icon: "arrow.left.arrow.right", title: "Transfers", subtitle: c.windowOpen ? "Window open" : "Window closed",
+                             badge: c.market.offers.isEmpty ? nil : "\(c.market.offers.count)")
+                }
+                NavigationLink { ScoutingView() } label: {
+                    DashTile(icon: "binoculars.fill", title: "Scouting", subtitle: "\(c.scouting.scouts.count) scouts · \(c.scouting.reports.count) reports")
+                }
+                NavigationLink { AcademyView() } label: {
+                    DashTile(icon: "graduationcap.fill", title: "Academy", subtitle: "\(c.academy.count) prospects")
+                }
+            }
+            SectionLabel(text: "Competition")
+            LazyVGrid(columns: columns, spacing: 10) {
+                NavigationLink { CareerScreen(title: "Fixtures") { CareerFixturesTab(path: $path) } } label: {
+                    DashTile(icon: "calendar", title: "Fixtures", subtitle: "\(c.leaguePlayed)/\(c.leagueFixtures.count) league games played")
+                }
+                NavigationLink { CareerScreen(title: "League") { CareerTableTab(path: $path) } } label: {
+                    DashTile(icon: "list.number", title: "League", subtitle: "You're \(pos) · table & caps")
+                }
+                NavigationLink { CareerScreen(title: "World") { CareerWorldTab(path: $path) } } label: {
+                    DashTile(icon: "globe", title: "International", subtitle: c.intl.job.map { "Coach of \($0)" } ?? "\(c.intl.offers.count) job offer\(c.intl.offers.count == 1 ? "" : "s")",
+                             badge: c.intl.job == nil && !c.intl.offers.isEmpty ? "\(c.intl.offers.count)" : nil)
+                }
+            }
+            SectionLabel(text: "Office")
+            LazyVGrid(columns: columns, spacing: 10) {
+                NavigationLink { CareerScreen(title: "Club") { CareerClubTab(path: $path) } } label: {
+                    DashTile(icon: "building.columns.fill", title: "Club & finances", subtitle: "Bank \(Money.format(c.bank(c.userClubId)))")
+                }
+                NavigationLink { FacilitiesView() } label: {
+                    DashTile(icon: "building.2.fill", title: "Facilities",
+                             subtitle: c.facilities.building.flatMap { FacilityKind(rawValue: $0)?.label }.map { "Building \($0)" } ?? "7 facilities")
+                }
+                NavigationLink { ManagerView() } label: {
+                    DashTile(icon: "star.circle.fill", title: "Manager", subtitle: "Level \(c.manager.level) · traits",
+                             badge: c.manager.points > 0 ? "\(c.manager.points)" : nil)
+                }
+                NavigationLink { StoreView() } label: {
+                    DashTile(icon: "bag.fill", title: "Store", subtitle: "🪙 \(c.gold) gold")
+                }
+            }
+        }
+        .buttonStyle(.plain)
     }
 }
 

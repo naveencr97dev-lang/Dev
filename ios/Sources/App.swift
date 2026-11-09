@@ -29,6 +29,7 @@ struct RootView: View {
             AppBackground()
             if store.inCareer && store.career != nil {
                 CareerHubView()
+                    .environment(\.careerTheme, true)
             } else if let phase = store.game?.phase {
                 switch phase {
                 case .setup: NavigationStack { SetupView() }

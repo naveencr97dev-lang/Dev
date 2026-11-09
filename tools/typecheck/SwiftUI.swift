@@ -621,3 +621,16 @@ extension Binding: Identifiable where Value: Identifiable {
 extension RangeReplaceableCollection where Self: MutableCollection {
     public mutating func remove(atOffsets offsets: IndexSet) {}
 }
+public protocol EnvironmentKey {
+    associatedtype Value
+    static var defaultValue: Value { get }
+}
+extension EnvironmentValues {
+    public subscript<K: EnvironmentKey>(key: K.Type) -> K.Value {
+        get { K.defaultValue }
+        set {}
+    }
+}
+extension View {
+    public func navigationDestination<C: View>(isPresented: Binding<Bool>, @ViewBuilder destination: () -> C) -> _Mod { _Mod() }
+}

@@ -99,6 +99,11 @@ struct AppCard<Content: View>: View {
     var padding: CGFloat = DS.Space.lg
     var tint: Color? = nil
     @ViewBuilder var content: Content
+    /// Career screens use navy panels.
+    @Environment(\.careerTheme) private var careerTheme
+
+    private var surface: Color { careerTheme ? Color(hex: "#10264A") : Palette.surface }
+    private var edge: Color { careerTheme ? Color(hex: "#284A86") : Palette.stroke }
 
     var body: some View {
         content
@@ -107,7 +112,7 @@ struct AppCard<Content: View>: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
                 ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous).fill(Palette.surface)
+                    RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous).fill(surface)
                     if let tint {
                         RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
                             .fill(LinearGradient(colors: [tint.opacity(0.28), tint.opacity(0.02)], startPoint: .leading, endPoint: .trailing))
@@ -116,7 +121,7 @@ struct AppCard<Content: View>: View {
                 }
                 .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
             )
-            .overlay(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous).stroke(Palette.stroke, lineWidth: 1))
+            .overlay(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous).stroke(edge, lineWidth: 1))
     }
 }
 

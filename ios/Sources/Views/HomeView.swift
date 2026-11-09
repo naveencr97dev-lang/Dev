@@ -56,7 +56,7 @@ struct HomeView: View {
         }
         .onAppear { withAnimation(.spring(response: 0.6, dampingFraction: 0.75)) { appear = true } }
         .sheet(isPresented: $showCareerSetup) {
-            CareerSetupView().environmentObject(store)
+            CareerSetupView().environmentObject(store).environment(\.careerTheme, true)
         }
         .confirmationDialog("Start a new career? Your current career will be replaced when you start.",
                             isPresented: $confirmNewCareer, titleVisibility: .visible) {
