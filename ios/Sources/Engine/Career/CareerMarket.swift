@@ -146,9 +146,11 @@ extension Career {
         let elim = results.first { $0.stage == .eliminator }
         let places = [final?.winnerId, final?.loserId, q2?.loserId, elim?.loserId]
         for club in clubs {
-            post(club.id, "Season \(year) central revenue", tuning.seasonRevenue)
+            let mult = club.id == userClubId ? difficulty.incomeMult : 1
+            post(club.id, "Season \(year) central revenue", Career.round5(Double(tuning.seasonRevenue) * mult))
             if let place = places.firstIndex(where: { $0 == club.id }), place < tuning.prizeMoney.count {
-                post(club.id, "Prize money (\(["champions", "runners-up", "Qualifier 2", "Eliminator"][place]))", tuning.prizeMoney[place])
+                post(club.id, "Prize money (\(["champions", "runners-up", "Qualifier 2", "Eliminator"][place]))",
+                     Career.round5(Double(tuning.prizeMoney[place]) * mult))
             }
         }
     }
@@ -309,7 +311,7 @@ extension Career {
         if squad.count < tuning.minSquad { need *= 1.15 }
         if squad.count >= tuning.auctionSquadTarget { need *= 0.5 }
         // Personality nudges bids (±10%) without letting one club buy every star.
-        let temper = 1 + (club.personality - 1) * 0.5
+        let temper = (1 + (club.personality - 1) * 0.5) * difficulty.aiBidMult
         let v = Double(p.value(in: year)) * need * temper * rng.range(0.8, 1.2)
         let limit = min(Int(v), capRoom(club.id) - auctionReserve(club.id))
         return limit >= base ? limit : 0
@@ -422,12 +424,14 @@ extension Career {
     /// Windows: the off-season (after the auction), the first two league rounds, and the
     /// mid-season break before round 25.
     var windowOpen: Bool {
+        if settings.marketAlwaysOpen && phase != .seasonEnd { return true }
         if phase == .offseason { return offseason?.stage == .window }
         guard phase == .season, let f = nextFixture, let r = round(of: f) else { return false }
         return r <= 2 || r == 25
     }
 
     var windowLabel: String {
+        if settings.marketAlwaysOpen && windowOpen { return "Market always open (test setting)" }
         if windowOpen { return phase == .offseason ? "Window open until the season starts" : "Window open this round" }
         return "Window closed · opens before round 25 and in the off-season"
     }
@@ -436,7 +440,8 @@ extension Career {
     func askingPrice(_ p: CareerPlayer) -> Int {
         guard let cid = p.clubId, let club = club(cid) else { return 0 }
         let mult = club.xi.contains(p.id) ? tuning.askXIMultiplier : tuning.askBenchMultiplier
-        return Career.round5(Double(p.value(in: year)) * mult)
+        let userPrice = club.id == userClubId ? 1 : difficulty.priceMult
+        return Career.round5(Double(p.value(in: year)) * mult * userPrice)
     }
 
 
@@ -453,7 +458,7 @@ extension Career {
         if used >= 3 { return .rejected("They've stopped talking to you until the next window.") }
         market.talks[playerId] = used + 1
 
-        let demand = Career.round5(Double(wageDemand(p)) * (manager.has(.negotiator) ? 0.9 : 1))
+        let demand = userWageDemand(p)
         let accept = manager.has(.starMagnet) ? 0.8 : 1.0
         var counterFee = fee
         if let cid = p.clubId, let seller = club(cid) {
@@ -625,6 +630,10 @@ extension Career {
     /// Called as matches are played: opens the mid-season window and closes offers when it shuts.
     mutating func marketTick() {
         guard phase == .season else { return }
+        if settings.marketAlwaysOpen {
+            // Open market: bids for listed players keep coming in.
+            for id in market.listed.keys.sorted() where rng.unit() < 0.15 { generateOffers(for: id, attempts: 1) }
+        }
         if windowOpen, let f = nextFixture, round(of: f) == 25, !market.aiWindowsDone.contains("\(year)-mid") {
             aiWindowActivity(key: "\(year)-mid")
             unsolicitedOffers()

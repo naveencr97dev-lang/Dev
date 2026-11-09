@@ -55,7 +55,7 @@ struct CareerFlags: Codable, Hashable {
 /// The whole career save. A pure value type: every rule lives here or in the engines, so the
 /// career can be unit-tested and simulated headlessly.
 struct Career: Codable {
-    static let currentSchema = 7
+    static let currentSchema = 8
     static let maxNews = 80
 
     var schemaVersion = Career.currentSchema
@@ -99,6 +99,8 @@ struct Career: Codable {
     var intl = InternationalState()
     // Schema 6 (M6): match-day tactics.
     var tactics = Tactics()
+    // Schema 8: difficulty and test switches.
+    var settings = CareerSettings()
 
     /// Home grounds, by franchise template order.
     static let homePitches: [Pitch] = [.indianFlat, .dustyTurner, .indianFlat, .caribbeanSlow, .englishSeam,
@@ -476,7 +478,9 @@ struct Career: Codable {
         players[r.potmId]?.stats.potm += 1
         if r.teamA == userClubId || r.teamB == userClubId {
             trainingTick()
-            scoutTick()
+            let week = results.filter { $0.teamA == userClubId || $0.teamB == userClubId }.count
+            if week % max(1, tuning.scoutReportEveryWeeks) == 0 { scoutTick() }
+            weeklyIncome(after: r)
             facilityTick()
             gold += tuning.goldPerMatch
             if r.winnerId == userClubId { gainXP(r.stage == .league ? 20 : 40, reason: nil) }
@@ -711,6 +715,12 @@ enum CareerSave {
 
     /// JSON migrations, keyed by the version they upgrade from.
     static let migrations: [Int: ([String: Any]) -> [String: Any]] = [
+        // v7 → v8: settings (difficulty, market always open).
+        7: { json in
+            var j = json
+            j["settings"] = CareerSave.jsonObject(CareerSettings())
+            return j
+        },
         // v6 → v7: players' season logs (an optional field: nothing to convert).
         6: { json in json },
         // v5 → v6: tactics.

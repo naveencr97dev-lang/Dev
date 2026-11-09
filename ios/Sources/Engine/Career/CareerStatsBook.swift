@@ -84,12 +84,15 @@ extension Career {
     func minBalls(_ scope: StatScope) -> Int { scope == .allTime ? 120 : max(12, leaguePlayed / 10 * 2) }
 
     /// Sorted list of players to buy (or to rank), best first by `sort`.
-    func marketPlayers(role: Role? = nil, freeAgentsOnly: Bool = false, sort: MarketSort = .rating,
-                       scope: StatScope = .season, limit: Int = 80) -> [CareerPlayer] {
+    /// - slot: preferred batting slot (opener, top order…); bowlType: pace or spin bowlers only.
+    func marketPlayers(role: Role? = nil, slot: BatSlot? = nil, bowlType: BowlType? = nil, freeAgentsOnly: Bool = false,
+                       sort: MarketSort = .rating, scope: StatScope = .season, limit: Int = 600) -> [CareerPlayer] {
         let season = seasonStatLines
         let pool = players.values.filter {
             !$0.retired && $0.clubId != userClubId && $0.academyOf == nil
                 && (role == nil || $0.role == role) && (!freeAgentsOnly || $0.clubId == nil)
+                && (slot == nil || $0.slot == slot)
+                && (bowlType == nil || ($0.bowlType == bowlType && $0.bowl >= 40))
         }
         return ranked(pool, sort: sort, scope: scope, season: season).prefix(limit).map { $0 }
     }

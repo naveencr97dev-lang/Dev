@@ -6,6 +6,7 @@ struct CareerSetupView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var name = ""
     @State private var legends = false
+    @State private var difficulty: Difficulty = .normal
     @State private var draft: Career? = nil
     @State private var picked: Int? = nil
 
@@ -17,6 +18,11 @@ struct CareerSetupView: View {
                         .textInputAutocapitalization(.words)
                         .autocorrectionDisabled()
                     Toggle("Legends era", isOn: $legends)
+                    Picker("Difficulty", selection: $difficulty) {
+                        ForEach(Difficulty.allCases) { d in Text(d.label).tag(d) }
+                    }
+                    .pickerStyle(.segmented)
+                    Text(difficulty.blurb).font(.caption).foregroundStyle(Palette.muted)
                 } header: {
                     Text("Manager")
                 } footer: {
@@ -80,7 +86,7 @@ struct CareerSetupView: View {
 
     private func start() {
         guard let d = draft, let id = picked else { return }
-        store.startCareer(d, clubId: id, managerName: name)
+        store.startCareer(d, clubId: id, managerName: name, difficulty: difficulty)
         Haptics.success()
         dismiss()
     }

@@ -39,10 +39,11 @@ extension GameStore {
                    flags: CareerFlags(legendsEra: legendsEra))
     }
 
-    func startCareer(_ draft: Career, clubId: Int, managerName: String) {
+    func startCareer(_ draft: Career, clubId: Int, managerName: String, difficulty: Difficulty = .normal) {
         var c = draft
         let name = managerName.trimmingCharacters(in: .whitespaces)
         c.takeCharge(clubId: clubId, managerName: name.isEmpty ? "The Gaffer" : name)
+        c.settings.difficulty = difficulty
         career = c
         logs = [:]
         inCareer = true
@@ -177,6 +178,16 @@ extension GameStore {
     func careerReleaseAcademy(_ id: String) { mutateCareer { $0.releaseFromAcademy(id) } }
 
     func careerSetTactics(_ t: Tactics) { mutateCareer { $0.tactics = t } }
+
+    // MARK: Settings
+
+    func careerSetDifficulty(_ d: Difficulty) { mutateCareer { $0.settings.difficulty = d } }
+    func careerSetMarketAlwaysOpen(_ on: Bool) { mutateCareer { $0.settings.marketAlwaysOpen = on } }
+    func careerExchangeGold(_ amount: Int) -> String? {
+        var err: String?
+        mutateCareer { err = $0.exchangeGold(amount) }
+        return err
+    }
 
     // MARK: International
 

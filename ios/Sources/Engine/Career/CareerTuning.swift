@@ -77,6 +77,8 @@ struct CareerTuning: Codable, Hashable {
     /// Width of the potential range for a player nobody has scouted.
     var unknownPotentialWidth = 20
     var scoutCap = 2
+    /// Scouts file a report this often (in weeks = your matches).
+    var scoutReportEveryWeeks = 2
     var scoutWage = 25
 
     // Club and manager (M4)

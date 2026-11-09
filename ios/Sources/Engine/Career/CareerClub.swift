@@ -250,10 +250,12 @@ extension Career {
                 fixtures.first { $0.resultId == r.id }?.home == club.id
             }.count
             post(club.id, "Wages", -payroll(club.id))
-            post(club.id, "Gate money (\(homeGames) home matches)", gate(for: club.id) * homeGames)
-            post(club.id, "Sponsors & merchandise", commercialIncome(for: club.id))
             if club.id == userClubId {
+                // Tickets and merchandise were paid weekly.
                 post(club.id, "Facility upkeep", -facilityMaintenance)
+            } else {
+                post(club.id, "Gate money (\(homeGames) home matches)", gate(for: club.id) * homeGames)
+                post(club.id, "Sponsors & merchandise", commercialIncome(for: club.id))
             }
         }
         let b = bank(userClubId)
@@ -295,7 +297,7 @@ extension Career {
 
     /// Per-player rating boosts for the user's XI from perks and the Analytics Room.
     func userBoost(for p: Player, position: Int, attackSlot: Int?, fixture: Fixture?) -> (bat: Int, bowl: Int) {
-        var bat = 0, bowl = 0
+        var bat = difficulty.userBoost, bowl = difficulty.userBoost
         let analytics = (facility(.analytics) - 1) / 3
         bat += analytics; bowl += analytics
         if manager.has(.captainsCall) { bat += 1; bowl += 1 }

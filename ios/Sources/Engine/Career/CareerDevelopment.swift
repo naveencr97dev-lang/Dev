@@ -270,16 +270,20 @@ extension Career {
                     && (scouting.knowledge[p.id] ?? 0) < 100
             }.sorted { $0.id < $1.id }
             guard !pool.isEmpty else { continue }
+            var studied: [CareerPlayer] = []
             for _ in 0..<(1 + s.stars / 2) {
                 guard let p = pool.randomElement(using: &rng) else { break }
                 let before = scouting.knowledge[p.id] ?? 0
                 let after = min(100, before + 15 + s.stars * 10 + 2 * (facility(.scoutingNetwork) - 1))
                 scouting.knowledge[p.id] = after
-                if after >= 60 && before < 60 {
-                    scouting.reports.insert(ScoutReport(id: scouting.nextId, playerId: p.id, scoutName: s.name,
-                                                        year: year, day: currentDay), at: 0)
-                    scouting.nextId += 1
-                }
+                studied.append(p)
+            }
+            // Every visit ends with a report on the most promising player he watched.
+            if let best = studied.max(by: { $0.potential < $1.potential }) {
+                scouting.reports.insert(ScoutReport(id: scouting.nextId, playerId: best.id, scoutName: s.name,
+                                                    year: year, day: currentDay), at: 0)
+                scouting.nextId += 1
+                addNews(.squad, "📋 \(s.name): \(best.name) (\(best.role.short), \(best.country), age \(best.age(in: year))) — potential \(potentialLabel(best)).")
             }
         }
         if scouting.reports.count > 30 { scouting.reports.removeLast(scouting.reports.count - 30) }

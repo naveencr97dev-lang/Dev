@@ -638,3 +638,7 @@ public enum DynamicTypeSize: Hashable { case xSmall, small, medium, large, xLarg
 extension View {
     public func dynamicTypeSize(_ s: DynamicTypeSize) -> _Mod { _Mod() }
 }
+public struct LazyVStack<C: View>: View {
+    public init(alignment: HorizontalAlignment = .center, spacing: CGFloat? = nil, @ViewBuilder content: () -> C) {}
+    public var body: Never { fatalError() }
+}

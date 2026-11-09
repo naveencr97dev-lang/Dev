@@ -188,6 +188,9 @@ struct CareerDashboard: View {
                 NavigationLink { StoreView() } label: {
                     DashTile(icon: "bag.fill", title: "Store", subtitle: "🪙 \(c.gold) gold")
                 }
+                NavigationLink { CareerSettingsView() } label: {
+                    DashTile(icon: "gearshape.fill", title: "Settings", subtitle: "\(c.settings.difficulty.label) · market \(c.settings.marketAlwaysOpen ? "open" : "windows")")
+                }
             }
         }
         .buttonStyle(.plain)

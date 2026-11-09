@@ -285,6 +285,12 @@ struct CareerMarketTab: View {
     @State private var roleIndex = 0
     @State private var freeOnly = false
     @State private var sort: MarketSort = .rating
+    @State private var slotIndex = 0
+    @State private var bowlIndex = 0
+    private static let slots: [BatSlot?] = [nil, .open, .top, .middle, .finish, .lower]
+    private static let slotLabels = ["Any slot", "Openers", "Top order", "Middle order", "Finishers", "Lower order"]
+    private static let bowls: [BowlType?] = [nil, .pace, .spin]
+    private static let bowlLabels = ["Any bowling", "Pace bowlers", "Spinners"]
     @State private var scope: StatScope = .season
 
     private static let roles: [Role?] = [nil, .BAT, .WK, .AR, .BOWL]
@@ -334,6 +340,17 @@ struct CareerMarketTab: View {
                     Text("BOWL").tag(4)
                 }
                 .pickerStyle(.segmented)
+                HStack {
+                    Picker("Batting slot", selection: $slotIndex) {
+                        ForEach(0..<Self.slots.count, id: \.self) { i in Text(Self.slotLabels[i]).tag(i) }
+                    }
+                    .pickerStyle(.menu)
+                    Picker("Bowling", selection: $bowlIndex) {
+                        ForEach(0..<Self.bowls.count, id: \.self) { i in Text(Self.bowlLabels[i]).tag(i) }
+                    }
+                    .pickerStyle(.menu)
+                    Spacer()
+                }
                 Toggle("Free agents only (no fee)", isOn: $freeOnly)
                     .font(.subheadline)
                 HStack {
@@ -350,8 +367,10 @@ struct CareerMarketTab: View {
                     .frame(maxWidth: 200)
                 }
                 let season = c.seasonStatLines
-                let list = c.marketPlayers(role: Self.roles[roleIndex], freeAgentsOnly: freeOnly, sort: sort, scope: scope, limit: 50)
-                VStack(spacing: DS.Space.sm) {
+                let list = c.marketPlayers(role: Self.roles[roleIndex], slot: Self.slots[slotIndex], bowlType: Self.bowls[bowlIndex],
+                                           freeAgentsOnly: freeOnly, sort: sort, scope: scope)
+                Text("\(list.count) players").font(.caption).foregroundStyle(Palette.muted)
+                LazyVStack(spacing: DS.Space.sm) {
                     ForEach(list) { p in
                         NavigationLink { CareerPlayerView(playerId: p.id) } label: {
                             MarketRow(career: c, player: p, scope: scope, season: season)
@@ -381,12 +400,12 @@ struct MarketRow: View {
                 .lineLimit(1).minimumScaleFactor(0.8)
             HStack(spacing: 6) {
                 if let club { TeamBadge(team: club, size: 18) }
-                Text(club?.short ?? "FREE AGENT").font(.caption2.weight(.bold))
+                Text(club?.name.uppercased() ?? "FREE AGENT").font(.caption2.weight(.bold)).lineLimit(1)
                     .foregroundStyle(club == nil ? Palette.accent : Palette.muted)
                 Spacer()
                 Text(club == nil ? "No fee" : "Fee ~\(Money.format(c.askingPrice(player)))")
                     .font(.caption2.monospacedDigit()).foregroundStyle(Palette.muted)
-                Text("Wage ~\(Money.format(c.wageDemand(player)))")
+                Text("Wage ~\(Money.format(c.userWageDemand(player)))")
                     .font(.caption2.monospacedDigit()).foregroundStyle(Palette.muted)
                 Text("POT \(c.potentialLabel(player))")
                     .font(.caption2.weight(.bold).monospacedDigit()).foregroundStyle(Palette.four)
@@ -466,7 +485,7 @@ struct TransferActions: View {
             .onAppear {
                 if !loaded {
                     fee = c.askingPrice(p)
-                    wage = c.wageDemand(p)
+                    wage = c.userWageDemand(p)
                     loaded = true
                 }
             }
@@ -500,13 +519,23 @@ struct TransferActions: View {
 
     @ViewBuilder private func bid(_ c: Career, _ p: CareerPlayer) -> some View {
         if p.clubId != nil {
-            Text("Asking about \(Money.format(c.askingPrice(p))) · wants \(Money.format(c.wageDemand(p))) a season")
+            Text("Owner: \(p.clubId.flatMap { c.club($0)?.name } ?? "") · asking \(Money.format(c.askingPrice(p))) · wants \(Money.format(c.userWageDemand(p))) a season")
                 .font(.caption).foregroundStyle(Palette.muted)
             Stepper("Fee \(Money.format(fee))", value: $fee, in: 0...50_000, step: fee < 500 ? 25 : 100)
         } else {
-            Text("Wants \(Money.format(c.wageDemand(p))) a season").font(.caption).foregroundStyle(Palette.muted)
+            Text("Free agent · wants \(Money.format(c.userWageDemand(p))) a season").font(.caption).foregroundStyle(Palette.muted)
         }
         Stepper("Wage \(Money.format(wage))", value: $wage, in: c.tuning.minWage...c.tuning.salaryCap, step: wage < 200 ? 5 : 25)
+        Button("✅ Pay asking price: \(p.clubId == nil ? "" : Money.format(c.askingPrice(p)) + " + ")\(Money.format(c.userWageDemand(p)))/yr") {
+            fee = c.askingPrice(p)
+            wage = c.userWageDemand(p)
+            let outcome = store.careerMakeOffer(playerId: p.id, fee: p.clubId == nil ? 0 : fee, wage: wage)
+            message = outcome.message
+            if case .accepted = outcome { Haptics.success() } else { Haptics.warning() }
+        }
+        .buttonStyle(PrimaryButtonStyle())
+        .disabled(!c.windowOpen)
+        Text("Or negotiate:").font(.caption).foregroundStyle(Palette.muted)
         Button(p.clubId == nil ? "Offer contract" : "Make offer") {
             let outcome = store.careerMakeOffer(playerId: p.id, fee: p.clubId == nil ? 0 : fee, wage: wage)
             message = outcome.message
@@ -519,7 +548,7 @@ struct TransferActions: View {
             case .rejected: Haptics.warning()
             }
         }
-        .buttonStyle(PrimaryButtonStyle())
+        .buttonStyle(SecondaryButtonStyle())
         .disabled(!c.windowOpen)
     }
 }
@@ -535,7 +564,7 @@ struct FinanceCard: View {
         VStack(alignment: .leading, spacing: DS.Space.sm) {
             SectionLabel(text: "Finances")
             PurseStrip(career: c)
-            Text("Wages \(Money.format(c.payroll(c.userClubId))) of the \(Money.format(c.tuning.salaryCap)) salary cap. The bank pays transfer fees; revenue and prize money arrive after the final.")
+            Text("Wages \(Money.format(c.payroll(c.userClubId))) of the \(Money.format(c.tuning.salaryCap)) salary cap. Ticket sales (stadium \(c.stadiumCapacity.formatted()) seats) come in after every home match and merchandise every week; central revenue and prize money after the final.")
                 .font(.caption).foregroundStyle(Palette.muted)
             if !ledger.isEmpty {
                 AppCard(padding: DS.Space.md) {

@@ -24,6 +24,7 @@ Auction XI
 │
 └── Career mode ................................. Engine/Career/
     ├── Flow: the CONTINUE button .............. CareerFlow.swift (nextAction)
+    ├── Settings: difficulty, market always open CareerSettings.swift (+ weekly income, gold→cash)
     ├── Season ................................. Career.swift
     │   ├── League (36 matches each, 10 clubs), home pitches, IPL playoffs
     │   ├── Calendar and international windows
@@ -41,7 +42,7 @@ Auction XI
     │   ├── Scouting: scouts, knowledge, potential ranges
     │   └── Academy: intake, promote, release
     ├── Club and manager ....................... CareerClub.swift
-    │   ├── Facilities (7) and season accounts
+    │   ├── Facilities (7) and season accounts; weekly tickets + merchandise
     │   ├── Manager XP, levels, 24 perks
     │   └── Gold and the store (tester pack)
     ├── International .......................... CareerInternational.swift
@@ -64,6 +65,7 @@ Auction XI
 | Club | CareerClubViews |
 | International | CareerWorldViews |
 | Stats (profile, market, leaderboards) | CareerStatsViews |
+| Settings | CareerSettingsView |
 | Look | CareerTheme |
 
 ---

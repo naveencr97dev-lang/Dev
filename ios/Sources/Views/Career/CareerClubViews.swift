@@ -195,6 +195,26 @@ struct StoreView: View {
             .listRowBackground(CareerPalette.panel)
 
             Section {
+                ForEach([100, 1_000, 10_000, 100_000], id: \.self) { amount in
+                    HStack {
+                        Text("\(amount.formatted()) gold → \(Money.format(amount))").font(.subheadline)
+                        Spacer()
+                        Button("Exchange") {
+                            if store.careerExchangeGold(amount) == nil { Haptics.success() } else { Haptics.warning() }
+                        }
+                        .font(.caption.weight(.bold))
+                        .buttonStyle(.borderless)
+                        .disabled(gold < amount)
+                    }
+                }
+            } header: {
+                Text("Gold → club bank")
+            } footer: {
+                Text("1 gold = ₹1 lakh. Handy for testing transfers with the Tester Pack.")
+            }
+            .listRowBackground(CareerPalette.panel)
+
+            Section {
                 ForEach(StorePack.allCases) { pack in
                     HStack {
                         VStack(alignment: .leading, spacing: 2) {
