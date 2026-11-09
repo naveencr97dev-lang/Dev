@@ -47,6 +47,9 @@ struct CareerSquadTab: View {
                             NavigationLink { AcademyView() } label: {
                                 SquadAction(icon: "graduationcap", text: "Academy \(c.academy.count)")
                             }
+                            NavigationLink { TacticsView() } label: {
+                                SquadAction(icon: "slider.horizontal.3", text: "Tactics")
+                            }
                         }
                         Button {
                             store.careerAutoXI()

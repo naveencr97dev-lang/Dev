@@ -172,7 +172,7 @@ struct MatchView: View {
         let board = VStack(spacing: DS.Space.sm) {
             ScoreBug(result: r, event: current)
             statusLine(current: current, anticipating: anticipating)
-            WagonWheel(shots: shots, latest: shown - 1)
+            FieldOrWheel(shots: shots, latest: shown - 1)
                 .frame(maxWidth: .infinity)
                 .frame(height: vSize == .compact ? 210 : 280)
                 .overlay {
@@ -284,7 +284,7 @@ struct MatchView: View {
                 }
                 .frame(width: col)
 
-                WagonWheel(shots: shots, latest: shown - 1)
+                FieldOrWheel(shots: shots, latest: shown - 1)
                     .frame(width: col, height: geo.size.height)
                     .overlay {
                         if let e = current, !anticipating { BigCall(event: e).id(shown) }

@@ -198,7 +198,22 @@ one owner and one AI developer.
   - Bilaterals and the T20 World Cup.
 - **Gate:** a 20-season simulation produces sensible rankings and World Cup winners.
 
-### M6: Match day+ and 2D view (2 sprints)
+### M6: Match day+ and 2D view (2 sprints) ✅ built (generic first pass)
+- **Built:**
+  - **Tactics** per phase (powerplay, middle, death). Field: attack, balanced or defend, trading
+    wickets for boundaries. Batting intent: block, rotate or attack (attack = +25% sixes, +12% fours,
+    +12% wickets).
+  - Tactics are applied to your club and your national side. Neutral or absent tactics give
+    exactly the old engine, so Quick Auction is unchanged (tested).
+  - **2D ground view:** a top-down field with the setting's placements, bowler, keeper and batter,
+    the ball's path, and the nearest fielder chasing it. A 2D/WHEEL toggle on the live match is
+    remembered.
+  - Save schema 6, with a tested v5 migration.
+- **Not yet:** in-match changes (the engine simulates a whole match before replaying it, so
+  mid-match changes need a resumable engine), dew, and rain/DLS. The 2D view always shows a
+  balanced field for now.
+
+### M6 plan (original)
 - **Must:**
   - Field settings, batting intent and in-match changes.
   - The 2D top-down ground view in portrait and landscape.

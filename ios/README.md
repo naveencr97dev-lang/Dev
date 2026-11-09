@@ -52,7 +52,10 @@ Run one franchise season after season. The design is in `docs/career/GDD.md` and
   - The league pauses for international windows: 3-match series, or the T20 World Cup in April of
     even years.
   - National job offers by reputation, a 15-man squad, board targets and sacking.
-- **Coming next:** match-day tactics and the 2D match view (M6), and ODIs (M7).
+- **M6, match day:**
+  - Tactics per phase: field (attack, balanced, defend) and batting intent (block, rotate, attack).
+  - A 2D ground view on the live match (toggle 2D/WHEEL).
+- **Coming next:** ODIs and the ODI World Cup (M7), then the Beta balance and polish pass.
 
 ## How a game goes
 

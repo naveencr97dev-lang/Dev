@@ -143,6 +143,39 @@ struct BallEvent: Hashable {
     let bowler: LiveBowler
 }
 
+// MARK: - Tactics
+
+enum FieldSetting: String, Codable, CaseIterable {
+    case attack, balanced, defend
+    var label: String { rawValue.capitalized }
+    var blurb: String {
+        switch self {
+        case .attack: return "Catchers in: more wickets, more boundaries"
+        case .balanced: return "Standard field"
+        case .defend: return "Sweepers out: fewer boundaries, fewer wickets"
+        }
+    }
+}
+
+enum BatIntent: String, Codable, CaseIterable {
+    case block, rotate, attack
+    var label: String { rawValue.capitalized }
+    var blurb: String {
+        switch self {
+        case .block: return "See it off: fewer wickets, fewer runs"
+        case .rotate: return "Normal game"
+        case .attack: return "Go hard: more sixes, more risk"
+        }
+    }
+}
+
+/// Per phase (powerplay, middle, death).
+struct Tactics: Codable, Hashable {
+    var field: [FieldSetting] = [.balanced, .balanced, .balanced]
+    var intent: [BatIntent] = [.rotate, .rotate, .rotate]
+    static let phases = ["Powerplay (1-6)", "Middle (7-16)", "Death (17-20)"]
+}
+
 // MARK: - Engine
 
 struct MatchEngine {
@@ -166,7 +199,13 @@ struct MatchEngine {
         let xi: [Player]   // batting order
         /// Custom bowling plan (5 bowlers); nil = captain picks for the pitch.
         var attack: [Player]? = nil
+        /// Field settings and batting intent per phase (career mode); nil = neutral.
+        var tactics: Tactics? = nil
     }
+
+    /// Tactics of the sides in the current innings.
+    var battingTactics: Tactics? = nil
+    var bowlingTactics: Tactics? = nil
 
     /// Playoff match: Big-Match players lift.
     var bigGame = false
@@ -284,6 +323,8 @@ struct MatchEngine {
                           log: inout [BallEvent]) -> InningsCard {
         var card = InningsCard(teamId: batting.teamId)
         card.maxBalls = maxOvers * 6
+        battingTactics = batting.tactics
+        bowlingTactics = bowling.tactics
         card.batters = batting.xi.map { BatterCard(id: $0.id, name: $0.name) }
         let attack: [Player]
         if maxOvers == 20, let plan = bowling.attack, plan.count == 5 {
@@ -554,6 +595,23 @@ struct MatchEngine {
         if wicketsLeft <= 3 && ballsLeft > 24 { aggression = min(aggression, -0.3) }
         // Early collapse: rebuild before attacking again.
         if card.wickets >= 3 && over < 10 && maxOvers == 20 { aggression = max(-0.45, aggression - 0.3) }
+
+        // Tactics: batting intent shifts aggression; the field trades boundaries for wickets.
+        let phaseIndex = powerplay ? 0 : (death ? 2 : 1)
+        if maxOvers == 20, let t = battingTactics, phaseIndex < t.intent.count {
+            switch t.intent[phaseIndex] {
+            case .attack: w[4] *= 1.12; w[5] *= 1.25; w[6] *= 1.12; w[0] *= 0.95
+            case .block: w[4] *= 0.85; w[5] *= 0.7; w[6] *= 0.82; w[1] *= 1.1
+            case .rotate: break
+            }
+        }
+        if maxOvers == 20, let t = bowlingTactics, phaseIndex < t.field.count {
+            switch t.field[phaseIndex] {
+            case .attack: w[6] *= 1.12; w[4] *= 1.08; w[5] *= 1.04
+            case .defend: w[6] *= 0.9; w[4] *= 0.85; w[5] *= 0.95; w[1] *= 1.1
+            case .balanced: break
+            }
+        }
 
         if aggression > 0 {
             w[4] *= 1 + 0.5 * aggression

@@ -251,7 +251,7 @@ extension Career {
     func intlSide(_ teamId: Int) -> MatchEngine.Side {
         let code = nationCode(teamId: teamId) ?? "IND"
         let xi = nationXI(code).compactMap { enginePlayer($0) }
-        return MatchEngine.Side(teamId: teamId, xi: xi, attack: nil)
+        return MatchEngine.Side(teamId: teamId, xi: xi, attack: nil, tactics: code == intl.job ? tactics : nil)
     }
 
     /// Plays one international. Returns the result and ball log.

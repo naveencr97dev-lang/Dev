@@ -19,7 +19,14 @@ public struct TupleView<T>: View { public var body: Never { fatalError() } }
 public struct _ConditionalContent<T: View, F: View>: View { public var body: Never { fatalError() } }
 public struct AnyView: View { public init<V: View>(_ v: V) {}; public var body: Never { fatalError() } }
 /// Every modifier returns this.
-public struct _Mod: View { public var body: Never { fatalError() } }
+public struct _Mod: View, Shape {
+    public var body: Never { fatalError() }
+    public func path(in rect: CGRect) -> Path { Path() }
+}
+public enum CGLineCap { case butt, round, square }
+public struct StrokeStyle {
+    public init(lineWidth: CGFloat = 1, lineCap: CGLineCap = .butt, dash: [CGFloat] = []) {}
+}
 extension Optional: View where Wrapped: View { public var body: Never { fatalError() } }
 
 @resultBuilder public struct ViewBuilder {
@@ -369,8 +376,10 @@ public struct AnyLayout {
 
 // MARK: - Shapes
 
-public struct Path {
+public struct Path: Shape {
     public init() {}
+    public init(_ build: (inout Path) -> Void) {}
+    public func path(in rect: CGRect) -> Path { self }
     public init(roundedRect: CGRect, cornerRadius: CGFloat, style: RoundedCornerStyle = .circular) {}
     public init(ellipseIn: CGRect) {}
     public mutating func move(to p: CGPoint) {}
@@ -387,6 +396,7 @@ extension Shape {
     public var body: Never { fatalError() }
     public func fill<S: ShapeStyle>(_ s: S) -> _Mod { _Mod() }
     public func stroke<S: ShapeStyle>(_ s: S, lineWidth: CGFloat = 1) -> _Mod { _Mod() }
+    public func stroke<S: ShapeStyle>(_ s: S, style: StrokeStyle) -> _Mod { _Mod() }
     public func trim(from: CGFloat, to: CGFloat) -> _Mod { _Mod() }
 }
 public struct Rectangle: Shape { public init() {}; public func path(in rect: CGRect) -> Path { Path() } }
@@ -463,6 +473,7 @@ extension View {
     public func rotationEffect(_ a: Angle) -> _Mod { _Mod() }
     public func offset(x: CGFloat = 0, y: CGFloat = 0) -> _Mod { _Mod() }
     public func position(x: CGFloat = 0, y: CGFloat = 0) -> _Mod { _Mod() }
+    public func position(_ p: CGPoint) -> _Mod { _Mod() }
     public func allowsHitTesting(_ b: Bool) -> _Mod { _Mod() }
     public func ignoresSafeArea() -> _Mod { _Mod() }
     public func animation<V: Equatable>(_ a: Animation?, value: V) -> _Mod { _Mod() }

@@ -55,7 +55,7 @@ struct CareerFlags: Codable, Hashable {
 /// The whole career save. A pure value type: every rule lives here or in the engines, so the
 /// career can be unit-tested and simulated headlessly.
 struct Career: Codable {
-    static let currentSchema = 5
+    static let currentSchema = 6
     static let maxNews = 80
 
     var schemaVersion = Career.currentSchema
@@ -97,6 +97,8 @@ struct Career: Codable {
     var trainingBoostWeeks = 0
     // Schema 5 (M5): international cricket.
     var intl = InternationalState()
+    // Schema 6 (M6): match-day tactics.
+    var tactics = Tactics()
 
     /// Home grounds, by franchise template order.
     static let homePitches: [Pitch] = [.indianFlat, .dustyTurner, .indianFlat, .caribbeanSlow, .englishSeam,
@@ -366,7 +368,7 @@ struct Career: Codable {
             plan = plan.compactMap { byId[$0.id] }
         }
         let attack = plan.count == 5 && Set(plan.map(\.id)).count == 5 && plan.allSatisfy { ids.contains($0.id) } ? plan : nil
-        return MatchEngine.Side(teamId: clubId, xi: xi, attack: attack)
+        return MatchEngine.Side(teamId: clubId, xi: xi, attack: attack, tactics: clubId == userClubId ? tactics : nil)
     }
 
     /// Plays one fixture. Returns the result and the ball log (for the live view).
@@ -708,6 +710,12 @@ enum CareerSave {
 
     /// JSON migrations, keyed by the version they upgrade from.
     static let migrations: [Int: ([String: Any]) -> [String: Any]] = [
+        // v5 → v6: tactics.
+        5: { json in
+            var j = json
+            j["tactics"] = CareerSave.jsonObject(Tactics())
+            return j
+        },
         // v4 → v5: international cricket (nations are set up on first use).
         4: { json in
             var j = json

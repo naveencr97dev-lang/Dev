@@ -35,8 +35,9 @@ it off for a session, or `/ultracave` for maximum compression.
   post-match scorecard → runs per over → highlights.
 - **Next big project: Career Mode** (a cricket manager in the style of football manager games).
   Design: `docs/career/GDD.md`. Build order and milestone gates: `docs/career/ROADMAP.md`.
-  Work milestone by milestone and keep the GDD in sync with the code. M0 and M1 are built
-  (engine in `ios/Sources/Engine/Career`, screens in `ios/Sources/Views/Career`). Next is M2:
-  contracts, auctions and the transfer market.
+  Work milestone by milestone and keep the GDD in sync with the code. M0–M6 are built as a generic
+  first pass (engine in `ios/Sources/Engine/Career`, screens in `ios/Sources/Views/Career`, save
+  schema 6 with a migration per version). The user tests on device and sends feedback; fix that
+  first. Next: M7 (ODIs), then Beta balance (see the ROADMAP "Known gaps").
 - User preferences: replies in the "OPTIMIZED PROMPT (CO-STAR) + results" format, terse
   (caveman). Commit and push every change to the working branch. Tell the user to rebuild in Codemagic.

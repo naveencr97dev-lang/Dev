@@ -22,6 +22,8 @@ FILES=(
   "$S"/Views/HomeView.swift
   "$S"/Views/SquadsView.swift
   "$S"/Views/SeasonView.swift
+  "$S"/Views/WagonWheel.swift
+  "$S"/Views/GroundView.swift
   $(find "$S/Views/Career" -name '*.swift')
   tools/typecheck/AppDecls.swift
 )

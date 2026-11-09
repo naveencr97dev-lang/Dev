@@ -176,6 +176,8 @@ extension GameStore {
 
     func careerReleaseAcademy(_ id: String) { mutateCareer { $0.releaseFromAcademy(id) } }
 
+    func careerSetTactics(_ t: Tactics) { mutateCareer { $0.tactics = t } }
+
     // MARK: International
 
     @discardableResult
