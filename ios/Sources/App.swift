@@ -41,7 +41,11 @@ struct RootView: View {
                 case .champion: NavigationStack { ChampionView() }
                 }
             } else {
-                HomeView()
+                ZStack {
+                    ManagerBackground()
+                    HomeView()
+                }
+                .environment(\.careerTheme, true)
             }
         }
         // Rebuild everything when the text size changes, so every font picks up the new scale.

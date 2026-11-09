@@ -43,7 +43,7 @@ struct TrainingView: View {
             } footer: {
                 Text("After each of your matches, every player has a chance to gain a point in the drilled skills. Under-22s learn fastest, over-30s slowest, and nobody grows past their potential. Hard training develops faster but costs form; light sessions and fitness drills lift form. The Training Ground adds slots (M4).")
             }
-            .listRowBackground(CareerPalette.panel)
+            .listRowBackground(GameRowBackground())
 
             Section {
                 ForEach(squad) { p in
@@ -69,7 +69,7 @@ struct TrainingView: View {
             } footer: {
                 Text("A focus skill grows about 2.5× faster than a drill.")
             }
-            .listRowBackground(CareerPalette.panel)
+            .listRowBackground(GameRowBackground())
         }
         .darkList()
         .navigationTitle("Training")
@@ -136,10 +136,10 @@ struct AcademyView: View {
             } footer: {
                 Text("Academy kids train with your plan (a little faster) and don't count against your squad or the salary cap until promoted on a minimum contract.")
             }
-            .listRowBackground(CareerPalette.panel)
+            .listRowBackground(GameRowBackground())
             if let message {
                 Section { Text(message).font(.footnote) }
-                    .listRowBackground(CareerPalette.panel)
+                    .listRowBackground(GameRowBackground())
             }
         }
         .darkList()
@@ -167,7 +167,7 @@ struct ScoutingView: View {
             } footer: {
                 Text("After each of your matches, every scout studies players that fit his brief. More stars = more players and more detail. Scouted players show a narrower potential range; you know your own players fully.")
             }
-            .listRowBackground(CareerPalette.panel)
+            .listRowBackground(GameRowBackground())
 
             Section("Available to hire") {
                 ForEach(s.candidates) { cand in
@@ -186,11 +186,11 @@ struct ScoutingView: View {
                     }
                 }
             }
-            .listRowBackground(CareerPalette.panel)
+            .listRowBackground(GameRowBackground())
 
             if let message {
                 Section { Text(message).font(.footnote) }
-                    .listRowBackground(CareerPalette.panel)
+                    .listRowBackground(GameRowBackground())
             }
 
             Section("Latest reports") {
@@ -210,7 +210,7 @@ struct ScoutingView: View {
                     }
                 }
             }
-            .listRowBackground(CareerPalette.panel)
+            .listRowBackground(GameRowBackground())
         }
         .darkList()
         .navigationTitle("Scouting")

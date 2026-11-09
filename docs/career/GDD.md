@@ -297,6 +297,16 @@ maintenance. Gold can speed up a build.
 
 ### 11.0 Career look (manager-game style)
 
+- **Game UI kit (v2):** styled after the CC0 Kenney UI packs (kenney.nl), rebuilt in SwiftUI shapes
+  with no bitmaps (`CareerTheme.swift`):
+  - framed panels with a dark border, an inner highlight and a bevel lip;
+  - 3D buttons that press down (`GameButtonStyle`);
+  - gold ribbon section headers;
+  - pill resource counters in the top bar;
+  - tiles with glossy icon badges;
+  - a stadium-at-night background.
+- Applies to career mode and the home screen. Quick Auction keeps its broadcast look.
+
 - Navy "manager's desk" theme for career screens (`CareerTheme.swift`): panels with header strips.
   Shared cards switch to navy through the `careerTheme` environment value.
 - **Top bar:** club crest, club, manager, level, national job, date, bank and gold.

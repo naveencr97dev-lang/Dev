@@ -102,23 +102,19 @@ struct ContinueBar: View {
         Button(action: action) {
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(label.title.uppercased()).font(.display(22))
+                    Text(label.title.uppercased()).font(.display(24))
                     if !label.detail.isEmpty {
-                        Text(label.detail).font(.caption.weight(.semibold)).lineLimit(1)
+                        Text(label.detail).font(.caption.weight(.bold)).textCase(nil).lineLimit(1)
                     }
                 }
                 Spacer()
-                Image(systemName: "chevron.right.2").font(.title2.weight(.black))
+                Image(systemName: "play.fill").font(.title2.weight(.black))
             }
-            .foregroundStyle(Palette.ink)
             .padding(.horizontal, 18)
-            .padding(.vertical, 12)
-            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Palette.accent))
-            .shadow(color: Palette.accent.opacity(0.4), radius: 14, y: 4)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(GameButtonStyle(kind: .primary))
         .padding(.horizontal, DS.Space.md)
-        .padding(.bottom, DS.Space.sm)
+        .padding(.bottom, DS.Space.xs)
         .frame(maxWidth: 640)
     }
 }

@@ -21,14 +21,14 @@ struct TacticsView: View {
                     .pickerStyle(.segmented)
                     Text(t.intent[i].blurb).font(.caption).foregroundStyle(Palette.muted)
                 }
-                .listRowBackground(CareerPalette.panel)
+                .listRowBackground(GameRowBackground())
             }
             Section {
                 Button("Reset to balanced / rotate") { t = Tactics() }
             } footer: {
                 Text("Field = when you bowl, batting = when you bat. Applies to every match until you change it, including your national side's.")
             }
-            .listRowBackground(CareerPalette.panel)
+            .listRowBackground(GameRowBackground())
         }
         .darkList()
         .navigationTitle("Tactics")

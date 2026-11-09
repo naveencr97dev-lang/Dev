@@ -19,7 +19,7 @@ struct CareerSettingsView: View {
             } footer: {
                 Text("Change it any time. It sets your players' match boost, transfer prices and wages, your club's income, and how hard rival clubs bid.")
             }
-            .listRowBackground(CareerPalette.panel)
+            .listRowBackground(GameRowBackground())
 
             Section {
                 Toggle("Market always open", isOn: Binding(get: { c?.settings.marketAlwaysOpen ?? true },
@@ -29,12 +29,12 @@ struct CareerSettingsView: View {
             } footer: {
                 Text("On: buy, sell and negotiate at any time. Off: real windows (off-season, rounds 1–2, before round 25).")
             }
-            .listRowBackground(CareerPalette.panel)
+            .listRowBackground(GameRowBackground())
 
             Section("Display") {
                 TextSizePicker()
             }
-            .listRowBackground(CareerPalette.panel)
+            .listRowBackground(GameRowBackground())
         }
         .darkList()
         .navigationTitle("Settings")

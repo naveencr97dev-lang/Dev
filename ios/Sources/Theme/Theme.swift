@@ -129,42 +129,62 @@ struct AppCard<Content: View>: View {
     var padding: CGFloat = DS.Space.lg
     var tint: Color? = nil
     @ViewBuilder var content: Content
-    /// Career screens use navy panels.
+    /// Career screens and the home screen use the framed game-kit panel.
     @Environment(\.careerTheme) private var careerTheme
 
-    private var surface: Color { careerTheme ? Color(hex: "#10264A") : Palette.surface }
-    private var edge: Color { careerTheme ? Color(hex: "#284A86") : Palette.stroke }
-
     var body: some View {
-        content
-            .padding(padding)
-            .padding(.leading, tint == nil ? 0 : 4)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous).fill(surface)
+        if careerTheme {
+            content
+                .padding(padding)
+                .padding(.leading, tint == nil ? 0 : 5)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(alignment: .leading) {
                     if let tint {
-                        RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
-                            .fill(LinearGradient(colors: [tint.opacity(0.28), tint.opacity(0.02)], startPoint: .leading, endPoint: .trailing))
-                        Rectangle().fill(tint).frame(width: 5)
+                        ZStack(alignment: .leading) {
+                            LinearGradient(colors: [tint.opacity(0.35), tint.opacity(0.0)], startPoint: .leading, endPoint: .trailing)
+                            Rectangle().fill(tint).frame(width: 6)
+                        }
                     }
                 }
-                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
-            )
-            .overlay(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous).stroke(edge, lineWidth: 1))
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .gameFrame()
+        } else {
+            content
+                .padding(padding)
+                .padding(.leading, tint == nil ? 0 : 4)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(
+                    ZStack(alignment: .leading) {
+                        RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous).fill(Palette.surface)
+                        if let tint {
+                            RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
+                                .fill(LinearGradient(colors: [tint.opacity(0.28), tint.opacity(0.02)], startPoint: .leading, endPoint: .trailing))
+                            Rectangle().fill(tint).frame(width: 5)
+                        }
+                    }
+                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+                )
+                .overlay(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous).stroke(Palette.stroke, lineWidth: 1))
+        }
     }
 }
 
 /// Section header with a lime slash.
 struct SectionLabel: View {
     let text: String
+    @Environment(\.careerTheme) private var careerTheme
+
     var body: some View {
-        HStack(spacing: 6) {
-            Slant().fill(Palette.accent).frame(width: 7, height: 14)
-            Text(text.uppercased())
-                .font(.display(15, weight: .heavy))
-                .foregroundStyle(Palette.muted)
-                .tracking(0.8)
+        if careerTheme {
+            RibbonLabel(text: text)
+        } else {
+            HStack(spacing: 6) {
+                Slant().fill(Palette.accent).frame(width: 7, height: 14)
+                Text(text.uppercased())
+                    .font(.display(15, weight: .heavy))
+                    .foregroundStyle(Palette.muted)
+                    .tracking(0.8)
+            }
         }
     }
 }
@@ -199,32 +219,44 @@ struct TicketShape: Shape {
 
 struct PrimaryButtonStyle: ButtonStyle {
     var color: Color = Palette.accent
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.display(21))
-            .textCase(.uppercase)
-            .foregroundStyle(Palette.ink)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 15)
-            .background(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous).fill(color))
-            .shadow(color: color.opacity(configuration.isPressed ? 0.2 : 0.45), radius: configuration.isPressed ? 4 : 14, y: 4)
-            .scaleEffect(configuration.isPressed ? 0.97 : 1)
-            .animation(.spring(response: 0.25, dampingFraction: 0.6), value: configuration.isPressed)
+    @Environment(\.careerTheme) private var careerTheme
+
+    @ViewBuilder func makeBody(configuration: Configuration) -> some View {
+        if careerTheme {
+            GameButtonStyle(kind: .primary).makeBody(configuration: configuration)
+        } else {
+            configuration.label
+                .font(.display(21))
+                .textCase(.uppercase)
+                .foregroundStyle(Palette.ink)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 15)
+                .background(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous).fill(color))
+                .shadow(color: color.opacity(configuration.isPressed ? 0.2 : 0.45), radius: configuration.isPressed ? 4 : 14, y: 4)
+                .scaleEffect(configuration.isPressed ? 0.97 : 1)
+                .animation(.spring(response: 0.25, dampingFraction: 0.6), value: configuration.isPressed)
+        }
     }
 }
 
 struct SecondaryButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.display(17, weight: .heavy))
-            .textCase(.uppercase)
-            .foregroundStyle(.white)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 13)
-            .background(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous).fill(Palette.surfaceHi))
-            .overlay(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous).stroke(Palette.stroke, lineWidth: 1))
-            .scaleEffect(configuration.isPressed ? 0.97 : 1)
-            .animation(.spring(response: 0.25, dampingFraction: 0.6), value: configuration.isPressed)
+    @Environment(\.careerTheme) private var careerTheme
+
+    @ViewBuilder func makeBody(configuration: Configuration) -> some View {
+        if careerTheme {
+            GameButtonStyle(kind: .secondary, fontSize: 17).makeBody(configuration: configuration)
+        } else {
+            configuration.label
+                .font(.display(17, weight: .heavy))
+                .textCase(.uppercase)
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 13)
+                .background(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous).fill(Palette.surfaceHi))
+                .overlay(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous).stroke(Palette.stroke, lineWidth: 1))
+                .scaleEffect(configuration.isPressed ? 0.97 : 1)
+                .animation(.spring(response: 0.25, dampingFraction: 0.6), value: configuration.isPressed)
+        }
     }
 }
 

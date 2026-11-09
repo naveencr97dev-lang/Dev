@@ -642,3 +642,7 @@ public struct LazyVStack<C: View>: View {
     public init(alignment: HorizontalAlignment = .center, spacing: CGFloat? = nil, @ViewBuilder content: () -> C) {}
     public var body: Never { fatalError() }
 }
+extension View {
+    public func mask<M: View>(_ m: M) -> _Mod { _Mod() }
+    public func mask<M: View>(alignment: Alignment = .center, @ViewBuilder _ m: () -> M) -> _Mod { _Mod() }
+}

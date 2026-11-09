@@ -90,7 +90,7 @@ struct RetentionView: View {
             } footer: {
                 Text("Every contract ends at a mega auction. Kept players sign again for 3 seasons at their market wage; everyone else goes into the auction, where you can try to buy them back.")
             }
-            .listRowBackground(CareerPalette.panel)
+            .listRowBackground(GameRowBackground())
 
             Section("Your squad") {
                 ForEach(squad) { p in
@@ -107,7 +107,7 @@ struct RetentionView: View {
                     .buttonStyle(.plain)
                 }
             }
-            .listRowBackground(CareerPalette.panel)
+            .listRowBackground(GameRowBackground())
         }
         .darkList()
         .navigationTitle("Retentions")

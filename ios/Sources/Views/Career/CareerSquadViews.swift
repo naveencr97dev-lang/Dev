@@ -171,7 +171,7 @@ struct PickXIView: View {
             } footer: {
                 Text("Tap to pick or drop. New picks slot into the batting order where they bat best; adjust it later in Order.")
             }
-            .listRowBackground(CareerPalette.panel)
+            .listRowBackground(GameRowBackground())
 
             ForEach(Role.allCases, id: \.self) { role in
                 let group = squad.filter { $0.role == role }.sorted { max($0.bat, $0.bowl) > max($1.bat, $1.bowl) }
@@ -190,7 +190,7 @@ struct PickXIView: View {
                             .buttonStyle(.plain)
                         }
                     }
-                    .listRowBackground(CareerPalette.panel)
+                    .listRowBackground(GameRowBackground())
                 }
             }
         }
