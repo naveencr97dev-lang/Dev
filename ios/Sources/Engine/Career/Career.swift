@@ -55,7 +55,7 @@ struct CareerFlags: Codable, Hashable {
 /// The whole career save. A pure value type: every rule lives here or in the engines, so the
 /// career can be unit-tested and simulated headlessly.
 struct Career: Codable {
-    static let currentSchema = 9
+    static let currentSchema = 10
     static let maxNews = 80
 
     var schemaVersion = Career.currentSchema
@@ -104,6 +104,8 @@ struct Career: Codable {
     // Schema 9: weekly training session and the season's money by category.
     var trainingDoneThisWeek = false
     var seasonMoney: [String: Int] = [:]
+    /// Schema 10: season objectives, board confidence, monthly awards.
+    var board = BoardState()
 
     /// Home grounds, by franchise template order.
     static let homePitches: [Pitch] = [.indianFlat, .dustyTurner, .indianFlat, .caribbeanSlow, .englishSeam,
@@ -213,6 +215,7 @@ struct Career: Codable {
         self.managerName = managerName
         for i in clubs.indices { clubs[i].isCPU = clubs[i].id != clubId }
         news = []
+        if !fixtures.isEmpty { setObjectives() }
         addNews(.info, "\(managerName) takes charge of \(userClub.name). The \(year) season starts on \(CareerCalendar.label(tuning.roundDays.first ?? 10)).")
     }
 
@@ -321,6 +324,7 @@ struct Career: Codable {
             fixtureDays[f.id] = min(day, 310)
         }
         for k in players.keys { players[k]?.form = 0 }
+        setObjectives()
     }
 
     /// Picks the XI from the squad (AI clubs before every match; the user's when theirs is invalid).
@@ -353,7 +357,15 @@ struct Career: Codable {
     }
 
     /// The player as the match engine sees them (form plus the career batting calibration).
-    func enginePlayer(_ id: String) -> Player? { players[id]?.matchPlayer(batBoost: tuning.engineBatBoost) }
+    func enginePlayer(_ id: String, pitch: Pitch? = nil) -> Player? {
+        players[id]?.matchPlayer(batBoost: tuning.engineBatBoost + pitchBoost(pitch))
+    }
+
+    /// The pitch's extra batting calibration (career only; the quick game is untouched).
+    func pitchBoost(_ pitch: Pitch?) -> Int {
+        guard let pitch, let i = Pitch.allCases.firstIndex(of: pitch), i < tuning.pitchBatBoost.count else { return 0 }
+        return tuning.pitchBatBoost[i]
+    }
 
     func side(_ clubId: Int, fixture: Fixture? = nil) -> MatchEngine.Side {
         let c = club(clubId)!
@@ -361,8 +373,8 @@ struct Career: Codable {
         if !xiIssues(clubId).isEmpty {
             ids = TeamSelector.autoXI(squad: c.squad.compactMap { player($0) }, rules: rules)
         }
-        var xi = ids.compactMap { enginePlayer($0) }
-        var plan = c.bowlingOrder.compactMap { enginePlayer($0) }
+        var xi = ids.compactMap { enginePlayer($0, pitch: fixture?.pitch) }
+        var plan = c.bowlingOrder.compactMap { enginePlayer($0, pitch: fixture?.pitch) }
         if clubId == userClubId {
             // Perks and the Analytics Room lift the user's players a little.
             let attackIds = (plan.count == 5 ? plan : MatchEngine.autoAttack(xi, pitch: fixture?.pitch)).map(\.id)
@@ -391,6 +403,7 @@ struct Career: Codable {
         results.append(r)
         fixtures[fi].resultId = r.id
         record(r)
+        checkMonthEnd(after: f)
         defer { marketTick() }
 
         if f.stage == .final {
@@ -608,6 +621,7 @@ struct Career: Codable {
         phase = .seasonEnd
         let name = club(champ)?.name ?? ""
         addNews(.season, champ == userClubId ? "🏆 CHAMPIONS! \(name) win the \(year) title!" : "🏆 \(name) are the \(year) champions.")
+        judgeObjectives()
     }
 
     // MARK: - Rollover
@@ -759,6 +773,16 @@ enum CareerSave {
 
     /// JSON migrations, keyed by the version they upgrade from.
     static let migrations: [Int: ([String: Any]) -> [String: Any]] = [
+        // v9 → v10: board objectives and monthly awards; new tuning keys (the app reloads tuning).
+        9: { json in
+            var j = json
+            j["board"] = CareerSave.jsonObject(BoardState())
+            var tuning = j["tuning"] as? [String: Any] ?? [:]
+            let standard = CareerSave.jsonObject(CareerTuning.standard) as? [String: Any] ?? [:]
+            for (k, v) in standard where tuning[k] == nil { tuning[k] = v }
+            j["tuning"] = tuning
+            return j
+        },
         // v8 → v9: training session flag, season money, ticket price.
         8: { json in
             var j = json

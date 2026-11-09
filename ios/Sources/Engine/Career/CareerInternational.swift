@@ -252,13 +252,13 @@ extension Career {
         var engine = MatchEngine(rng: rng)
         engine.liveChanges = changes
         var log: [BallEvent] = []
-        let r = engine.play(intlSide(f.home), intlSide(f.away), stage: f.stage, pitch: f.pitch, log: &log)
+        let r = engine.play(intlSide(f.home, pitch: f.pitch), intlSide(f.away, pitch: f.pitch), stage: f.stage, pitch: f.pitch, log: &log)
         return (r, log, engine.rng)
     }
 
-    func intlSide(_ teamId: Int) -> MatchEngine.Side {
+    func intlSide(_ teamId: Int, pitch: Pitch? = nil) -> MatchEngine.Side {
         let code = nationCode(teamId: teamId) ?? "IND"
-        let xi = nationXI(code).compactMap { enginePlayer($0) }
+        let xi = nationXI(code).compactMap { enginePlayer($0, pitch: pitch) }
         return MatchEngine.Side(teamId: teamId, xi: xi, attack: nil, tactics: code == intl.job ? tactics : nil)
     }
 

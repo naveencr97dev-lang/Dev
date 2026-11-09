@@ -1,6 +1,6 @@
 # Handoff: Auction XI (read this first in a new chat)
 
-Last updated 2026-11-09, at commit `237f65a` on branch `claude/gracious-davinci-yq0yej`.
+Last updated 2026-11-09 (after customer-panel round 1) on branch `claude/gracious-davinci-yq0yej`.
 
 ## 1. Where things are
 
@@ -81,7 +81,7 @@ Last updated 2026-11-09, at commit `237f65a` on branch `claude/gracious-davinci-
 - **Swift toolchain:** if `/opt/swift` is missing, install it with
   `curl -sSfL https://download.swift.org/swift-6.0.3-release/ubuntu2404/swift-6.0.3-RELEASE/swift-6.0.3-RELEASE-ubuntu24.04.tar.gz | tar xz --strip-components=1 -C /opt/swift`
   (run `mkdir -p /opt/swift` first). Then `export PATH=/opt/swift/usr/bin:$PATH`.
-- **Engine tests:** `cd ios && swift test` (59 tests, all green). Pipe the output to a file and
+- **Engine tests:** `cd ios && swift test` (66 tests, all green). Pipe the output to a file and
   check the "Executed … with 0 failures" line before committing. One push once went out red because
   a grep in a command chain hid the failure.
 - **Whole-app type-check:** `tools/typecheck/run.sh`. It checks all 48 files against SwiftUI, UIKit
@@ -92,19 +92,29 @@ Last updated 2026-11-09, at commit `237f65a` on branch `claude/gracious-davinci-
   for 3+ seasons.
 - **`ArchitectureTests`:** no UI imports in the engine, views never mutate the career, every save
   schema has a migration.
+- **Customer panel:** `CUSTOMER_PANEL=1 CUSTOMER_SEASONS=4 swift test -c release -Xswiftc -enable-testing --filter CustomerPanelTests`.
+  Six personas (caster, tinkerer, trader, bidder, veteran, rookie) play the same club through
+  CONTINUE and report presses, idle presses, thrillers and blowouts, pitch pars, banks, objectives and
+  awards. Write each round up in `docs/feedback/ROUNDn.md`. This replaces MiroFish, which needs paid
+  LLM and Zep keys and can't play an app.
 - **Tuning file:** after changing `CareerTuning` defaults, regenerate it with
   `WRITE_TUNING=1 swift test --filter CareerTests.testWriteTuningFile`.
 
 ## 6. What's built (career mode)
 
 The engine is in `ios/Sources/Engine/Career/`, the screens in `ios/Sources/Views/Career/`, and the
-store glue in `ios/Sources/Store/GameStore+Career.swift`. **Save schema 9**, with a JSON migration
+store glue in `ios/Sources/Store/GameStore+Career.swift`. **Save schema 10**, with a JSON migration
 for each version in `CareerSave.migrations`.
 
 - **Season:** 10 fictional clubs, 36 league matches each, home pitches, IPL playoffs, awards,
   history, news.
 - **Calendar:** international windows pause the league before rounds 13 and 25.
-- **Flow:** one **CONTINUE** button (`CareerFlow.swift`).
+- **Flow:** one **CONTINUE** button (`CareerFlow.swift`). One press sims the rest of the round and
+  opens your match.
+- **Board** (`CareerBoard.swift`, modelled on Soccer Manager 2026): season objectives (finish, home
+  wins, U23 appearances) with XP and gold rewards, board confidence, and Player and Manager of the
+  Month. Shown on Home.
+- **Pitches:** per-pitch career batting calibration (`pitchBatBoost`), so pars are near real ones.
 - **Squad:** XI from about 20 players, batting order, bowling plan of 5, tactics.
 - **Tactics:** field Defensive / Balanced / Aggressive and batting Block / Rotate / Attack, per phase.
 - **Match day:**
@@ -118,6 +128,7 @@ for each version in `CareerSave.migrations`.
   - Mega auction every 3 years with up to 6 retentions; mini auctions in between. The auction is
     turn-based.
   - Transfers: offers and counters, Pay asking price, every player listed with their owner.
+  - AI clubs buy from each other each window. Auction lots show staff advice.
   - Filters by role, batting slot and pace/spin; sort by stats.
   - Settings → **market always open** (on for testing).
 - **Development:**
@@ -142,18 +153,20 @@ for each version in `CareerSave.migrations`.
 
 ## 7. Next steps and known gaps
 
+Customer-panel round 1 is in `docs/feedback/ROUND1.md` (findings, the SM26 reference, what changed).
+
+
 The full backlog is in `docs/ARCHITECTURE.md` §4.
 
 1. **The user's device test of the latest build:** fix anything reported first (layer 3).
 2. **Design:** Quick Auction screens (auction ticket, broadcast score strip) still use older
    layouts. Pitch and trait emoji are still used as content glyphs.
 3. **Balance:**
-   - Seam and bounce pitch scores run about 20 below par, and flat-pitch scores drift down over
-     many seasons.
+   - About 45% of games are blowouts (chase pacing, L0).
+   - Flat-pitch scores may drift down over many seasons.
    - KOL was strong in the harness.
-   - AI clubs never spend their banks.
-4. **Systems:** AI-to-AI trades, loans, an international stats screen, mid-match changes in Quick
-   Auction.
+4. **Systems:** loans, contract talks with a patience bar, a squad planner (SM26 ideas), an
+   international stats screen, mid-match changes in Quick Auction.
 5. **M7:** ODIs and the ODI World Cup (needs an N-over engine option).
 6. **Before any public release:** the real StoreKit store (`StoreConfig.testerStore` off),
    fictional player names (licensing), and the market always-open setting off by default.

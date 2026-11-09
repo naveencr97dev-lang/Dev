@@ -626,6 +626,63 @@ extension Career {
                 }
             }
         }
+        aiTransfers()
+    }
+
+    /// AI-to-AI transfers: clubs with money to spare buy an upgrade from another AI club, which keeps
+    /// the market alive and stops AI banks piling up. Deterministic (sorted, no dictionary order).
+    mutating func aiTransfers() {
+        var moved = Set<String>()
+        var sellers: [Int: Int] = [:]
+        let buyers = clubs.filter(\.isCPU).map(\.id).sorted { bank($0) > bank($1) }
+        for buyer in buyers {
+            for _ in 0..<tuning.aiDealsPerWindow {
+                let spare = bank(buyer) - tuning.aiReserveBank
+                guard spare > 0, let bi = clubs.firstIndex(where: { $0.id == buyer }),
+                      squad(buyer).count < tuning.maxSquad else { break }
+                let xi = clubs[bi].xi.compactMap { players[$0] }
+                let overseas = squad(buyer).filter(\.overseas).count
+                func weakest(_ r: Role) -> Int { xi.filter { $0.role == r }.map(\.rating).min() ?? 0 }
+                let candidates = players.values.filter { p in
+                    guard let cid = p.clubId, cid != buyer, cid != userClubId, !p.retired, !moved.contains(p.id),
+                          club(cid)?.isCPU == true, sellers[cid, default: 0] < 1,
+                          squad(cid).count > tuning.minSquad + 1 else { return false }
+                    return p.rating >= weakest(p.role) + tuning.aiUpgradeMargin
+                        && (!p.overseas || overseas < tuning.maxOverseasSquad)
+                        && aiFee(p) <= spare && wageDemand(p) <= capRoom(buyer)
+                }
+                guard let t = candidates.max(by: { a, b in
+                    let ga = a.rating - weakest(a.role), gb = b.rating - weakest(b.role)
+                    return ga != gb ? ga < gb : a.id > b.id
+                }), let seller = t.clubId else { break }
+                moved.insert(t.id)
+                sellers[seller, default: 0] += 1
+                completeTransfer(playerId: t.id, to: buyer, fee: aiFee(t), wage: wageDemand(t))
+            }
+        }
+    }
+
+    /// Staff advice for an auction lot or a transfer target: does the player improve the XI, fill
+    /// a gap in the squad shape, or only add depth? (Panel feedback: blind bidding wrecked squads.)
+    func scoutAdvice(_ p: CareerPlayer) -> (text: String, good: Bool) {
+        let mine = squad(userClubId)
+        let xi = userClub.xi.compactMap { id in players[id].flatMap { $0.clubId == userClubId ? $0 : nil } }
+        let sameRole = mine.filter { $0.role == p.role }.count
+        let shapeIndex = [Role.WK, .BAT, .AR, .BOWL].firstIndex(of: p.role) ?? 0
+        let want = shapeIndex < tuning.squadShape.count ? tuning.squadShape[shapeIndex] : 4
+        if let w = xi.filter({ $0.role == p.role && $0.id != p.id }).min(by: { $0.rating < $1.rating }), p.rating > w.rating + 1 {
+            return ("Walks into your XI: better than \(w.name) (\(w.rating))", true)
+        }
+        if sameRole < want { return ("Fills a gap: \(sameRole) \(p.role.label.lowercased())s in the squad, you want \(want)", true) }
+        if mine.count >= tuning.auctionSquadTarget { return ("Squad is full (\(mine.count)): depth only", false) }
+        return ("Depth only: \(sameRole) \(p.role.label.lowercased())s already", false)
+    }
+
+    /// What one AI club pays another (no difficulty markup: that only applies to the user).
+    func aiFee(_ p: CareerPlayer) -> Int {
+        guard let cid = p.clubId, let c = club(cid) else { return 0 }
+        let mult = c.xi.contains(p.id) ? tuning.askXIMultiplier : tuning.askBenchMultiplier
+        return Career.round5(Double(p.value(in: year)) * mult)
     }
 
     /// Called as matches are played: opens the mid-season window and closes offers when it shuts.

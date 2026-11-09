@@ -1,7 +1,10 @@
 {
   "academyBoost" : 1.3,
   "academyMax" : 8,
+  "aiDealsPerWindow" : 2,
   "aiFacilityLevel" : 2,
+  "aiReserveBank" : 2500,
+  "aiUpgradeMargin" : 3,
   "askBenchMultiplier" : 1.15,
   "askXIMultiplier" : 1.5,
   "auctionSquadTarget" : 21,
@@ -88,6 +91,13 @@
   "minSquad" : 18,
   "minWage" : 20,
   "paceRetireOffset" : 1,
+  "pitchBatBoost" : [
+    0,
+    14,
+    15,
+    16,
+    11
+  ],
   "playoffDays" : [
     316,
     318,
@@ -109,7 +119,7 @@
   "scoutCap" : 2,
   "scoutReportEveryWeeks" : 2,
   "scoutWage" : 25,
-  "seasonRevenue" : 9500,
+  "seasonRevenue" : 8000,
   "secondTraitChance" : 0.25,
   "squadShape" : [
     2,

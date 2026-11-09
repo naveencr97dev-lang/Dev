@@ -8,6 +8,8 @@ extension GameStore {
     func loadCareer() {
         guard let data = try? Data(contentsOf: careerURL), var c = try? CareerSave.decode(data) else { return }
         c.tuning = careerTuning
+        // A save from before objectives existed: the board sets this season's now.
+        if c.phase == .season && c.board.year != c.year { c.setObjectives() }
         career = c
     }
 

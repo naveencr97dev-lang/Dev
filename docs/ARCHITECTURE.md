@@ -37,13 +37,18 @@ Auction XI
     ├── Market ................................. CareerMarket.swift
     │   ├── Contracts and salary cap, bank and ledger
     │   ├── Off-season: retentions › auction (mega every 3rd season) › window
-    │   └── Transfers: offers, counters, free agents, release, AI bids, AI windows
+    │   ├── Transfers: offers, counters, free agents, release, AI bids, AI windows
+    │   ├── AI-to-AI transfers (rich AI clubs buy upgrades each window)
+    │   └── Scout advice on auction lots (improves the XI, fills a gap, or depth only)
     ├── Development ............................ CareerDevelopment.swift, Career.develop()
     │   ├── Ageing, growth to potential, retirement, youth pool
     │   ├── Training: drills, intensity, focus
     │   ├── Scouting: scouts, knowledge, potential ranges
     │   └── Academy: intake, promote, release
     ├── Club and manager ....................... CareerClub.swift
+    │   ├── Board ................................ CareerBoard.swift
+    │   │   ├── Season objectives (finish, home wins, U23 appearances), rewards, confidence
+    │   │   └── Monthly awards: Player and Manager of the Month
     │   ├── Facilities (7) and season accounts; weekly tickets + merchandise
     │   ├── Manager XP, levels, 24 perks
     │   └── Gold and the store (tester pack)
@@ -64,7 +69,7 @@ Auction XI
 | Squad | CareerSquadViews and CareerTacticsView |
 | Market | CareerMarketViews |
 | Development | CareerDevelopmentViews |
-| Club | CareerClubViews |
+| Club (and the Home board-objectives card) | CareerClubViews |
 | International | CareerWorldViews |
 | Stats (profile, market, leaderboards) | CareerStatsViews |
 | Settings | CareerSettingsView |
@@ -131,6 +136,8 @@ wired in by one call. Existing leaves aren't rewritten.
 
 ## 4. Backlog by layer
 
+The customer panel (`CustomerPanelTests`, reports in `docs/feedback/`) feeds this list.
+
 Open items from playtests and the roadmap's known gaps. Fix the top layers' breakages first.
 
 ### L4 Presentation
@@ -139,13 +146,17 @@ Open items from playtests and the roadmap's known gaps. Fix the top layers' brea
 - Landscape audit of every career screen (casting).
 
 ### L2 Balance
-- `Shared core › Match engine`: seam and bounce home grounds score about 20 below the quick-game par.
-  Flat-pitch scores drift down after 10+ seasons.
+- ~~`Shared core › Match engine`: seam and bounce home grounds score about 20 below par~~ ✅ fixed with
+  the career-only `pitchBatBoost` (panel round 1: seam 152, turner 156, slow 161, bounce 169, flat 189).
+- `Shared core › Match engine`: about 45% of games are blowouts (panel's loose definition). Look at
+  chase pacing (an L0 change).
 - `Career › Season`: KOL won 7 of 20 titles in the harness. Check auction personality and home pitch.
-- `Career › Club`: AI banks pile up cash. Needs an AI spending rule (an L1 change, small).
+- ~~`Career › Club`: AI banks pile up cash~~ ✅ AI-to-AI transfers plus central revenue 95 → 80 Cr
+  (AI bank growth about +15 Cr a season, down from +30).
 
 ### L1 Systems
-- `Career › Market`: AI-to-AI trades, loans.
+- `Career › Market`: ~~AI-to-AI trades~~ ✅, loans, contract talks with a patience bar (SM26).
+- `Career › Squad`: a squad planner (SM26).
 - ~~`Career › Match day`: in-match changes~~ ✅ done with a deterministic replay. A change re-runs the
   same seed, so the past is identical. The match is previewed and only recorded at the end.
 - `Quick Auction › Match day`: allow changes there too (the scorecard already works).

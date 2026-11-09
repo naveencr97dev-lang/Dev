@@ -33,6 +33,9 @@ struct CareerTuning: Codable, Hashable {
     /// Batting points added inside the match engine only, so career XIs (deeper, with fewer
     /// trait-laden stars than the quick game) score like the quick game's calibrated pars.
     var engineBatBoost = 8
+    /// Extra engine batting points per pitch (Pitch.allCases order: flat, seam, bounce, turner,
+    /// slow), so bowler-friendly grounds land near real T20 pars (~155-170) instead of ~135.
+    var pitchBatBoost = [0, 14, 15, 16, 11]
 
     // Development (per season, applied to the main skill)
     /// Growth range by age band: [maxAge, min, max].
@@ -54,7 +57,7 @@ struct CareerTuning: Codable, Hashable {
     var startingBank = 2_500
     var minWage = 20
     /// Paid to every club after each season, plus prize money by finish.
-    var seasonRevenue = 9_500
+    var seasonRevenue = 8_000
     var prizeMoney = [2_000, 1_300, 700, 650]   // champion, runner-up, lost Q2, lost Eliminator
     /// Mega auction every N seasons (up to `maxRetentions` kept); mini auctions in between.
     var megaAuctionEvery = 3
@@ -66,6 +69,11 @@ struct CareerTuning: Codable, Hashable {
     var askBenchMultiplier = 1.15
     var counterThreshold = 0.75
     var releaseCompensation = 0.5
+    /// AI-to-AI transfers: money an AI club keeps in reserve, deals per club per window, and how
+    /// much better (rating) a target must be than the XI player it replaces.
+    var aiReserveBank = 2_500
+    var aiDealsPerWindow = 2
+    var aiUpgradeMargin = 3
 
     // Training, scouting, academy (M3)
     var trainingSlots = 3

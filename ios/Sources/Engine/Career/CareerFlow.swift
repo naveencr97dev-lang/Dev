@@ -46,7 +46,10 @@ extension Career {
             let opp = f.flatMap { club($0.home == userClubId ? $0.away : $0.home)?.short } ?? ""
             let when = f.map { CareerCalendar.label(day(of: $0)) } ?? ""
             return ("Play match", "\(f.flatMap { round(of: $0) }.map { "R\($0) · " } ?? "")vs \(opp) · \(when)")
-        case .continueToMatch: return ("Continue", "Sim to your next match")
+        case .continueToMatch:
+            let f = nextUserFixture
+            let opp = f.flatMap { club($0.home == userClubId ? $0.away : $0.home)?.short } ?? ""
+            return ("Play match", "vs \(opp) · other games sim first")
         case .watchOther(let id):
             let f = fixtures.first { $0.id == id }
             return ("Watch \(f?.stage.label ?? "match")", "You're out — watch or sim")

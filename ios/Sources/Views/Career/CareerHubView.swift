@@ -113,8 +113,13 @@ struct CareerHubView: View {
             let signed = store.careerStartSeason()
             note = signed.isEmpty ? "The season is under way!" : "The board filled your squad: \(signed.joined(separator: ", "))."
         case .continueToMatch:
+            // One press: the other games in the round sim, then your match starts.
             let n = store.careerSimUntilUserMatch()
-            note = "Simulated \(n) match\(n == 1 ? "" : "es") around the league."
+            if case .playMatch(let id) = store.career?.nextAction {
+                path.append(.match(id))
+            } else {
+                note = "Simulated \(n) match\(n == 1 ? "" : "es") around the league."
+            }
         case .none: break
         }
     }
@@ -311,6 +316,7 @@ struct CareerHomeTab: View {
                     Text(note).font(.display(12, weight: .regular)).foregroundStyle(Palette.muted)
                 }
                 SeasonSummary(career: c, path: $path)
+                BoardObjectivesCard(career: c)
                 NewsFeed(news: Array(c.news.prefix(3)))
                 if c.news.count > 3 {
                     NavigationLink { NewsScreen() } label: {
@@ -351,7 +357,7 @@ struct NextMatchHero: View {
                 Button("Sim result instead", action: quickSim)
                     .font(.display(14, weight: .semibold)).foregroundStyle(Palette.accent)
             } else {
-                Text("Other matches come first: Continue plays them.").font(.display(12, weight: .regular)).foregroundStyle(Palette.muted)
+                Text("Other games in the round sim first.").font(.display(12, weight: .regular)).foregroundStyle(Palette.muted)
             }
         }
         .padding(DS.Space.lg)

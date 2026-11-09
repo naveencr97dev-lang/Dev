@@ -270,3 +270,59 @@ struct GoldActions: View {
         }
     }
 }
+
+/// Home: this season's board objectives and the latest Player of the Month (Career › Club › Board).
+struct BoardObjectivesCard: View {
+    let career: Career
+
+    var body: some View {
+        let c = career
+        if !c.board.objectives.isEmpty {
+            VStack(alignment: .leading, spacing: DS.Space.sm) {
+                SectionLabel(text: "Board objectives · confidence \(c.board.confidence)%")
+                VStack(spacing: 0) {
+                    ForEach(Array(c.board.objectives.enumerated()), id: \.element.id) { i, o in
+                        if i > 0 { Hairline(inset: 16) }
+                        ObjectiveRow(career: c, objective: o)
+                    }
+                    if let a = c.board.awards.last, a.year == c.year {
+                        Hairline(inset: 16)
+                        InfoRow(label: "Player of the Month · \(a.monthName)",
+                                value: "\(a.playerName) (\(c.club(a.playerClub)?.short ?? ""))", chevron: false)
+                    }
+                }
+                .gameFrame()
+            }
+        }
+    }
+}
+
+struct ObjectiveRow: View {
+    let career: Career
+    let objective: Objective
+
+    var body: some View {
+        let p = career.progress(objective)
+        let judged = objective.met
+        let ok = judged ?? p.ok
+        let value: String = {
+            switch objective.kind {
+            case .finish: return Career.ordinal(p.value)
+            case .homeWins, .youth: return "\(p.value)/\(objective.target)"
+            }
+        }()
+        HStack(spacing: 12) {
+            Image(systemName: judged == true ? "checkmark.circle.fill" : (judged == false ? "xmark.circle" : "scope"))
+                .font(.system(size: 17 * TextScale.factor, weight: .semibold))
+                .foregroundStyle(judged == nil ? Palette.muted : (ok ? Palette.accent : Palette.wicket))
+            VStack(alignment: .leading, spacing: 2) {
+                Text(objective.title).font(.display(16, weight: .regular)).foregroundStyle(.white)
+                Text("+\(objective.xp) XP · +\(objective.gold) gold").font(.display(12, weight: .regular)).foregroundStyle(Palette.muted)
+            }
+            Spacer(minLength: 8)
+            Text(value).font(.score(16, weight: .regular)).foregroundStyle(ok ? Palette.accent : Palette.muted)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 11)
+    }
+}
