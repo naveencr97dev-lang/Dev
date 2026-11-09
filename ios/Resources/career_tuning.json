@@ -1,9 +1,11 @@
 {
   "academyBoost" : 1.3,
   "academyMax" : 8,
+  "aiFacilityLevel" : 2,
   "askBenchMultiplier" : 1.15,
   "askXIMultiplier" : 1.5,
   "auctionSquadTarget" : 21,
+  "commercialPerLevel" : 150,
   "counterThreshold" : 0.75,
   "depthBat" : [
     58,
@@ -16,9 +18,16 @@
   "depthPlayers" : 160,
   "drillChance" : 0.05,
   "engineBatBoost" : 8,
+  "facilityBaseCost" : 40,
+  "facilityUpkeep" : 5,
   "focusMultiplier" : 2.5,
   "formCap" : 10,
   "formDecay" : 1,
+  "gatePerLevel" : 15,
+  "goldForTitle" : 200,
+  "goldPerBuildWeek" : 40,
+  "goldPerLevel" : 20,
+  "goldPerMatch" : 2,
   "growth" : [
     [
       20,
@@ -99,7 +108,7 @@
   "salaryCap" : 12000,
   "scoutCap" : 2,
   "scoutWage" : 25,
-  "seasonRevenue" : 1200,
+  "seasonRevenue" : 9500,
   "secondTraitChance" : 0.25,
   "squadShape" : [
     2,
@@ -109,6 +118,7 @@
   ],
   "startSquad" : 20,
   "startingBank" : 2500,
+  "startingGold" : 100,
   "trainingSlots" : 3,
   "traitChance" : 0.5,
   "unknownPotentialWidth" : 20,

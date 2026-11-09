@@ -323,6 +323,9 @@ maintenance. Gold can speed up a build.
 | 6,000 Gold | display only | |
 | **Tester Pack: 1,000,000 Gold** | **Free** | **Unlimited purchases.** Behind the `testerStore` flag, which is on by default in this build. |
 
+- **As built (M4):** `StorePack` and `StoreConfig.testerStore` in `CareerClub.swift`. In test mode
+  every pack is granted free. The cap exemption for minimum-wage fillers (up to 8, to reach 18
+  players) is documented in ROADMAP M3.
 - **Implementation:**
   - A `StoreService` protocol with a `MockStore` implementation that grants gold instantly with
     no charge.

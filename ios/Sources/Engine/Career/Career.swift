@@ -55,7 +55,7 @@ struct CareerFlags: Codable, Hashable {
 /// The whole career save. A pure value type: every rule lives here or in the engines, so the
 /// career can be unit-tested and simulated headlessly.
 struct Career: Codable {
-    static let currentSchema = 3
+    static let currentSchema = 4
     static let maxNews = 80
 
     var schemaVersion = Career.currentSchema
@@ -90,6 +90,11 @@ struct Career: Codable {
     var scouting = ScoutingState()
     /// The user's academy (player ids).
     var academy: [String] = []
+    // Schema 4 (M4): facilities, the manager, gold.
+    var facilities = FacilityState()
+    var manager = ManagerProfile()
+    var gold = 0
+    var trainingBoostWeeks = 0
 
     /// Home grounds, by franchise template order.
     static let homePitches: [Pitch] = [.indianFlat, .dustyTurner, .indianFlat, .caribbeanSlow, .englishSeam,
@@ -139,6 +144,8 @@ struct Career: Codable {
         c.finance = c.clubs.map { _ in ClubFinance(bank: tuning.startingBank) }
         c.assignDraftContracts()
         for i in c.clubs.indices { c.autoPickXI(clubIndex: i) }
+        c.facilities.levels = Dictionary(uniqueKeysWithValues: FacilityKind.allCases.map { ($0.rawValue, tuning.aiFacilityLevel) })
+        c.gold = tuning.startingGold
         c.scouting.scouts = [Scout(id: 0, name: "Chief scout", stars: 2, wage: tuning.scoutWage * 2)]
         c.refreshScoutCandidates()
         _ = c.academyIntake()
@@ -326,14 +333,25 @@ struct Career: Codable {
     /// The player as the match engine sees them (form plus the career batting calibration).
     func enginePlayer(_ id: String) -> Player? { players[id]?.matchPlayer(batBoost: tuning.engineBatBoost) }
 
-    func side(_ clubId: Int) -> MatchEngine.Side {
+    func side(_ clubId: Int, fixture: Fixture? = nil) -> MatchEngine.Side {
         let c = club(clubId)!
         var ids = c.xi
         if !xiIssues(clubId).isEmpty {
             ids = TeamSelector.autoXI(squad: c.squad.compactMap { player($0) }, rules: rules)
         }
-        let xi = ids.compactMap { enginePlayer($0) }
-        let plan = c.bowlingOrder.compactMap { enginePlayer($0) }
+        var xi = ids.compactMap { enginePlayer($0) }
+        var plan = c.bowlingOrder.compactMap { enginePlayer($0) }
+        if clubId == userClubId {
+            // Perks and the Analytics Room lift the user's players a little.
+            let attackIds = (plan.count == 5 ? plan : MatchEngine.autoAttack(xi, pitch: fixture?.pitch)).map(\.id)
+            let boosted = xi.enumerated().map { i, p -> Player in
+                let b = userBoost(for: p, position: i, attackSlot: attackIds.firstIndex(of: p.id), fixture: fixture)
+                return p.adjusted(bat: b.bat, bowl: b.bowl)
+            }
+            let byId = Dictionary(uniqueKeysWithValues: boosted.map { ($0.id, $0) })
+            xi = boosted
+            plan = plan.compactMap { byId[$0.id] }
+        }
         let attack = plan.count == 5 && Set(plan.map(\.id)).count == 5 && plan.allSatisfy { ids.contains($0.id) } ? plan : nil
         return MatchEngine.Side(teamId: clubId, xi: xi, attack: attack)
     }
@@ -350,7 +368,7 @@ struct Career: Codable {
         }
         var engine = MatchEngine(rng: rng)
         var log: [BallEvent] = []
-        let r = engine.play(side(f.home), side(f.away), stage: f.stage, pitch: f.pitch, log: &log)
+        let r = engine.play(side(f.home, fixture: f), side(f.away, fixture: f), stage: f.stage, pitch: f.pitch, log: &log)
         rng = engine.rng
         results.append(r)
         fixtures[fi].resultId = r.id
@@ -429,6 +447,12 @@ struct Career: Codable {
         if r.teamA == userClubId || r.teamB == userClubId {
             trainingTick()
             scoutTick()
+            facilityTick()
+            gold += tuning.goldPerMatch
+            if r.winnerId == userClubId { gainXP(r.stage == .league ? 20 : 40, reason: nil) }
+            if manager.has(.settledSide) {
+                for id in userClub.squad { if let f = players[id]?.form, f < -4 { players[id]?.form = -4 } }
+            }
         }
         let cap = tuning.formCap
         for id in played.sorted() {
@@ -495,6 +519,12 @@ struct Career: Codable {
                                     mvp: line(mvp) { "\(Int($0.mvpPoints)) pts" }))
         if let i = clubInfo.firstIndex(where: { $0.id == champ }) { clubInfo[i].titles += 1 }
         payPrizeMoney()
+        if champ == userClubId {
+            gainXP(300, reason: nil)
+            gold += tuning.goldForTitle
+        } else if results.contains(where: { $0.stage != .league && ($0.teamA == userClubId || $0.teamB == userClubId) }) {
+            gainXP(100, reason: nil)
+        }
         for id in club(champ)?.squad ?? [] { players[id]?.stats.titles += 1 }
         phase = .seasonEnd
         let name = club(champ)?.name ?? ""
@@ -553,6 +583,8 @@ struct Career: Codable {
             var gain = Int.random(in: tuning.growthRange(age: age), using: &rng)
             let main = max(p.bat, p.bowl)
             if gain > 0 { gain = min(gain, max(0, p.potential - main)) }
+            let mine = p.clubId == userClubId
+            if mine && gain < 0 && age >= 30 && manager.has(.veteranCare) { gain += 1 }
             if gain != 0 {
                 if p.role == .AR {
                     p.attr.shift(Attributes.batKeys, by: gain)
@@ -578,6 +610,10 @@ struct Career: Codable {
             if unsigned && age >= 26 && (p.rating < 50 || age >= 30) { chance = max(chance, 0.6) }
             if unsigned && age >= 22 && p.potential < 68 { chance = max(chance, 0.4) }
             if p.academyOf != nil { chance = 0 }
+            if mine {
+                chance *= 1 - 0.04 * Double(facility(.medical) - 1)
+                if manager.has(.ironBody) { chance *= 0.8 }
+            }
             if age >= 41 { chance = 1 }
             if chance > 0 && rng.unit() < chance {
                 p.retired = true
@@ -644,6 +680,17 @@ enum CareerSave {
 
     /// JSON migrations, keyed by the version they upgrade from.
     static let migrations: [Int: ([String: Any]) -> [String: Any]] = [
+        // v3 → v4: facilities, manager, gold.
+        3: { json in
+            var j = json
+            var f = FacilityState()
+            f.levels = Dictionary(uniqueKeysWithValues: FacilityKind.allCases.map { ($0.rawValue, CareerTuning.standard.aiFacilityLevel) })
+            j["facilities"] = CareerSave.jsonObject(f)
+            j["manager"] = CareerSave.jsonObject(ManagerProfile())
+            j["gold"] = CareerTuning.standard.startingGold
+            j["trainingBoostWeeks"] = 0
+            return j
+        },
         // v2 → v3: training, scouting, academy.
         2: { json in
             var j = json

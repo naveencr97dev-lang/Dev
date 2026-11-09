@@ -159,6 +159,8 @@ extension Career {
     @discardableResult
     mutating func beginOffseason() -> RolloverReport {
         guard phase == .seasonEnd else { return RolloverReport() }
+        settleSeasonAccounts()
+        facilityTick(weeks: 4)
         var report = ageAndRefreshPool()
         market = MarketState(nextOfferId: market.nextOfferId, aiWindowsDone: market.aiWindowsDone)
         payScouts()
@@ -239,6 +241,12 @@ extension Career {
     // MARK: Auction
 
     func increment(after bid: Int) -> Int { bid < 100 ? 10 : (bid < 500 ? 25 : (bid < 1000 ? 50 : 100)) }
+
+    /// Auction Shark perk: the highest rival limit on the current lot.
+    var auctionTopRivalLimit: Int? {
+        guard manager.has(.auctionShark), let a = offseason?.auction, a.currentId != nil else { return nil }
+        return clubs.indices.filter { clubs[$0].id != userClubId }.map { a.aiMax[$0] }.max()
+    }
 
     var auctionNextBid: Int? {
         guard let a = offseason?.auction, let id = a.currentId, let p = players[id] else { return nil }
@@ -451,7 +459,8 @@ extension Career {
         if used >= 3 { return .rejected("They've stopped talking to you until the next window.") }
         market.talks[playerId] = used + 1
 
-        let demand = wageDemand(p)
+        let demand = Career.round5(Double(wageDemand(p)) * (manager.has(.negotiator) ? 0.9 : 1))
+        let accept = manager.has(.starMagnet) ? 0.8 : 1.0
         var counterFee = fee
         if let cid = p.clubId, let seller = club(cid) {
             let ask = askingPrice(p)
@@ -459,7 +468,7 @@ extension Career {
             if fee < ask { counterFee = ask }
         }
         if Double(wage) < Double(demand) * 0.85 { return .rejected("\(p.name) isn't interested at that wage. He wants about \(Money.format(demand)).") }
-        if counterFee != fee || wage < demand {
+        if counterFee != fee || Double(wage) < Double(demand) * accept {
             return .counter(fee: counterFee, wage: max(wage, demand),
                             "Close! They'd do it for \(Money.format(counterFee)) with a wage of \(Money.format(max(wage, demand))).")
         }
@@ -563,7 +572,8 @@ extension Career {
                     && !market.offers.contains { $0.playerId == playerId && $0.fromClub == c.id }
             }
             guard let buyer = buyers.randomElement(using: &rng) else { continue }
-            let fee = min(bank(buyer.id), Career.round5(value * rng.range(0.8, 1.15)))
+            let deal = manager.has(.dealmaker) ? 1.1 : 1.0
+            let fee = min(bank(buyer.id), Career.round5(value * rng.range(0.8, 1.15) * deal))
             guard fee >= Career.round5(value * 0.5) else { continue }
             market.offers.append(TransferOffer(id: market.nextOfferId, playerId: playerId, fromClub: buyer.id, fee: fee))
             market.nextOfferId += 1
@@ -577,7 +587,7 @@ extension Career {
             let wage = p.contract?.wage ?? wageDemand(p)
             let buyers = clubs.filter { $0.id != userClubId && capRoom($0.id) >= wage && squad($0.id).count < tuning.maxSquad }
             guard let buyer = buyers.randomElement(using: &rng) else { continue }
-            let fee = min(bank(buyer.id), Career.round5(Double(p.value(in: year)) * rng.range(1.1, 1.5)))
+            let fee = min(bank(buyer.id), Career.round5(Double(p.value(in: year)) * rng.range(1.1, 1.5) * (manager.has(.dealmaker) ? 1.1 : 1)))
             guard fee > 0 else { continue }
             market.offers.append(TransferOffer(id: market.nextOfferId, playerId: p.id, fromClub: buyer.id, fee: fee))
             market.nextOfferId += 1

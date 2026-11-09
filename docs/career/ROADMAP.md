@@ -139,7 +139,29 @@ one owner and one AI developer.
   - The youth academy intake.
 - **Gate:** development curves hit their targets in the simulation.
 
-### M4: Club and manager (2 sprints)
+### M4: Club and manager (2 sprints) ✅ built (generic first pass)
+- **Built:**
+  - **7 facilities**, levels 1–10, starting at 2. One build at a time, measured in your matches
+    (4 weeks pass each off-season). Cost is 40 L × level², upkeep 5 L × level² per facility.
+  - **Facility effects:** Stadium = gate money. Training Ground = speed plus slots at levels 3/6/9.
+    Academy = more gems. Medical = longer careers and less form lost. Scouting Network = scouts at
+    levels 4/7/10 and more knowledge per report. Analytics = rating lift in matches.
+    Commercial = sponsor money.
+  - **Full season accounts:** wages are charged, plus upkeep, gate, sponsors, central revenue
+    (₹95 Cr) and prize money. A debt warning appears if the bank goes negative.
+  - **Manager:** XP (wins, playoffs, titles, profit, builds), levels to 100, 1 point plus gold per
+    level. 24 perks in 3 trees with tier gates, all wired into the engine.
+  - **Gold:** earned from matches, levels and titles. Spent on finishing builds, a training boost,
+    an instant scout report, or fresh legs.
+  - **Store:** test mode, with every pack free and the **Tester Pack (1,000,000 gold) unlimited**,
+    behind `StoreConfig.testerStore`.
+  - Save schema 4, with a tested v3 migration.
+- **Known gaps:**
+  - AI clubs don't spend their banks: low-payroll clubs pile up cash (up to about ₹700 Cr over 20
+    seasons).
+  - AI facilities are fixed at level 2.
+
+### M4 plan (original)
 - **Must:**
   - The 7 facilities with builds and maintenance.
   - Full finances and owner budget.

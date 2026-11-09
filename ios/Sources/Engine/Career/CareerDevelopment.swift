@@ -121,10 +121,10 @@ extension Career {
     /// Default plan for AI clubs.
     static let aiPlan = TrainingPlan()
 
-    var trainingSlots: Int { tuning.trainingSlots + facilityTrainingSlots }
+    var trainingSlots: Int { tuning.trainingSlots + facilityTrainingSlots + (manager.has(.extraSession) ? 1 : 0) }
 
-    /// Extra slots from facilities (M4 adds the Training Ground).
-    var facilityTrainingSlots: Int { 0 }
+    /// +1 slot at Training Ground levels 3, 6 and 9.
+    var facilityTrainingSlots: Int { facility(.trainingGround) / 3 }
 
     mutating func setTraining(_ plan: TrainingPlan) {
         var p = plan
@@ -136,29 +136,45 @@ extension Career {
     mutating func trainingTick() {
         for club in clubs {
             let plan = club.id == userClubId ? training : Career.aiPlan
-            for id in club.squad.sorted() { train(id, plan: plan) }
+            for id in club.squad.sorted() { train(id, plan: plan, user: club.id == userClubId) }
         }
-        for id in academy.sorted() { train(id, plan: training, youthBoost: tuning.academyBoost) }
+        for id in academy.sorted() { train(id, plan: training, user: true, youthBoost: tuning.academyBoost) }
+        if trainingBoostWeeks > 0 { trainingBoostWeeks -= 1 }
     }
 
-    private mutating func train(_ id: String, plan: TrainingPlan, youthBoost: Double = 1) {
+    private mutating func train(_ id: String, plan: TrainingPlan, user: Bool, youthBoost: Double = 1) {
         guard var p = players[id] else { return }
         let age = p.age(in: year)
         let ageFactor = age <= 21 ? 1.6 : (age <= 25 ? 1.2 : (age <= 29 ? 0.8 : 0.4))
-        let base = tuning.drillChance * plan.intensity.multiplier * ageFactor * youthBoost
-        let bowler = p.bowl >= 40
-        var keys: [WritableKeyPath<Attributes, Int>] = []
-        for d in plan.drills where !d.isBowling || bowler {
-            keys += d.keys.filter { $0 != \Attributes.keeping || p.role == .WK }
+        var base = tuning.drillChance * plan.intensity.multiplier * ageFactor * youthBoost
+        var bowlingBonus = 1.0, focusBonus = 1.0, hardPenalty = 0.12
+        if user {
+            base *= 1 + 0.06 * Double(facility(.trainingGround) - 1)
+            if manager.has(.drillMaster) { base *= 1.1 }
+            if manager.has(.youthMentor) && age < 22 { base *= 1.15 }
+            if trainingBoostWeeks > 0 { base *= 1.5 }
+            if manager.has(.netProgram) { bowlingBonus = 1.1 }
+            if manager.has(.specialistCoach) { focusBonus = 1.2 }
+            hardPenalty *= 1 - 0.06 * Double(facility(.medical) - 1)
+            if manager.has(.fitnessGuru) { hardPenalty *= 0.5 }
+        } else {
+            base *= 1 + 0.06 * Double(tuning.aiFacilityLevel - 1)
         }
-        for k in keys where rng.unit() < base { bump(&p, k) }
-        if let name = plan.focus[id], let k = Attributes.key(named: name), rng.unit() < base * tuning.focusMultiplier {
+        let bowler = p.bowl >= 40
+        for d in plan.drills where !d.isBowling || bowler {
+            let chance = base * (d.isBowling ? bowlingBonus : 1)
+            for k in d.keys where k != \Attributes.keeping || p.role == .WK {
+                if rng.unit() < chance { bump(&p, k) }
+            }
+        }
+        if let name = plan.focus[id], let k = Attributes.key(named: name),
+           rng.unit() < base * tuning.focusMultiplier * focusBonus {
             bump(&p, k)
         }
         // Intensity: hard work tires players, light sessions freshen them up.
         if plan.drills.contains(.fitness) || plan.intensity == .light {
             if rng.unit() < 0.15 { p.form = min(tuning.formCap, p.form + 1) }
-        } else if plan.intensity == .hard, rng.unit() < 0.12 {
+        } else if plan.intensity == .hard, rng.unit() < hardPenalty {
             p.form = max(-tuning.formCap, p.form - 1)
         }
         players[id] = p
@@ -200,10 +216,10 @@ extension Career {
         return r.lowerBound == r.upperBound ? "\(r.lowerBound)" : "\(r.lowerBound)–\(r.upperBound)"
     }
 
-    var scoutCap: Int { tuning.scoutCap + facilityScoutSlots }
+    var scoutCap: Int { tuning.scoutCap + facilityScoutSlots + (manager.has(.globalNetwork) ? 1 : 0) }
 
-    /// Extra scouts from facilities (M4 adds the Scouting Network).
-    var facilityScoutSlots: Int { 0 }
+    /// +1 scout at Scouting Network levels 4, 7 and 10.
+    var facilityScoutSlots: Int { (facility(.scoutingNetwork) - 1) / 3 }
 
     /// New scouts available to hire (refreshed each off-season).
     mutating func refreshScoutCandidates() {
@@ -257,7 +273,7 @@ extension Career {
             for _ in 0..<(1 + s.stars / 2) {
                 guard let p = pool.randomElement(using: &rng) else { break }
                 let before = scouting.knowledge[p.id] ?? 0
-                let after = min(100, before + 15 + s.stars * 10)
+                let after = min(100, before + 15 + s.stars * 10 + 2 * (facility(.scoutingNetwork) - 1))
                 scouting.knowledge[p.id] = after
                 if after >= 60 && before < 60 {
                     scouting.reports.insert(ScoutReport(id: scouting.nextId, playerId: p.id, scoutName: s.name,
@@ -297,6 +313,7 @@ extension Career {
                                    potential: kids[i].potential, legend: false, generated: true, line: "Academy graduate",
                                    clubId: nil)
             kids[i].academyOf = userClubId
+            if manager.has(.youthFaith) { kids[i].potential = min(99, kids[i].potential + 3) }
             players[kids[i].id] = kids[i]
             academy.append(kids[i].id)
         }
@@ -306,8 +323,7 @@ extension Career {
     /// Academy players are local talent.
     static let clubNations = ["IND"]
 
-    /// Academy level (M4 adds the Youth Academy facility).
-    var academyLevel: Int { 1 }
+    var academyLevel: Int { facility(.youthAcademy) }
 
     /// Moves an academy player into the squad on a minimum contract.
     @discardableResult

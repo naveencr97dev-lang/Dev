@@ -212,7 +212,8 @@ struct ClubHeaderCard: View {
                             .background(RoundedRectangle(cornerRadius: 5).fill(won ? Palette.accent : Palette.wicket))
                     }
                     Spacer()
-                    Text("\(c.leaguePlayed)/\(c.leagueFixtures.count) played").font(.caption2).foregroundStyle(Palette.muted)
+                    Text("🪙 \(c.gold) · Lv \(c.manager.level) · \(c.leaguePlayed)/\(c.leagueFixtures.count) played")
+                        .font(.caption2).foregroundStyle(Palette.muted)
                 }
             }
         }
@@ -599,6 +600,20 @@ struct CareerClubTab: View {
                             .font(.caption).foregroundStyle(Palette.muted)
                     }
                 }
+
+                ManagerCard(career: c)
+                HStack(spacing: DS.Space.sm) {
+                    NavigationLink { FacilitiesView() } label: {
+                        SquadAction(icon: "building.2", text: "Facilities")
+                    }
+                    NavigationLink { ManagerView() } label: {
+                        SquadAction(icon: "star.circle", text: "Traits \(c.manager.points)")
+                    }
+                    NavigationLink { StoreView() } label: {
+                        SquadAction(icon: "bag", text: "Store")
+                    }
+                }
+                .buttonStyle(.plain)
 
                 FinanceCard(career: c)
 

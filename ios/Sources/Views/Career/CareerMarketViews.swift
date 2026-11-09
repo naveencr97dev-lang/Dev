@@ -208,6 +208,10 @@ struct CareerAuctionView: View {
                     if !p.traits.isEmpty { TraitChips(traits: p.traits, inline: true) }
                     Text("Value \(Money.format(p.value(in: c.year))) · base \(Money.format(p.basePrice(in: c.year)))")
                         .font(.caption).foregroundStyle(Palette.muted)
+                    if let limit = c.auctionTopRivalLimit {
+                        Text("🦈 Top rival limit: \(limit > 0 ? Money.format(limit) : "nobody interested")")
+                            .font(.caption.weight(.bold)).foregroundStyle(Palette.accent)
+                    }
                 }
             }
             AppCard(tint: leader.map { Color(hex: $0.colorHex) }) {

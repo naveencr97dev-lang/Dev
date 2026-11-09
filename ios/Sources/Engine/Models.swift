@@ -51,6 +51,14 @@ struct Player: Codable, Identifiable, Hashable {
     /// A tail-ender sent into the top six is badly exposed.
     func isExposed(atPosition i: Int) -> Bool { bat < 40 && i < 6 }
 
+    /// A copy with batting and bowling nudged (perks, analytics).
+    func adjusted(bat db: Int, bowl dw: Int) -> Player {
+        guard db != 0 || dw != 0 else { return self }
+        return Player(id: id, name: name, role: role, overseas: overseas, country: country, base: base, pool: pool,
+                      rating: rating, bat: max(1, min(99, bat + db)), bowl: bowl >= 25 ? max(1, min(99, bowl + dw)) : bowl,
+                      line: line, bowlType: bowlType, traits: traits, slot: slot, legend: legend)
+    }
+
     /// Can be trusted with 4 overs.
     var isBowlingOption: Bool { bowl >= 40 }
     var isTopOrderBat: Bool { bat >= 55 }

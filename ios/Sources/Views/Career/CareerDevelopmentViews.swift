@@ -27,6 +27,17 @@ struct TrainingView: View {
                     ForEach(Intensity.allCases, id: \.self) { i in Text(i.label).tag(i) }
                 }
                 .pickerStyle(.segmented)
+                if let car = c {
+                    if car.trainingBoostWeeks > 0 {
+                        Text("⚡️ Training boost active: \(car.trainingBoostWeeks) weeks left").font(.caption.weight(.bold))
+                            .foregroundStyle(Palette.accent)
+                    } else {
+                        Button("⚡️ Training boost +50% for 4 weeks (\(car.goldCost(.trainingBoost)) gold)") {
+                            _ = store.careerSpendGold(.trainingBoost)
+                        }
+                        .font(.subheadline)
+                    }
+                }
             } header: {
                 Text("Weekly drills · \(c?.trainingSlots ?? 3) slots")
             } footer: {

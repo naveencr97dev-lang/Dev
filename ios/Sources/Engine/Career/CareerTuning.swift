@@ -54,7 +54,7 @@ struct CareerTuning: Codable, Hashable {
     var startingBank = 2_500
     var minWage = 20
     /// Paid to every club after each season, plus prize money by finish.
-    var seasonRevenue = 1_200
+    var seasonRevenue = 9_500
     var prizeMoney = [2_000, 1_300, 700, 650]   // champion, runner-up, lost Q2, lost Eliminator
     /// Mega auction every N seasons (up to `maxRetentions` kept); mini auctions in between.
     var megaAuctionEvery = 3
@@ -78,6 +78,19 @@ struct CareerTuning: Codable, Hashable {
     var unknownPotentialWidth = 20
     var scoutCap = 2
     var scoutWage = 25
+
+    // Club and manager (M4)
+    var facilityBaseCost = 40
+    var facilityUpkeep = 5
+    var gatePerLevel = 15
+    var commercialPerLevel = 150
+    /// Facility level assumed for AI clubs, and the user's starting level.
+    var aiFacilityLevel = 2
+    var startingGold = 100
+    var goldPerLevel = 20
+    var goldPerBuildWeek = 40
+    var goldPerMatch = 2
+    var goldForTitle = 200
 
     // Form
     var formDecay = 1

@@ -278,6 +278,7 @@ struct CareerPlayerView: View {
                     careerStats(p.stats)
                     SectionLabel(text: "Transfer")
                     TransferActions(playerId: playerId)
+                    GoldActions(playerId: playerId)
                 }
                 .padding(DS.Space.lg)
             }

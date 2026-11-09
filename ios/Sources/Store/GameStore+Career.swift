@@ -176,6 +176,28 @@ extension GameStore {
 
     func careerReleaseAcademy(_ id: String) { mutateCareer { $0.releaseFromAcademy(id) } }
 
+    // MARK: Club, manager, gold
+
+    func careerUpgrade(_ k: FacilityKind) -> String? {
+        var err: String?
+        mutateCareer { err = $0.upgrade(k) }
+        return err
+    }
+
+    func careerLearn(_ p: Perk) -> String? {
+        var err: String?
+        mutateCareer { err = $0.learn(p) }
+        return err
+    }
+
+    func careerSpendGold(_ item: GoldItem, playerId: String? = nil) -> String? {
+        var err: String?
+        mutateCareer { err = $0.spendGold(item, playerId: playerId) }
+        return err
+    }
+
+    func careerBuy(_ pack: StorePack) { mutateCareer { $0.buy(pack) } }
+
     /// Picks the best XI and order for the user's club.
     func careerAutoXI() {
         mutateCareer { c in c.autoPickXI(clubIndex: c.userClubIndex) }

@@ -27,7 +27,7 @@ final class CareerTests: XCTestCase {
             XCTAssertTrue(squad.allSatisfy { $0.clubId == club.id && !$0.retired }, file: file, line: line)
             XCTAssertTrue(c.xiIssues(club.id).isEmpty, "\(club.short) XI: \(c.xiIssues(club.id))", file: file, line: line)
             // Minimum-wage signings needed to reach 18 players are exempt from the cap.
-            XCTAssertLessThanOrEqual(c.payroll(club.id), c.tuning.salaryCap + 4 * c.tuning.minWage, "\(club.short) over the cap", file: file, line: line)
+            XCTAssertLessThanOrEqual(c.payroll(club.id), c.tuning.salaryCap + 8 * c.tuning.minWage, "\(club.short) over the cap", file: file, line: line)
             XCTAssertTrue(squad.allSatisfy { $0.contract != nil }, "\(club.short) uncontracted player", file: file, line: line)
             for id in club.squad {
                 XCTAssertFalse(seen.contains(id), "\(id) in two squads", file: file, line: line)
