@@ -9,6 +9,8 @@ struct CareerHubView: View {
     @State private var confirmSimSeason = false
     @State private var showRetention = false
     @State private var showAuction = false
+    @State private var tab: HubTab = .home
+    @State private var leagueSection = 0
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -17,19 +19,45 @@ struct CareerHubView: View {
                 ScrollView {
                     if let c = store.career {
                         VStack(alignment: .leading, spacing: DS.Space.md) {
-                            CareerTopBar(career: c)
-                            CareerHomeTab(path: $path, note: $note)
-                            CareerDashboard(career: c, path: $path)
+                            switch tab {
+                            case .home:
+                                CareerTopBar(career: c)
+                                CareerHomeTab(path: $path, note: $note)
+                            case .squad:
+                                CareerSquadTab()
+                            case .transfers:
+                                CareerMarketTab()
+                            case .league:
+                                Picker("League", selection: $leagueSection) {
+                                    Text("Fixtures").tag(0)
+                                    Text("Table").tag(1)
+                                    Text("Stats").tag(2)
+                                    Text("World").tag(3)
+                                }
+                                .pickerStyle(.segmented)
+                                switch leagueSection {
+                                case 0: CareerFixturesTab(path: $path)
+                                case 1: CareerTableTab(path: $path)
+                                case 2: StatsBoards()
+                                default: CareerWorldTab(path: $path)
+                                }
+                            case .club:
+                                ClubOfficeTiles(career: c)
+                                CareerClubTab(path: $path)
+                            }
                         }
                         .padding(.horizontal, DS.Space.md)
                         .padding(.top, DS.Space.sm)
-                        .padding(.bottom, 96)
+                        .padding(.bottom, 170)
                         .frame(maxWidth: 900)
                         .frame(maxWidth: .infinity)
                     }
                 }
                 if let c = store.career {
-                    ContinueBar(career: c) { perform(c.nextAction) }
+                    VStack(spacing: 4) {
+                        ContinueBar(career: c) { perform(c.nextAction) }
+                        HubTabBar(tab: $tab, career: c)
+                    }
                 }
             }
             .navigationTitle("Career")
@@ -119,77 +147,67 @@ struct ContinueBar: View {
     }
 }
 
-/// Tiles to every part of the club.
-struct CareerDashboard: View {
+/// Bottom tabs of the career hub.
+enum HubTab: Int, CaseIterable {
+    case home, squad, transfers, league, club
+
+    var label: String { ["Home", "Squad", "Transfers", "League", "Club"][rawValue] }
+    var icon: String { ["house.fill", "person.3.fill", "arrow.left.arrow.right", "trophy.fill", "building.columns.fill"][rawValue] }
+}
+
+/// Game-style tab bar pinned under CONTINUE.
+struct HubTabBar: View {
+    @Binding var tab: HubTab
     let career: Career
-    @Binding var path: [Route]
 
     var body: some View {
-        let c = career
-        let columns = [GridItem(.adaptive(minimum: 150), spacing: 10)]
-        let pos = Career.ordinal(c.position(of: c.userClubId))
-        VStack(alignment: .leading, spacing: DS.Space.sm) {
-            SectionLabel(text: "Club")
-            LazyVGrid(columns: columns, spacing: 10) {
-                NavigationLink { CareerScreen(title: "Squad") { CareerSquadTab() } } label: {
-                    DashTile(icon: "person.3.fill", title: "Squad", subtitle: "\(c.userClub.squad.count) players · XI & order",
-                             badge: c.xiIssues(c.userClubId).isEmpty ? nil : "!")
+        HStack(spacing: 0) {
+            ForEach(HubTab.allCases, id: \.self) { t in
+                Button {
+                    tab = t
+                    Haptics.tap()
+                } label: {
+                    VStack(spacing: 3) {
+                        ZStack(alignment: .topTrailing) {
+                            Image(systemName: t.icon).font(.system(size: 18 * TextScale.factor, weight: .black))
+                            if let b = badge(t) {
+                                Text(b).font(.system(size: 9, weight: .black)).foregroundStyle(.white)
+                                    .padding(.horizontal, 4).padding(.vertical, 1)
+                                    .background(Capsule().fill(Color(hex: "#E5322D")))
+                                    .offset(x: 10, y: -6)
+                            }
+                        }
+                        Text(t.label.uppercased()).font(.display(10, weight: .heavy)).lineLimit(1).minimumScaleFactor(0.7)
+                    }
+                    .foregroundStyle(tab == t ? CareerPalette.gold : Color.white.opacity(0.7))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 7)
+                    .background(
+                        RoundedRectangle(cornerRadius: 9, style: .continuous)
+                            .fill(tab == t ? Color.white.opacity(0.12) : .clear)
+                            .padding(.horizontal, 3)
+                    )
+                    .contentShape(Rectangle())
                 }
-                NavigationLink { TacticsView() } label: {
-                    DashTile(icon: "slider.horizontal.3", title: "Tactics", subtitle: "Field & batting intent")
-                }
-                NavigationLink { TrainingView() } label: {
-                    DashTile(icon: "dumbbell.fill", title: "Training", subtitle: "\(c.trainingSlots) drill slots · \(c.training.intensity.label)")
-                }
-                NavigationLink { CareerScreen(title: "Transfers") { CareerMarketTab() } } label: {
-                    DashTile(icon: "arrow.left.arrow.right", title: "Transfers", subtitle: c.windowOpen ? "Window open" : "Window closed",
-                             badge: c.market.offers.isEmpty ? nil : "\(c.market.offers.count)")
-                }
-                NavigationLink { ScoutingView() } label: {
-                    DashTile(icon: "binoculars.fill", title: "Scouting", subtitle: "\(c.scouting.scouts.count) scouts · \(c.scouting.reports.count) reports")
-                }
-                NavigationLink { AcademyView() } label: {
-                    DashTile(icon: "graduationcap.fill", title: "Academy", subtitle: "\(c.academy.count) prospects")
-                }
-            }
-            SectionLabel(text: "Competition")
-            LazyVGrid(columns: columns, spacing: 10) {
-                NavigationLink { CareerScreen(title: "Fixtures") { CareerFixturesTab(path: $path) } } label: {
-                    DashTile(icon: "calendar", title: "Fixtures", subtitle: "\(c.leaguePlayed)/\(c.leagueFixtures.count) league games played")
-                }
-                NavigationLink { CareerScreen(title: "League") { CareerTableTab(path: $path) } } label: {
-                    DashTile(icon: "list.number", title: "League", subtitle: "You're \(pos) · table & caps")
-                }
-                NavigationLink { StatsCentreView() } label: {
-                    DashTile(icon: "chart.bar.fill", title: "Stats", subtitle: "Season & all-time leaders")
-                }
-                NavigationLink { CareerScreen(title: "World") { CareerWorldTab(path: $path) } } label: {
-                    DashTile(icon: "globe", title: "International", subtitle: c.intl.job.map { "Coach of \($0)" } ?? "\(c.intl.offers.count) job offer\(c.intl.offers.count == 1 ? "" : "s")",
-                             badge: c.intl.job == nil && !c.intl.offers.isEmpty ? "\(c.intl.offers.count)" : nil)
-                }
-            }
-            SectionLabel(text: "Office")
-            LazyVGrid(columns: columns, spacing: 10) {
-                NavigationLink { CareerScreen(title: "Club") { CareerClubTab(path: $path) } } label: {
-                    DashTile(icon: "building.columns.fill", title: "Club & finances", subtitle: "Bank \(Money.format(c.bank(c.userClubId)))")
-                }
-                NavigationLink { FacilitiesView() } label: {
-                    DashTile(icon: "building.2.fill", title: "Facilities",
-                             subtitle: c.facilities.building.flatMap { FacilityKind(rawValue: $0)?.label }.map { "Building \($0)" } ?? "7 facilities")
-                }
-                NavigationLink { ManagerView() } label: {
-                    DashTile(icon: "star.circle.fill", title: "Manager", subtitle: "Level \(c.manager.level) · traits",
-                             badge: c.manager.points > 0 ? "\(c.manager.points)" : nil)
-                }
-                NavigationLink { StoreView() } label: {
-                    DashTile(icon: "bag.fill", title: "Store", subtitle: "🪙 \(c.gold) gold")
-                }
-                NavigationLink { CareerSettingsView() } label: {
-                    DashTile(icon: "gearshape.fill", title: "Settings", subtitle: "\(c.settings.difficulty.label) · market \(c.settings.marketAlwaysOpen ? "open" : "windows")")
-                }
+                .buttonStyle(.plain)
             }
         }
-        .buttonStyle(.plain)
+        .padding(4)
+        .gameFrame(radius: 14, face: [Color(hex: "#1D3F80"), Color(hex: "#0E2250")], lip: 3)
+        .padding(.horizontal, DS.Space.md)
+        .padding(.bottom, 2)
+        .frame(maxWidth: 640)
+    }
+
+    private func badge(_ t: HubTab) -> String? {
+        let c = career
+        switch t {
+        case .squad: return c.xiIssues(c.userClubId).isEmpty ? nil : "!"
+        case .transfers: return c.market.offers.isEmpty ? nil : "\(c.market.offers.count)"
+        case .club: return c.manager.points > 0 ? "\(c.manager.points)" : nil
+        case .league: return c.intl.job == nil && !c.intl.offers.isEmpty ? "\(c.intl.offers.count)" : nil
+        case .home: return nil
+        }
     }
 }
 
@@ -215,7 +233,47 @@ enum CareerText {
     }
 }
 
-// MARK: - Home
+/// Club tab: the office tiles.
+struct ClubOfficeTiles: View {
+    let career: Career
+
+    var body: some View {
+        let c = career
+        let columns = [GridItem(.adaptive(minimum: 150), spacing: 10)]
+        LazyVGrid(columns: columns, spacing: 10) {
+            NavigationLink { FacilitiesView() } label: {
+                DashTile(icon: "building.2.fill", title: "Facilities",
+                         subtitle: c.facilities.building.flatMap { FacilityKind(rawValue: $0)?.label }.map { "Building \($0)" } ?? "7 facilities")
+            }
+            NavigationLink { ManagerView() } label: {
+                DashTile(icon: "star.circle.fill", title: "Manager", subtitle: "Level \(c.manager.level) · traits",
+                         badge: c.manager.points > 0 ? "\(c.manager.points)" : nil)
+            }
+            NavigationLink { StoreView() } label: {
+                DashTile(icon: "bag.fill", title: "Store", subtitle: "🪙 \(c.gold) gold")
+            }
+            NavigationLink { NewsScreen() } label: {
+                DashTile(icon: "newspaper.fill", title: "News", subtitle: "\(c.news.count) items")
+            }
+            NavigationLink { CareerSettingsView() } label: {
+                DashTile(icon: "gearshape.fill", title: "Settings",
+                         subtitle: "\(c.settings.difficulty.label) · market \(c.settings.marketAlwaysOpen ? "open" : "windows")")
+            }
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+/// All news.
+struct NewsScreen: View {
+    @EnvironmentObject var store: GameStore
+
+    var body: some View {
+        CareerScreen(title: "News") {
+            NewsFeed(news: store.career?.news ?? [])
+        }
+    }
+}
 
 struct CareerHomeTab: View {
     @EnvironmentObject var store: GameStore
@@ -280,7 +338,12 @@ struct CareerHomeTab: View {
                     }
                 }
 
-                NewsFeed(news: Array(c.news.prefix(12)))
+                NewsFeed(news: Array(c.news.prefix(3)))
+                if c.news.count > 3 {
+                    NavigationLink { NewsScreen() } label: {
+                        Text("All news (\(c.news.count)) ›").font(.subheadline.weight(.bold)).foregroundStyle(CareerPalette.gold)
+                    }
+                }
             }
         }
     }
@@ -295,14 +358,6 @@ struct ClubHeaderCard: View {
         let row = c.table.first { $0.teamId == c.userClubId }
         AppCard(tint: Color(hex: club.colorHex)) {
             VStack(alignment: .leading, spacing: DS.Space.sm) {
-                HStack(spacing: 12) {
-                    TeamBadge(team: club, size: 52)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(club.name.uppercased()).font(.display(24))
-                        Text("Manager \(c.managerName) · Season \(c.year)").font(.caption).foregroundStyle(Palette.muted)
-                    }
-                    Spacer(minLength: 0)
-                }
                 HStack(spacing: 0) {
                     stat(Career.ordinal(c.position(of: c.userClubId)), "POSITION")
                     stat("\(row?.points ?? 0)", "POINTS")

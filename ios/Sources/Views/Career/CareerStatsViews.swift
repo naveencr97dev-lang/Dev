@@ -109,6 +109,13 @@ struct StatGrid: View {
 
 /// Leaderboards for this season and all-time.
 struct StatsCentreView: View {
+    var body: some View {
+        CareerScreen(title: "Stats") { StatsBoards() }
+    }
+}
+
+/// Season / all-time leaderboards (League tab and the Stats screen).
+struct StatsBoards: View {
     @EnvironmentObject var store: GameStore
     @State private var scope: StatScope = .season
 
@@ -118,7 +125,7 @@ struct StatsCentreView: View {
     ]
 
     var body: some View {
-        CareerScreen(title: "Stats") {
+        Group {
             if let c = store.career {
                 let season = c.seasonStatLines
                 VStack(alignment: .leading, spacing: DS.Space.lg) {

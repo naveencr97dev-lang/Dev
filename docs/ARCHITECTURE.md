@@ -60,7 +60,7 @@ Auction XI
 
 | Branch | Screen file |
 |---|---|
-| Hub and Flow | CareerHubView |
+| Hub and Flow (bottom tabs: Home, Squad, Transfers, League, Club, plus CONTINUE) | CareerHubView |
 | Squad | CareerSquadViews and CareerTacticsView |
 | Market | CareerMarketViews |
 | Development | CareerDevelopmentViews |
