@@ -375,20 +375,14 @@ struct Career: Codable {
 
     /// Plays one fixture. Returns the result and the ball log (for the live view).
     @discardableResult
-    mutating func play(fixtureId: Int) -> (MatchResult, [BallEvent])? {
-        if fixtureId >= Career.intlIdBase { return playIntl(fixtureId) }
+    mutating func play(fixtureId: Int, changes: [LiveChange] = []) -> (MatchResult, [BallEvent])? {
+        if fixtureId >= Career.intlIdBase { return playIntl(fixtureId, changes: changes) }
         guard phase == .season, pendingWindow == nil,
               let fi = fixtures.firstIndex(where: { $0.id == fixtureId }), !fixtures[fi].played else { return nil }
         let f = fixtures[fi]
-        for tid in [f.home, f.away] {
-            if let ci = clubs.firstIndex(where: { $0.id == tid }), clubs[ci].isCPU || !xiIssues(tid).isEmpty {
-                autoPickXI(clubIndex: ci)
-            }
-        }
-        var engine = MatchEngine(rng: rng)
-        var log: [BallEvent] = []
-        let r = engine.play(side(f.home, fixture: f), side(f.away, fixture: f), stage: f.stage, pitch: f.pitch, log: &log)
-        rng = engine.rng
+        prepareSides(f)
+        let (r, log, after) = simulate(f, changes: changes)
+        rng = after
         results.append(r)
         fixtures[fi].resultId = r.id
         record(r)
@@ -411,6 +405,50 @@ struct Career: Codable {
             }
         }
         return (r, log)
+    }
+
+    /// AI clubs (and an invalid user XI) pick their XI before a match.
+    mutating func prepareSides(_ f: Fixture) {
+        for tid in [f.home, f.away] {
+            if let ci = clubs.firstIndex(where: { $0.id == tid }), clubs[ci].isCPU || !xiIssues(tid).isEmpty {
+                autoPickXI(clubIndex: ci)
+            }
+        }
+    }
+
+    /// Runs the match engine for a club fixture without recording anything.
+    func simulate(_ f: Fixture, changes: [LiveChange]) -> (MatchResult, [BallEvent], SeededRNG) {
+        var engine = MatchEngine(rng: rng)
+        engine.liveChanges = changes
+        var log: [BallEvent] = []
+        let r = engine.play(side(f.home, fixture: f), side(f.away, fixture: f), stage: f.stage, pitch: f.pitch, log: &log)
+        return (r, log, engine.rng)
+    }
+
+    /// The match as it would play with these live changes, without recording it (the live view
+    /// shows this, then `play(fixtureId:changes:)` commits the identical match at the end).
+    func previewMatch(fixtureId: Int, changes: [LiveChange]) -> (MatchResult, [BallEvent])? {
+        if fixtureId >= Career.intlIdBase {
+            guard let f = intl.fixtures.first(where: { $0.id == fixtureId }), !f.played else { return nil }
+            let (r, log, _) = simulateIntl(f, changes: changes)
+            return (r, log)
+        }
+        guard phase == .season, pendingWindow == nil,
+              let f = fixtures.first(where: { $0.id == fixtureId }), !f.played else { return nil }
+        var copy = self
+        copy.prepareSides(f)
+        let (r, log, _) = copy.simulate(f, changes: changes)
+        return (r, log)
+    }
+
+    /// The user's team in a fixture (club or national side), if they're playing.
+    func userTeam(in fixtureId: Int) -> Int? {
+        if fixtureId >= Career.intlIdBase {
+            guard let f = intl.fixtures.first(where: { $0.id == fixtureId }), isUserNationFixture(f), let job = intl.job else { return nil }
+            return nationTeamId(job)
+        }
+        guard let f = fixtures.first(where: { $0.id == fixtureId }), isUserFixture(f) else { return nil }
+        return userClubId
     }
 
     /// Simulates every fixture before the user's next match. Returns how many were played.

@@ -248,6 +248,14 @@ extension Career {
         }
     }
 
+    func simulateIntl(_ f: Fixture, changes: [LiveChange]) -> (MatchResult, [BallEvent], SeededRNG) {
+        var engine = MatchEngine(rng: rng)
+        engine.liveChanges = changes
+        var log: [BallEvent] = []
+        let r = engine.play(intlSide(f.home), intlSide(f.away), stage: f.stage, pitch: f.pitch, log: &log)
+        return (r, log, engine.rng)
+    }
+
     func intlSide(_ teamId: Int) -> MatchEngine.Side {
         let code = nationCode(teamId: teamId) ?? "IND"
         let xi = nationXI(code).compactMap { enginePlayer($0) }
@@ -256,13 +264,11 @@ extension Career {
 
     /// Plays one international. Returns the result and ball log.
     @discardableResult
-    mutating func playIntl(_ fixtureId: Int) -> (MatchResult, [BallEvent])? {
+    mutating func playIntl(_ fixtureId: Int, changes: [LiveChange] = []) -> (MatchResult, [BallEvent])? {
         guard let fi = intl.fixtures.firstIndex(where: { $0.id == fixtureId }), !intl.fixtures[fi].played else { return nil }
         let f = intl.fixtures[fi]
-        var engine = MatchEngine(rng: rng)
-        var log: [BallEvent] = []
-        let r = engine.play(intlSide(f.home), intlSide(f.away), stage: f.stage, pitch: f.pitch, log: &log)
-        rng = engine.rng
+        let (r, log, after) = simulateIntl(f, changes: changes)
+        rng = after
         intl.results.append(r)
         intl.fixtures[fi].resultId = r.id
         for inn in r.innings.prefix(2) { for b in inn.batters { intl.caps[b.id, default: 0] += 1 } }

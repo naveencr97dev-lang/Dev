@@ -160,6 +160,31 @@ struct BallEvent: Hashable {
     /// The two batters at the crease after this ball, and the bowler's figures.
     let batters: [LiveBatter]
     let bowler: LiveBowler
+    // Who did what (for the scorecard-so-far while paused).
+    var strikerId = ""
+    var nonStrikerId = ""
+    var bowlerId = ""
+    var runsOffBat = 0
+    var outId: String? = nil
+    var how: String? = nil
+}
+
+/// A change made during a live match (career): applies from innings `innings`, legal ball
+/// `fromBall` onwards, to team `teamId` (its batting or its bowling, whichever applies).
+/// Re-simulating with the same seed reproduces every earlier ball exactly.
+struct LiveChange: Codable, Hashable {
+    let innings: Int
+    let fromBall: Int
+    let teamId: Int
+    var tactics: Tactics? = nil
+    /// Full batting order (ids); only batters not yet in are moved.
+    var battingOrder: [String]? = nil
+    /// Five bowlers in plan order (slots 1-2 new ball and death).
+    var bowlingPlan: [String]? = nil
+    /// Who bowls the next over (once).
+    var nextOverBowler: String? = nil
+
+    func applies(innings i: Int, ball: Int) -> Bool { i > innings || (i == innings && ball >= fromBall) }
 }
 
 // MARK: - Tactics
@@ -225,6 +250,8 @@ struct MatchEngine {
     /// Tactics of the sides in the current innings.
     var battingTactics: Tactics? = nil
     var bowlingTactics: Tactics? = nil
+    /// Changes made during a live match, in time order (empty = the normal simulation).
+    var liveChanges: [LiveChange] = []
 
     /// Playoff match: Big-Match players lift.
     var bigGame = false
@@ -367,6 +394,60 @@ struct MatchEngine {
             attack = Array(bowling.xi.sorted { MatchEngine.effectiveBowl($0, pitch: pitch) > MatchEngine.effectiveBowl($1, pitch: pitch) }.prefix(1))
         }
         card.bowlers = attack.map { BowlerCard(id: $0.id, name: $0.name) }
+        // Live changes can reorder the batting still to come and the bowling plan.
+        var order = batting.xi
+        var attackList = attack
+        var applied = Set<Int>()
+        var usedNextOver = Set<Int>()
+        var lastOverBowler: String? = nil
+        /// Deliveries bowled so far this innings (before the first, even the openers can change).
+        var delivered = 0
+        let liveOK = maxOvers == 20 && !liveChanges.isEmpty
+        func applyChanges() {
+            guard liveOK else { return }
+            for (k, ch) in liveChanges.enumerated() where !applied.contains(k) && ch.applies(innings: index, ball: card.balls) {
+                applied.insert(k)
+                if let t = ch.tactics {
+                    if ch.teamId == batting.teamId { battingTactics = t }
+                    if ch.teamId == bowling.teamId { bowlingTactics = t }
+                }
+                if ch.teamId == batting.teamId, let ids = ch.battingOrder {
+                    let keep = delivered == 0 ? 0 : nextIn
+                    let fixed = Array(order.prefix(keep))
+                    let rest = order.dropFirst(keep).sorted { (ids.firstIndex(of: $0.id) ?? 99) < (ids.firstIndex(of: $1.id) ?? 99) }
+                    order = fixed + rest
+                    let byId = Dictionary(uniqueKeysWithValues: card.batters.map { ($0.id, $0) })
+                    card.batters = order.compactMap { byId[$0.id] }
+                    if keep == 0 {
+                        for i in card.batters.indices { card.batters[i].batted = i < 2 }
+                    }
+                }
+                if ch.teamId == bowling.teamId, let ids = ch.bowlingPlan {
+                    let plan = ids.compactMap { id in bowling.xi.first { $0.id == id } }
+                    if plan.count == 5 && Set(plan.map(\.id)).count == 5 { attackList = plan }
+                }
+            }
+        }
+        /// Index into card.bowlers for this over's bowler (adds a card for a new bowler).
+        func bowlerIndex(over: Int) -> Int {
+            guard maxOvers == 20 else { return 0 }
+            let can = { (p: Player) -> Bool in
+                (card.bowlers.first { $0.id == p.id }?.balls ?? 0) < 24 && p.id != lastOverBowler
+            }
+            var pick = attackList[MatchEngine.overPlan[over] % attackList.count]
+            if liveOK {
+                for (k, ch) in liveChanges.enumerated() where ch.teamId == bowling.teamId && !usedNextOver.contains(k)
+                    && ch.applies(innings: index, ball: card.balls) {
+                    guard let id = ch.nextOverBowler else { continue }
+                    usedNextOver.insert(k)
+                    if let p = bowling.xi.first(where: { $0.id == id }), can(p) { pick = p }
+                }
+                if !can(pick), let alt = (attackList + bowling.xi).first(where: can) { pick = alt }
+            }
+            if let i = card.bowlers.firstIndex(where: { $0.id == pick.id }) { return i }
+            card.bowlers.append(BowlerCard(id: pick.id, name: pick.name))
+            return card.bowlers.count - 1
+        }
         let maxWickets = max(1, batting.xi.count - 1)
         let fielders = bowling.xi
         let keeper = bowling.xi.first { $0.role == .WK }
@@ -385,14 +466,28 @@ struct MatchEngine {
             return (bats, LiveBowler(name: bw.name, balls: bw.balls, runs: bw.runs, wickets: bw.wickets))
         }
 
+        /// Records who did what on the ball just logged.
+        func tag(striker s: String, runs: Int, outId: String? = nil, how: String? = nil, bowlerId: String) {
+            guard !log.isEmpty else { return }
+            log[log.count - 1].strikerId = s
+            log[log.count - 1].nonStrikerId = nonStriker < order.count ? order[nonStriker].id : ""
+            log[log.count - 1].bowlerId = bowlerId
+            log[log.count - 1].runsOffBat = runs
+            log[log.count - 1].outId = outId
+            log[log.count - 1].how = how
+        }
+
         overs: for over in 0..<maxOvers {
-            let bi = maxOvers == 20 ? MatchEngine.overPlan[over] % attack.count : 0
-            let bowler = attack[bi]
+            applyChanges()
+            let bi = bowlerIndex(over: over)
+            let bowler = maxOvers == 20 ? (bowling.xi.first { $0.id == card.bowlers[bi].id } ?? attack[0]) : attack[0]
+            lastOverBowler = bowler.id
             let runsAtOverStart = card.runs
             let deathOvers = over >= maxOvers - 4
             var legal = 0
             while legal < 6 {
                 if let t = target, card.runs >= t { break overs }
+                applyChanges()
 
                 // Wides
                 if rng.unit() < 0.035 {
@@ -402,6 +497,8 @@ struct MatchEngine {
                     log.append(BallEvent(innings: index, over: over, ballInOver: legal, label: "wd",
                                          text: "Wide", score: card.runs, wickets: card.wickets,
                                          batters: snap.0, bowler: snap.1))
+                    tag(striker: order[striker].id, runs: 0, bowlerId: bowler.id)
+                    delivered += 1
                     if index == 1, let t = target, card.runs >= t {
                         moment(.winningRuns, index, balls: card.balls, team: batting.teamId,
                                "A wide from \(bowler.name) seals it!", score: card.score, priority: 100)
@@ -409,17 +506,19 @@ struct MatchEngine {
                     continue
                 }
 
-                let batter = batting.xi[striker]
+                let batter = order[striker]
                 let (outcome, batTrait, bowlTrait) = ball(batter: batter, bowler: bowler, over: over, maxOvers: maxOvers,
                                                           card: card, target: target, maxWickets: maxWickets, pitch: pitch,
                                                           position: striker, faced: card.batters[striker].balls)
                 legal += 1
+                delivered += 1
                 card.balls += 1
                 card.bowlers[bi].balls += 1
                 card.batters[striker].balls += 1
 
                 var text: String
                 var label: String
+                var lastOut: (String, String)? = nil
                 if outcome == -1 {
                     let (how, bowlerCredit, runOutNonStriker) = dismissal(batter: batter, bowler: bowler,
                                                                           fielders: fielders, keeper: keeper)
@@ -433,13 +532,15 @@ struct MatchEngine {
                     label = "W"
                     moment(.wicket, index, balls: card.balls, team: batting.teamId, text, score: card.score,
                            priority: 40 + min(out.runs, 60) / 2 + (deathOvers ? 5 : 0) + (bowlTrait != nil && bowlerCredit ? 5 : 0))
-                    if card.wickets >= maxWickets || nextIn >= batting.xi.count {
+                    if card.wickets >= maxWickets || nextIn >= order.count {
                         card.allOut = true
                         let snap = snapshot(bi)
                         log.append(BallEvent(innings: index, over: over, ballInOver: legal, label: label, text: text,
                                              score: card.runs, wickets: card.wickets, batters: snap.0, bowler: snap.1))
+                        tag(striker: batter.id, runs: 0, outId: out.id, how: how, bowlerId: bowler.id)
                         break overs
                     }
+                    lastOut = (out.id, how)
                     card.batters[nextIn].batted = true
                     if runOutNonStriker { nonStriker = nextIn } else { striker = nextIn }
                     nextIn += 1
@@ -484,6 +585,7 @@ struct MatchEngine {
                 let snap = snapshot(bi)
                 log.append(BallEvent(innings: index, over: over, ballInOver: legal, label: label, text: text,
                                      score: card.runs, wickets: card.wickets, batters: snap.0, bowler: snap.1))
+                tag(striker: batter.id, runs: outcome == -1 ? 0 : outcome, outId: lastOut?.0, how: lastOut?.1, bowlerId: bowler.id)
             }
             card.overRuns.append(card.runs)
             card.overWickets = (card.overWickets ?? []) + [card.wickets]
@@ -703,5 +805,57 @@ struct MatchEngine {
             }
         }
         return best ?? (sides[0].xi[0], sides[0].teamId)
+    }
+}
+
+// MARK: - Scorecard so far
+
+extension MatchEngine {
+    /// The scorecard up to (not including) log index `shown`: no spoilers while a match is paused.
+    /// Batting and bowling orders come from the final cards; figures come from the balls shown.
+    static func scorecardSoFar(result r: MatchResult, log: [BallEvent], upTo shown: Int) -> [InningsCard] {
+        let events = log.prefix(max(0, min(shown, log.count)))
+        let inningsSeen = Set(events.map(\.innings))
+        var cards: [InningsCard] = []
+        for i in inningsSeen.sorted() {
+            let final = r.card(i)
+            var card = InningsCard(teamId: final.teamId)
+            card.maxBalls = r.maxBalls(i)
+            card.batters = final.batters.map { BatterCard(id: $0.id, name: $0.name) }
+            card.bowlers = final.bowlers.map { BowlerCard(id: $0.id, name: $0.name) }
+            func bat(_ id: String) -> Int? { card.batters.firstIndex { $0.id == id } }
+            func bowl(_ id: String) -> Int? { card.bowlers.firstIndex { $0.id == id } }
+            var overs: [Int: (Int, Int)] = [:]
+            for e in events where e.innings == i {
+                if let s = bat(e.strikerId) { card.batters[s].batted = true }
+                if let n = bat(e.nonStrikerId) { card.batters[n].batted = true }
+                if e.label == "wd" {
+                    card.runs += 1; card.extras += 1
+                    if let b = bowl(e.bowlerId) { card.bowlers[b].runs += 1 }
+                } else {
+                    card.balls += 1
+                    if let b = bowl(e.bowlerId) { card.bowlers[b].balls += 1; card.bowlers[b].runs += e.runsOffBat }
+                    if let s = bat(e.strikerId) {
+                        card.batters[s].balls += 1
+                        card.batters[s].runs += e.runsOffBat
+                        if e.runsOffBat == 4 { card.batters[s].fours += 1 }
+                        if e.runsOffBat == 6 { card.batters[s].sixes += 1 }
+                    }
+                    card.runs += e.runsOffBat
+                    if let out = e.outId {
+                        card.wickets += 1
+                        if let o = bat(out) { card.batters[o].dismissal = e.how; card.batters[o].batted = true }
+                        if let b = bowl(e.bowlerId), !(e.how ?? "").hasPrefix("run out") { card.bowlers[b].wickets += 1 }
+                    }
+                }
+                overs[e.over] = (card.runs, card.wickets)
+            }
+            card.overRuns = overs.keys.sorted().map { overs[$0]!.0 }
+            card.overWickets = overs.keys.sorted().map { overs[$0]!.1 }
+            card.allOut = card.wickets >= card.batters.count - 1
+            card.bowlers = card.bowlers.filter { $0.balls > 0 || $0.runs > 0 }
+            cards.append(card)
+        }
+        return cards
     }
 }
