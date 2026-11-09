@@ -157,7 +157,9 @@ extension CareerTests {
         XCTAssertFalse(c.windowOpen)
         XCTAssertTrue(c.makeOffer(playerId: other.id, fee: 0, wage: 100).message.contains("closed"))
         // It reopens before round 25 with AI business done.
-        while let f = c.nextFixture, (c.round(of: f) ?? 0) < 25 { c.play(fixtureId: f.id) }
+        while let f = c.nextFixture, (c.round(of: f) ?? 0) < 25 {
+            if c.pendingWindow != nil { c.simWindow(stopAtUser: false) } else { c.play(fixtureId: f.id) }
+        }
         XCTAssertTrue(c.windowOpen)
         XCTAssertTrue(c.market.aiWindowsDone.contains("2027-mid"))
     }

@@ -55,7 +55,7 @@ struct CareerFlags: Codable, Hashable {
 /// The whole career save. A pure value type: every rule lives here or in the engines, so the
 /// career can be unit-tested and simulated headlessly.
 struct Career: Codable {
-    static let currentSchema = 4
+    static let currentSchema = 5
     static let maxNews = 80
 
     var schemaVersion = Career.currentSchema
@@ -95,6 +95,8 @@ struct Career: Codable {
     var manager = ManagerProfile()
     var gold = 0
     var trainingBoostWeeks = 0
+    // Schema 5 (M5): international cricket.
+    var intl = InternationalState()
 
     /// Home grounds, by franchise template order.
     static let homePitches: [Pitch] = [.indianFlat, .dustyTurner, .indianFlat, .caribbeanSlow, .englishSeam,
@@ -149,6 +151,8 @@ struct Career: Codable {
         c.scouting.scouts = [Scout(id: 0, name: "Chief scout", stars: 2, wage: tuning.scoutWage * 2)]
         c.refreshScoutCandidates()
         _ = c.academyIntake()
+        c.setUpInternational()
+        c.generateJobOffers()
         c.startSeason()
         c.addNews(.info, "\(managerName) takes charge of \(c.clubs[clubIndex].name). The \(year) season starts on \(CareerCalendar.label(c.tuning.roundDays.first ?? 10)).")
         return c
@@ -247,8 +251,17 @@ struct Career: Codable {
 
     func result(_ id: UUID?) -> MatchResult? {
         guard let id else { return nil }
-        return results.first { $0.id == id }
+        return results.first { $0.id == id } ?? intl.results.first { $0.id == id }
     }
+
+    /// A fixture's result if it has been played (club or international).
+    func playedResult(fixtureId: Int) -> MatchResult? {
+        let f = fixtureId >= Career.intlIdBase ? intl.fixtures.first { $0.id == fixtureId } : fixtures.first { $0.id == fixtureId }
+        return result(f?.resultId)
+    }
+
+    /// Club or nation by team id (nations use ids from 100).
+    func team(_ id: Int) -> Franchise? { club(id) ?? nationTeam(id) }
 
     func isUserFixture(_ f: Fixture) -> Bool { f.involves(userClubId) }
 
@@ -359,7 +372,9 @@ struct Career: Codable {
     /// Plays one fixture. Returns the result and the ball log (for the live view).
     @discardableResult
     mutating func play(fixtureId: Int) -> (MatchResult, [BallEvent])? {
-        guard phase == .season, let fi = fixtures.firstIndex(where: { $0.id == fixtureId }), !fixtures[fi].played else { return nil }
+        if fixtureId >= Career.intlIdBase { return playIntl(fixtureId) }
+        guard phase == .season, pendingWindow == nil,
+              let fi = fixtures.firstIndex(where: { $0.id == fixtureId }), !fixtures[fi].played else { return nil }
         let f = fixtures[fi]
         for tid in [f.home, f.away] {
             if let ci = clubs.firstIndex(where: { $0.id == tid }), clubs[ci].isCPU || !xiIssues(tid).isEmpty {
@@ -398,7 +413,14 @@ struct Career: Codable {
     @discardableResult
     mutating func simUntilUserMatch() -> Int {
         var n = 0
-        while phase == .season, let f = nextFixture, !isUserFixture(f) {
+        while phase == .season, n < 1000 {
+            if pendingWindow != nil {
+                // International window: play it out, stopping before the user's nation plays.
+                n += simWindow(stopAtUser: true)
+                if pendingWindow != nil { break }
+                continue
+            }
+            guard let f = nextFixture, !isUserFixture(f) else { break }
             play(fixtureId: f.id)
             n += 1
         }
@@ -408,7 +430,13 @@ struct Career: Codable {
     /// Quick-sims the rest of the season, the user's matches included.
     mutating func simToSeasonEnd() {
         var guardCount = 0
-        while phase == .season, let f = nextFixture, guardCount < 1000 {
+        while phase == .season, guardCount < 2000 {
+            if pendingWindow != nil {
+                simWindow(stopAtUser: false)
+                guardCount += 1
+                continue
+            }
+            guard let f = nextFixture else { break }
             play(fixtureId: f.id)
             guardCount += 1
         }
@@ -680,6 +708,12 @@ enum CareerSave {
 
     /// JSON migrations, keyed by the version they upgrade from.
     static let migrations: [Int: ([String: Any]) -> [String: Any]] = [
+        // v4 → v5: international cricket (nations are set up on first use).
+        4: { json in
+            var j = json
+            j["intl"] = CareerSave.jsonObject(InternationalState())
+            return j
+        },
         // v3 → v4: facilities, manager, gold.
         3: { json in
             var j = json

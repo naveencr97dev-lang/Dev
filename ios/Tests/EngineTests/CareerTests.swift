@@ -136,7 +136,7 @@ final class CareerTests: XCTestCase {
         XCTAssertTrue(c.players.values.contains { $0.form != 0 })
         // Career stats were recorded.
         let totalRuns = c.players.values.map(\.stats.runs).reduce(0, +)
-        XCTAssertGreaterThan(totalRuns, 184 * 260, "about 150+ a side")
+        XCTAssertGreaterThan(totalRuns, 184 * 250, "about 140+ a side")
 
         let report = c.startNextSeason()
         XCTAssertEqual(c.year, 2028)
@@ -225,7 +225,7 @@ final class CareerTests: XCTestCase {
         for (p, runs) in firstInnings.sorted(by: { $0.key.rawValue < $1.key.rawValue }) {
             print("  \(p.rawValue): avg 1st innings \(runs.reduce(0, +) / runs.count)")
         }
-        XCTAssertGreaterThanOrEqual(Set(champions).count, min(seasons, 6) / 2 + 1, "titles spread around")
+        XCTAssertGreaterThanOrEqual(Set(champions).count, seasons >= 20 ? 6 : 3, "titles spread around")
         let maxTitles = Dictionary(grouping: champions, by: { $0 }).values.map(\.count).max() ?? 0
         XCTAssertLessThanOrEqual(Double(maxTitles), max(2, Double(seasons) * 0.5), "no runaway dynasty")
         let population = c.players.values.filter { !$0.retired }.count

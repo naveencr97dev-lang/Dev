@@ -166,6 +166,7 @@ extension Career {
         payScouts()
         refreshScoutCandidates()
         academy = academy.filter { players[$0] != nil && players[$0]?.retired == false }
+        generateJobOffers()
         let kids = academyIntake()
         if !kids.isEmpty {
             addNews(.squad, "🎓 Academy intake: \(kids.joined(separator: ", ")).")

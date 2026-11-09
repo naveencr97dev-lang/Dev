@@ -85,7 +85,7 @@ final class GameStore: ObservableObject {
 
     // MARK: Lookups
 
-    func team(_ id: Int) -> Franchise? { inCareer ? career?.club(id) : game?.team(id) }
+    func team(_ id: Int) -> Franchise? { inCareer ? career?.team(id) : game?.team(id) }
     func player(_ id: String) -> Player? { inCareer ? career?.player(id) : book[id] }
     func result(_ id: UUID) -> MatchResult? { inCareer ? career?.result(id) : game?.result(id) }
 

@@ -44,6 +44,27 @@ enum PlayerGen {
         "AFG": NamePool(
             first: ["Hashmat", "Ibrahim", "Fazal", "Qais", "Rahmat", "Naveed", "Zia", "Farid", "Sharaf", "Bilal"],
             last: ["Zadran", "Shinwari", "Safi", "Ahmadzai", "Stanikzai", "Mangal", "Zazai", "Malik", "Arab", "Sadat"]),
+        "PAK": NamePool(
+            first: ["Babar", "Shaheen", "Fakhar", "Haris", "Saim", "Abrar", "Usama", "Hasan", "Imad", "Azam"],
+            last: ["Khan", "Afridi", "Rizwan", "Ali", "Ayub", "Raza", "Mir", "Nawaz", "Shafique", "Masood"]),
+        "ZIM": NamePool(
+            first: ["Sikandar", "Blessing", "Tendai", "Wessly", "Richard", "Brian", "Clive", "Tinashe"],
+            last: ["Muzarabani", "Ngarava", "Madhevere", "Chatara", "Masakadza", "Bennett", "Mavuta", "Marumani"]),
+        "IRE": NamePool(
+            first: ["Paul", "Andy", "Curtis", "Lorcan", "Harry", "Mark", "Barry", "Gareth"],
+            last: ["Stirling", "Balbirnie", "Tector", "Tucker", "Adair", "McCarthy", "Delany", "Doheny"]),
+        "NED": NamePool(
+            first: ["Max", "Bas", "Logan", "Vikram", "Teja", "Roelof", "Paul", "Aryan"],
+            last: ["O'Dowd", "de Leede", "van Beek", "Singh", "Nidamanuru", "van der Merwe", "van Meekeren", "Dutt"]),
+        "SCO": NamePool(
+            first: ["Richie", "George", "Brandon", "Michael", "Mark", "Safyaan", "Chris", "Ollie"],
+            last: ["Berrington", "Munsey", "McMullen", "Leask", "Watt", "Sharif", "Greaves", "Hairs"]),
+        "NAM": NamePool(
+            first: ["Gerhard", "JJ", "Jan", "Bernard", "Ruben", "David", "Zane", "Nicol"],
+            last: ["Erasmus", "Smit", "Frylinck", "Scholtz", "Trumpelmann", "Wiese", "Green", "Loftie-Eaton"]),
+        "NEP": NamePool(
+            first: ["Rohit", "Kushal", "Sandeep", "Dipendra", "Aasif", "Sompal", "Gulsan", "Karan"],
+            last: ["Paudel", "Bhurtel", "Lamichhane", "Airee", "Sheikh", "Kami", "Jha", "KC"]),
         "BAN": NamePool(
             first: ["Tanzid", "Towhid", "Rishad", "Shoriful", "Jaker", "Tanvir", "Mahidul", "Parvez"],
             last: ["Hasan", "Hridoy", "Hossain", "Islam", "Ali", "Rahman", "Ankon", "Emon"]),

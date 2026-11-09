@@ -79,9 +79,10 @@ enum SeasonEngine {
         return fixtures
     }
 
-    static func table(teamIds: [Int], results: [MatchResult]) -> [TableRow] {
+    static func table(teamIds: [Int], results: [MatchResult], stage: Stage = .league) -> [TableRow] {
         var rows = Dictionary(uniqueKeysWithValues: teamIds.map { ($0, TableRow(teamId: $0)) })
-        for r in results where r.stage == .league {
+        let ids = Set(teamIds)
+        for r in results where r.stage == stage && ids.contains(r.teamA) && ids.contains(r.teamB) {
             for (bat, inn) in r.innings.prefix(2).enumerated() {
                 let other = r.innings[1 - bat]
                 let faced = inn.allOut ? inn.maxBalls : inn.balls

@@ -72,7 +72,7 @@ extension GameStore {
 
     func playCareer(fixtureId: Int) -> MatchResult? {
         guard let c = career else { return nil }
-        if let f = c.fixtures.first(where: { $0.id == fixtureId }), let r = c.result(f.resultId) { return r }
+        if let r = c.playedResult(fixtureId: fixtureId) { return r }
         var out: (MatchResult, [BallEvent])?
         mutateCareer { out = $0.play(fixtureId: fixtureId) }
         if let out { logs[fixtureId] = out.1 }
@@ -175,6 +175,20 @@ extension GameStore {
     }
 
     func careerReleaseAcademy(_ id: String) { mutateCareer { $0.releaseFromAcademy(id) } }
+
+    // MARK: International
+
+    @discardableResult
+    func careerSimWindow(stopAtUser: Bool) -> Int {
+        var n = 0
+        mutateCareer { n = $0.simWindow(stopAtUser: stopAtUser) }
+        return n
+    }
+
+    func careerEnsureWindow() { mutateCareer { $0.ensureWindow() } }
+    func careerAcceptJob(_ code: String) { mutateCareer { $0.acceptJob(code) } }
+    func careerResignJob() { mutateCareer { $0.resignJob() } }
+    func careerSetNationalSquad(_ ids: [String]) { mutateCareer { $0.setNationalSquad(ids) } }
 
     // MARK: Club, manager, gold
 

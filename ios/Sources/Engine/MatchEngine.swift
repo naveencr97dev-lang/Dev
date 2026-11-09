@@ -4,6 +4,11 @@ import Foundation
 
 enum Stage: String, Codable, CaseIterable {
     case league, qualifier1, eliminator, qualifier2, final
+    // International (career mode)
+    case series, group, superEight, semiFinal
+
+    /// Knockout and playoff matches: Big-Match players lift.
+    var isBigGame: Bool { ![.league, .series, .group].contains(self) }
 
     var label: String {
         switch self {
@@ -12,6 +17,10 @@ enum Stage: String, Codable, CaseIterable {
         case .eliminator: return "Eliminator"
         case .qualifier2: return "Qualifier 2"
         case .final: return "FINAL"
+        case .series: return "T20I"
+        case .group: return "Group stage"
+        case .superEight: return "Super 8"
+        case .semiFinal: return "Semi-final"
         }
     }
 }
@@ -165,7 +174,7 @@ struct MatchEngine {
     /// Simulates a full T20 between two XIs.
     mutating func play(_ a: Side, _ b: Side, stage: Stage, pitch: Pitch, log: inout [BallEvent]) -> MatchResult {
         moments = []
-        bigGame = stage != .league
+        bigGame = stage.isBigGame
         let tossWinner = rng.unit() < 0.5 ? a : b
         let other = tossWinner.teamId == a.teamId ? b : a
         // Captains bowl first more often when the pitch helps bowlers early.
