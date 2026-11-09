@@ -41,6 +41,14 @@ struct CareerSquadTab: View {
                     Hairline(inset: 54)
                     NavigationLink { AcademyView() } label: { DashTile(icon: "graduationcap", title: "Academy", subtitle: "\(c.academy.count) prospects") }
                     Hairline(inset: 54)
+                    NavigationLink { CareerScreen(title: "Development") { DevelopmentReportView() } } label: {
+                        DashTile(icon: "chart.line.uptrend.xyaxis", title: "Development", subtitle: "Young players this season")
+                    }
+                    Hairline(inset: 54)
+                    NavigationLink { CareerScreen(title: "Club stats") { ClubStatsView() } } label: {
+                        DashTile(icon: "chart.bar", title: "Club stats", subtitle: "Runs, wickets, match ratings")
+                    }
+                    Hairline(inset: 54)
                     NavigationLink { CareerScreen(title: "Squad report") { SquadReportView() } } label: {
                         let unhappy = squad.filter { c.morale($0) < 45 }.count
                         DashTile(icon: "list.bullet.clipboard", title: "Squad report",
@@ -308,6 +316,19 @@ struct CareerPlayerView: View {
                 }
                 Text("Value \(Money.format(p.value(in: c.year))) · Potential \(c.potentialLabel(p))\(c.knowledge(of: p.id) < 100 ? " (scouted \(c.knowledge(of: p.id))%)" : "")")
                     .font(.subheadline.weight(.semibold))
+                let recent = c.recentRatings(p.id)
+                if !recent.isEmpty {
+                    HStack(spacing: 6) {
+                        Text("Last \(recent.count)").font(.caption.weight(.semibold)).foregroundStyle(Palette.muted)
+                        ForEach(Array(recent.enumerated()), id: \.offset) { _, x in
+                            Text(String(format: "%.1f", x)).font(.score(14)).foregroundStyle(RatingStyle.color(x))
+                        }
+                        Spacer()
+                        if let avg = c.averageRating(p.id) {
+                            Text("avg \(String(format: "%.2f", avg))").font(.caption.weight(.semibold)).foregroundStyle(Palette.muted)
+                        }
+                    }
+                }
                 if !p.line.isEmpty {
                     Text(p.line).font(.caption).foregroundStyle(Palette.muted)
                 }
@@ -474,5 +495,172 @@ struct SquadReportView: View {
             }
         }
         .gameFrame()
+    }
+}
+
+enum RatingStyle {
+    /// Match ratings: 8+ excellent, 7+ good, 6+ fair, below that poor.
+    static func color(_ x: Double) -> Color { x >= 8 ? Palette.accent : (x >= 7 ? Palette.four : (x >= 6 ? .white : .orange)) }
+}
+
+/// Career › Squad › Club stats: the user's players ranked by one category.
+struct ClubStatsView: View {
+    @EnvironmentObject var store: GameStore
+    @State private var category = Category.runs
+
+    enum Category: String, CaseIterable, Identifiable {
+        case runs = "Runs", wickets = "Wickets", rating = "Match rating", sixes = "Sixes"
+        case strikeRate = "Strike rate", economy = "Economy", potm = "Player of the match"
+        var id: String { rawValue }
+        /// Header of the middle column (a rate that puts the total in context).
+        var rateLabel: String {
+            switch self {
+            case .runs: return "SR"
+            case .wickets: return "Econ"
+            case .sixes: return "Balls/6"
+            case .strikeRate: return "Runs"
+            case .economy: return "Wkts"
+            case .rating, .potm: return ""
+            }
+        }
+    }
+
+    var body: some View {
+        if let c = store.career {
+            let season = c.seasonStatLines
+            let rows = ranked(c, season)
+            VStack(alignment: .leading, spacing: DS.Space.md) {
+                HStack {
+                    Text("Season \(String(c.year))").font(.display(14, weight: .semibold)).foregroundStyle(Palette.muted)
+                    Spacer()
+                    Picker("Category", selection: $category) {
+                        ForEach(Category.allCases) { Text($0.rawValue).tag($0) }
+                    }
+                    .pickerStyle(.menu)
+                }
+                HStack {
+                    Text("Player").frame(maxWidth: .infinity, alignment: .leading)
+                    Text("Apps").frame(width: 44)
+                    Text(category.rateLabel).frame(width: 60)
+                    Text(category == .rating ? "Avg" : "Total").frame(width: 56, alignment: .trailing)
+                }
+                .font(.caption.weight(.semibold)).foregroundStyle(Palette.muted)
+                .padding(.horizontal, 16)
+                VStack(spacing: 0) {
+                    if rows.isEmpty {
+                        Text("No matches played this season yet.").font(.subheadline).foregroundStyle(.secondary)
+                            .padding(16)
+                    }
+                    ForEach(Array(rows.enumerated()), id: \.element.0.id) { i, row in
+                        if i > 0 { Hairline(inset: 16) }
+                        NavigationLink { CareerPlayerView(playerId: row.0.id) } label: {
+                            HStack {
+                                Text(row.0.name).font(.display(15, weight: i == 0 ? .semibold : .regular)).lineLimit(1)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                Text("\(row.1)").font(.score(15)).foregroundStyle(Palette.muted).frame(width: 44)
+                                Text(row.2).font(.score(15)).foregroundStyle(Palette.muted).frame(width: 60)
+                                Text(row.3).font(.score(16)).foregroundStyle(Palette.accent).frame(width: 56, alignment: .trailing)
+                            }
+                            .padding(.horizontal, 16).padding(.vertical, 11)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .gameFrame()
+                Text("Match ratings run from 3 to 10: runs and strike rate, wickets and economy, the result and player of the match. Strike rate needs 30 balls faced, economy 24 bowled.")
+                    .font(.caption).foregroundStyle(Palette.muted)
+            }
+        }
+    }
+
+    /// (player, apps, rate, total) for the chosen category, best first.
+    private func ranked(_ c: Career, _ season: [String: StatLine]) -> [(CareerPlayer, Int, String, String)] {
+        let squad = c.squad(c.userClubId)
+        let f1 = { (x: Double) in String(format: "%.1f", x) }
+        var rows: [(CareerPlayer, Int, String, String, Double)] = []
+        for p in squad {
+            let s = season[p.id] ?? StatLine()
+            guard s.matches > 0 else { continue }
+            switch category {
+            case .runs:
+                rows.append((p, s.matches, s.balls > 0 ? f1(s.strikeRate) : "–", "\(s.runs)", Double(s.runs)))
+            case .wickets:
+                guard s.ballsBowled > 0 else { continue }
+                rows.append((p, s.matches, f1(s.economy), "\(s.wickets)", Double(s.wickets) - s.economy / 100))
+            case .rating:
+                guard let avg = c.averageRating(p.id) else { continue }
+                rows.append((p, s.matches, "", String(format: "%.2f", avg), avg))
+            case .sixes:
+                guard s.sixes > 0 else { continue }
+                rows.append((p, s.matches, "\(s.balls / max(1, s.sixes))", "\(s.sixes)", Double(s.sixes)))
+            case .strikeRate:
+                guard s.balls >= 30 else { continue }
+                rows.append((p, s.matches, "\(s.runs)", f1(s.strikeRate), s.strikeRate))
+            case .economy:
+                guard s.ballsBowled >= 24 else { continue }
+                rows.append((p, s.matches, "\(s.wickets)", String(format: "%.2f", s.economy), -s.economy))
+            case .potm:
+                guard s.potm > 0 else { continue }
+                rows.append((p, s.matches, "", "\(s.potm)", Double(s.potm)))
+            }
+        }
+        return rows.sorted { $0.4 != $1.4 ? $0.4 > $1.4 : $0.0.id < $1.0.id }.map { ($0.0, $0.1, $0.2, $0.3) }
+    }
+}
+
+/// Career › Squad › Development: young players and academy prospects, rating at the season start,
+/// now, the trend and the potential range.
+struct DevelopmentReportView: View {
+    @EnvironmentObject var store: GameStore
+
+    var body: some View {
+        if let c = store.career {
+            let list = c.developmentWatch
+            VStack(alignment: .leading, spacing: DS.Space.md) {
+                HStack {
+                    Text("Player").frame(maxWidth: .infinity, alignment: .leading)
+                    Text("Start").frame(width: 46)
+                    Text("Now").frame(width: 46)
+                    Text("").frame(width: 24)
+                    Text("Potential").frame(width: 76, alignment: .trailing)
+                }
+                .font(.caption.weight(.semibold)).foregroundStyle(Palette.muted)
+                .padding(.horizontal, 16)
+                VStack(spacing: 0) {
+                    if list.isEmpty {
+                        Text("No players aged 23 or under. Sign some, or promote from the academy.")
+                            .font(.subheadline).foregroundStyle(.secondary).padding(16)
+                    }
+                    ForEach(Array(list.enumerated()), id: \.element.id) { i, p in
+                        if i > 0 { Hairline(inset: 16) }
+                        let delta = c.seasonProgress(p) ?? 0
+                        NavigationLink { CareerPlayerView(playerId: p.id) } label: {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(p.name).font(.display(15, weight: .semibold)).lineLimit(1)
+                                    Text("\(p.age(in: c.year)) · \(p.role.short)\(p.academyOf != nil ? " · academy" : "")")
+                                        .font(.caption).foregroundStyle(Palette.muted)
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                Text(p.seasonStartRating.map { "\($0)" } ?? "–").font(.score(15)).foregroundStyle(Palette.muted).frame(width: 46)
+                                Text("\(p.rating)").font(.score(16)).frame(width: 46)
+                                Image(systemName: delta > 0 ? "arrow.up" : (delta < 0 ? "arrow.down" : "minus"))
+                                    .font(.system(size: 13 * TextScale.factor, weight: .bold))
+                                    .foregroundStyle(delta > 0 ? Palette.accent : (delta < 0 ? Palette.wicket : Palette.muted))
+                                    .frame(width: 24)
+                                Text(c.potentialLabel(p)).font(.score(15)).foregroundStyle(Palette.accent).frame(width: 76, alignment: .trailing)
+                            }
+                            .padding(.horizontal, 16).padding(.vertical, 10)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .gameFrame()
+                Text("Young players grow most with training focus and match time. Scouting narrows the potential range.")
+                    .font(.caption).foregroundStyle(Palette.muted)
+            }
+        }
     }
 }

@@ -325,7 +325,11 @@ struct Career: Codable {
             fixtures.append(f)
             fixtureDays[f.id] = min(day, 310)
         }
-        for k in players.keys { players[k]?.form = 0 }
+        for k in players.keys {
+            players[k]?.form = 0
+            let r = players[k]?.rating
+            players[k]?.seasonStartRating = r
+        }
         setObjectives()
         announceRetirementWatch()
         assignDefaultRoles(refresh: true)

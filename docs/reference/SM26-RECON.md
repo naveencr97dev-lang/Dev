@@ -22,6 +22,18 @@ native look (`docs/MOBILE-DESIGN.md`). Source: 16 screenshots the owner took of 
 | **Reports › Overview** | Average rating, squad size, average age, average and total value; 3 best players; ✓ strengths / ✗ weaknesses ("Defence is a weak area", "Too many attacking players") | Squad analysis in plain sentences | ✅ **Squad report** (batting and bowling vs league, spin and pace options for the home pitch, keeper backup, age, size, morale) |
 | **Negotiation** | Expectations (status, years, wage) with a **sad-to-happy bar**; your offer: status, years, wage keypad, signing fee | The offer's distance from the demand, made visible; a role changes the price | ✅ **Promise** picker (a bigger role buys a cheaper wage), **mood bar**, talks left |
 
+### Batch 2: the Team section (Reports › Youth, Stats)
+
+| SM26 screen | What it shows | The mechanic | Auction XI |
+|---|---|---|---|
+| **Reports › Youth** | Each youngster: base rating, progress bar to the next point, a "Developing" arrow, potential range | Visible growth for young players | ✅ **Development** report: rating at season start → now, trend arrow, potential range (U23s and academy) |
+| **Stats (club)** | One category at a time from a dropdown: Goals (apps, minutes per goal, total), Assists, Average Performance | Club leaderboards with a rate column | ✅ **Club stats**: Runs (SR), Wickets (economy), Match rating, Sixes (balls per six), Strike rate, Economy, Player of the match |
+| Average Performance / Form "9 10 9 8 5 7" | A 1–10 rating every match | Match ratings | ✅ **Match ratings** 3.0–10.0 from the scorecard (runs and SR, wickets and economy, duck, result, POTM), soft-capped: mean 6.3, POTM 8.8, 9+ only 2%. The player page shows the last 5 and the average. Computed from results: no save change. |
+
+The SM26 Team section is a left rail: Squad / Reports / Stats / Opposition / Squad Planner. Auction
+XI's Squad tab now has Development, Club stats and Squad report tiles. Still to do: Opposition (a
+scouting report on the next opponent) and Squad Planner.
+
 ## Built from this recon (schema 12)
 
 - `CareerMorale.swift`:
@@ -39,7 +51,8 @@ native look (`docs/MOBILE-DESIGN.md`). Source: 16 screenshots the owner took of 
 
 ## Next from the recon
 
-1. Squad list column switcher (General / Contract / Stats).
+1. Opposition report (next opponent: form, best players, home pitch, how to beat them).
+2. Squad list column switcher (General / Contract / Stats).
 2. Hub tiles: a mini table around your position; league-wide big transfers; a spotlight player.
 3. Compare two players.
 4. Block bids and loans.

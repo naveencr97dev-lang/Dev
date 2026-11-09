@@ -11,6 +11,10 @@ extension GameStore {
         // A save from before objectives existed: the board sets this season's now.
         if c.phase == .season && c.board.year != c.year { c.setObjectives() }
         c.assignDefaultRoles()   // saves from before roles existed
+        for id in c.userClub.squad + c.academy where c.players[id]?.seasonStartRating == nil {
+            let r = c.players[id]?.rating
+            c.players[id]?.seasonStartRating = r
+        }
         career = c
     }
 

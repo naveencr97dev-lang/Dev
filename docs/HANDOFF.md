@@ -81,7 +81,7 @@ Last updated 2026-11-09 (after customer-panel rounds 1-4 and the SM26 recon) on 
 - **Swift toolchain:** if `/opt/swift` is missing, install it with
   `curl -sSfL https://download.swift.org/swift-6.0.3-release/ubuntu2404/swift-6.0.3-RELEASE/swift-6.0.3-RELEASE-ubuntu24.04.tar.gz | tar xz --strip-components=1 -C /opt/swift`
   (run `mkdir -p /opt/swift` first). Then `export PATH=/opt/swift/usr/bin:$PATH`.
-- **Engine tests:** `cd ios && swift test` (80 tests, all green). Pipe the output to a file and
+- **Engine tests:** `cd ios && swift test` (82 tests, all green). Pipe the output to a file and
   check the "Executed … with 0 failures" line before committing. One push once went out red because
   a grep in a command chain hid the failure.
 - **Whole-app type-check:** `tools/typecheck/run.sh`. It checks all 48 files against SwiftUI, UIKit
@@ -123,7 +123,9 @@ for each version in `CareerSave.migrations`.
 - **Roles and morale** (`CareerMorale.swift`, from the SM26 recon in `docs/reference/SM26-RECON.md`):
   squad roles are playing-time promises, morale follows playing time, and only broken promises
   end in transfer requests. A bigger role promised at signing lowers the wage (mood bar in the bid).
-  Squad › Squad report lists strengths and weak spots.
+  Squad › Squad report lists strengths and weak spots. Squad › Development (young players' progress)
+  and Squad › Club stats (category leaders with match ratings). Match ratings (3-10) come from the
+  scorecards (`Career.matchRating`); the player page shows the last 5.
 - **Squad:** XI from about 20 players, batting order, bowling plan of 5, tactics.
 - **Tactics:** field Defensive / Balanced / Aggressive and batting Block / Rotate / Attack, per phase.
 - **Match day:**

@@ -129,6 +129,8 @@ struct CareerPlayer: Codable, Identifiable, Hashable {
     var morale: Int? = nil
     /// The role was promised (at signing or set by the manager), so the season reset keeps it.
     var rolePromised: Bool? = nil
+    /// Rating when the season started (the development report shows the change; optional).
+    var seasonStartRating: Int? = nil
 
     var bat: Int { attr.bat }
     var bowl: Int { attr.bowl }
