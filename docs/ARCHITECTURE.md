@@ -102,6 +102,8 @@ Auction XI
 
 ---
 
+The look is defined in [MOBILE-DESIGN.md](MOBILE-DESIGN.md).
+
 ## 3. How to make a change without breaking the main game
 
 1. **Place it in the tree:** which node is it (for example `Career › Market › Auction`)?

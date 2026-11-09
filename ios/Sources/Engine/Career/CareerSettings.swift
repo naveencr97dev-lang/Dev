@@ -30,6 +30,8 @@ struct CareerSettings: Codable, Hashable {
     var difficulty: Difficulty = .normal
     /// Testing: the transfer market never closes.
     var marketAlwaysOpen = true
+    /// Schema 9.
+    var ticketPrice: TicketPrice = .normal
 }
 
 extension Career {
@@ -52,9 +54,10 @@ extension Career {
             let wins = userForm().filter { $0 }.count
             let topOpponent = position(of: opp) <= 4
             var fill = 0.55 + 0.06 * Double(wins) + (topOpponent ? 0.1 : 0) + (r.stage != .league ? 0.2 : 0)
-            fill = max(0.45, min(1.0, fill))
+                + settings.ticketPrice.fillDelta
+            fill = max(0.3, min(1.0, fill))
             let fans = Int(Double(stadiumCapacity) * fill / 100) * 100
-            let money = Career.round5(Double(gate(for: userClubId)) * fill * 1.3 * difficulty.incomeMult)
+            let money = Career.round5(Double(gate(for: userClubId)) * fill * 1.3 * difficulty.incomeMult * settings.ticketPrice.priceMult)
             post(userClubId, "Tickets: \(fans.formatted()) fans vs \(club(opp)?.short ?? "")", money)
         }
         let merch = Career.round5(Double(commercialIncome(for: userClubId)) / 36 * difficulty.incomeMult)

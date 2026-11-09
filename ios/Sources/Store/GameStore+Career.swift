@@ -181,6 +181,15 @@ extension GameStore {
 
     // MARK: Settings
 
+    func careerSetTicketPrice(_ t: TicketPrice) { mutateCareer { $0.settings.ticketPrice = t } }
+
+    /// Runs this week's training now; returns who improved.
+    func careerRunTraining() -> [String] {
+        var lines: [String] = []
+        mutateCareer { lines = $0.runTrainingSession() }
+        return lines
+    }
+
     func careerSetDifficulty(_ d: Difficulty) { mutateCareer { $0.settings.difficulty = d } }
     func careerSetMarketAlwaysOpen(_ on: Bool) { mutateCareer { $0.settings.marketAlwaysOpen = on } }
     func careerExchangeGold(_ amount: Int) -> String? {

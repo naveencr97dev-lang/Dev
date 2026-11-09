@@ -130,13 +130,13 @@ struct ContinueBar: View {
         Button(action: action) {
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(label.title.uppercased()).font(.display(24))
+                    Text(label.title).font(.system(size: 20 * TextScale.factor, weight: .bold))
                     if !label.detail.isEmpty {
                         Text(label.detail).font(.caption.weight(.bold)).textCase(nil).lineLimit(1)
                     }
                 }
                 Spacer()
-                Image(systemName: "play.fill").font(.title2.weight(.black))
+                Image(systemName: "chevron.right").font(.system(size: 16 * TextScale.factor, weight: .bold))
             }
             .padding(.horizontal, 18)
         }
@@ -161,42 +161,38 @@ struct HubTabBar: View {
     let career: Career
 
     var body: some View {
-        HStack(spacing: 0) {
-            ForEach(HubTab.allCases, id: \.self) { t in
-                Button {
-                    tab = t
-                    Haptics.tap()
-                } label: {
-                    VStack(spacing: 3) {
-                        ZStack(alignment: .topTrailing) {
-                            Image(systemName: t.icon).font(.system(size: 18 * TextScale.factor, weight: .black))
-                            if let b = badge(t) {
-                                Text(b).font(.system(size: 9, weight: .black)).foregroundStyle(.white)
-                                    .padding(.horizontal, 4).padding(.vertical, 1)
-                                    .background(Capsule().fill(Color(hex: "#E5322D")))
-                                    .offset(x: 10, y: -6)
-                            }
+        VStack(spacing: 0) {
+            Hairline()
+            HStack(spacing: 0) {
+                ForEach(HubTab.allCases, id: \.self) { t in
+                    Button {
+                        tab = t
+                        Haptics.tap()
+                    } label: {
+                        VStack(spacing: 3) {
+                            Image(systemName: t.icon).font(.system(size: 20 * TextScale.factor, weight: .medium))
+                                .overlay(alignment: .topTrailing) {
+                                    if let b = badge(t) {
+                                        Text(b).font(.system(size: 10, weight: .bold)).foregroundStyle(.white)
+                                            .padding(.horizontal, 4).padding(.vertical, 1)
+                                            .background(Capsule().fill(Palette.wicket))
+                                            .offset(x: 10, y: -6)
+                                    }
+                                }
+                            Text(t.label).font(.system(size: 10 * TextScale.factor, weight: .medium)).lineLimit(1)
                         }
-                        Text(t.label.uppercased()).font(.display(10, weight: .heavy)).lineLimit(1).minimumScaleFactor(0.7)
+                        .foregroundStyle(tab == t ? Palette.accent : Palette.muted)
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, 7)
+                        .padding(.bottom, 4)
+                        .contentShape(Rectangle())
                     }
-                    .foregroundStyle(tab == t ? CareerPalette.gold : Color.white.opacity(0.7))
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 7)
-                    .background(
-                        RoundedRectangle(cornerRadius: 9, style: .continuous)
-                            .fill(tab == t ? Color.white.opacity(0.12) : .clear)
-                            .padding(.horizontal, 3)
-                    )
-                    .contentShape(Rectangle())
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
             }
+            .frame(maxWidth: 640)
         }
-        .padding(4)
-        .gameFrame(radius: 14, face: [Color(hex: "#1D3F80"), Color(hex: "#0E2250")], lip: 3)
-        .padding(.horizontal, DS.Space.md)
-        .padding(.bottom, 2)
-        .frame(maxWidth: 640)
+        .background(Palette.surface.opacity(0.98).ignoresSafeArea(edges: .bottom))
     }
 
     private func badge(_ t: HubTab) -> String? {
@@ -239,27 +235,31 @@ struct ClubOfficeTiles: View {
 
     var body: some View {
         let c = career
-        let columns = [GridItem(.adaptive(minimum: 150), spacing: 10)]
-        LazyVGrid(columns: columns, spacing: 10) {
+        VStack(spacing: 0) {
             NavigationLink { FacilitiesView() } label: {
-                DashTile(icon: "building.2.fill", title: "Facilities",
+                DashTile(icon: "building.2", title: "Facilities",
                          subtitle: c.facilities.building.flatMap { FacilityKind(rawValue: $0)?.label }.map { "Building \($0)" } ?? "7 facilities")
             }
+            Hairline(inset: 54)
             NavigationLink { ManagerView() } label: {
-                DashTile(icon: "star.circle.fill", title: "Manager", subtitle: "Level \(c.manager.level) · traits",
+                DashTile(icon: "star", title: "Manager", subtitle: "Level \(c.manager.level) · traits",
                          badge: c.manager.points > 0 ? "\(c.manager.points)" : nil)
             }
+            Hairline(inset: 54)
             NavigationLink { StoreView() } label: {
-                DashTile(icon: "bag.fill", title: "Store", subtitle: "🪙 \(c.gold) gold")
+                DashTile(icon: "bag", title: "Store", subtitle: "\(c.gold) gold")
             }
+            Hairline(inset: 54)
             NavigationLink { NewsScreen() } label: {
-                DashTile(icon: "newspaper.fill", title: "News", subtitle: "\(c.news.count) items")
+                DashTile(icon: "newspaper", title: "News", subtitle: "\(c.news.count) items")
             }
+            Hairline(inset: 54)
             NavigationLink { CareerSettingsView() } label: {
-                DashTile(icon: "gearshape.fill", title: "Settings",
+                DashTile(icon: "gearshape", title: "Settings",
                          subtitle: "\(c.settings.difficulty.label) · market \(c.settings.marketAlwaysOpen ? "open" : "windows")")
             }
         }
+        .gameFrame()
         .buttonStyle(.plain)
     }
 }
@@ -327,6 +327,8 @@ struct CareerHomeTab: View {
                     Text(note).font(.footnote).foregroundStyle(.secondary)
                 }
 
+                SeasonMoneyCard(career: c)
+
                 let mine = c.results.filter { $0.teamA == c.userClubId || $0.teamB == c.userClubId }.suffix(3).reversed()
                 if !mine.isEmpty {
                     SectionLabel(text: "Your recent results")
@@ -378,7 +380,7 @@ struct ClubHeaderCard: View {
                             .background(RoundedRectangle(cornerRadius: 5).fill(won ? Palette.accent : Palette.wicket))
                     }
                     Spacer()
-                    Text("🪙 \(c.gold) · Lv \(c.manager.level) · \(c.leaguePlayed)/\(c.leagueFixtures.count) played")
+                    Text("\(c.gold) · Lv \(c.manager.level) · \(c.leaguePlayed)/\(c.leagueFixtures.count) played")
                         .font(.caption2).foregroundStyle(Palette.muted)
                 }
             }
@@ -446,9 +448,9 @@ struct SeasonEndCard: View {
                 if let record {
                     Text("Your season: \(record.userFinish)").font(.headline)
                     VStack(alignment: .leading, spacing: 4) {
-                        if let a = record.orangeCap { Text("🟠 Orange Cap: \(a.name) — \(a.value)") }
-                        if let a = record.purpleCap { Text("🟣 Purple Cap: \(a.name) — \(a.value)") }
-                        if let a = record.mvp { Text("⭐ MVP: \(a.name) — \(a.value)") }
+                        if let a = record.orangeCap { Text("Orange Cap: \(a.name) — \(a.value)") }
+                        if let a = record.purpleCap { Text("Purple Cap: \(a.name) — \(a.value)") }
+                        if let a = record.mvp { Text("MVP: \(a.name) — \(a.value)") }
                     }
                     .font(.subheadline)
                 }
@@ -471,9 +473,10 @@ struct NewsFeed: View {
                     VStack(alignment: .leading, spacing: 10) {
                         ForEach(news) { item in
                             HStack(alignment: .top, spacing: 10) {
-                                Text(icon(item.kind)).font(.caption)
+                                Image(systemName: icon(item.kind)).font(.system(size: 14 * TextScale.factor))
+                                    .foregroundStyle(Palette.muted).frame(width: 20)
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text(item.text).font(.subheadline)
+                                    Text(NewsFeed.clean(item.text)).font(.subheadline)
                                     Text("\(CareerCalendar.label(item.day)) \(String(item.year))")
                                         .font(.caption2).foregroundStyle(Palette.muted)
                                 }
@@ -487,12 +490,19 @@ struct NewsFeed: View {
 
     private func icon(_ k: NewsItem.Kind) -> String {
         switch k {
-        case .result: return "🏏"
-        case .milestone: return "⭐"
-        case .squad: return "👥"
-        case .season: return "🏆"
-        case .info: return "📰"
+        case .result: return "sportscourt"
+        case .milestone: return "star"
+        case .squad: return "person.2"
+        case .season: return "trophy"
+        case .info: return "newspaper"
         }
+    }
+
+    /// News text without a leading emoji (icons come from SF Symbols).
+    static func clean(_ t: String) -> String {
+        guard let first = t.unicodeScalars.first, first.properties.isEmojiPresentation || first.properties.isEmoji && first.value > 0x238C else { return t }
+        guard let space = t.firstIndex(of: " ") else { return t }
+        return String(t[t.index(after: space)...])
     }
 }
 
@@ -760,7 +770,7 @@ struct CareerClubTab: View {
                         if let info {
                             Text("\(info.homePitch.icon) Home ground: \(info.homePitch.label)").font(.subheadline)
                             Text(info.homePitch.blurb).font(.caption).foregroundStyle(Palette.muted)
-                            Text("🏆 Titles: \(info.titles)").font(.subheadline)
+                            Text("Titles: \(info.titles)").font(.subheadline)
                         }
                         Text("Manager since \(String(c.startYear)) · \(c.history.count) season\(c.history.count == 1 ? "" : "s") completed")
                             .font(.caption).foregroundStyle(Palette.muted)
@@ -830,12 +840,12 @@ struct HistoryRow: View {
                     Text(String(record.year)).font(.display(22)).foregroundStyle(Palette.accent)
                     Spacer()
                     if let champ = career.club(record.championId) {
-                        Text("🏆 \(champ.short)").font(.subheadline.weight(.bold))
+                        Text("\(champ.short)").font(.subheadline.weight(.bold))
                     }
                 }
                 Text("You: \(record.userFinish) · \(Career.ordinal(record.userPosition)) in the league").font(.subheadline)
-                if let a = record.orangeCap { Text("🟠 \(a.name) \(a.value)").font(.caption).foregroundStyle(Palette.muted) }
-                if let a = record.purpleCap { Text("🟣 \(a.name) \(a.value)").font(.caption).foregroundStyle(Palette.muted) }
+                if let a = record.orangeCap { Text("\(a.name) \(a.value)").font(.caption).foregroundStyle(Palette.muted) }
+                if let a = record.purpleCap { Text("\(a.name) \(a.value)").font(.caption).foregroundStyle(Palette.muted) }
             }
         }
     }

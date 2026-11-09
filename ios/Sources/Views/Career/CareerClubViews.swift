@@ -15,7 +15,7 @@ struct ManagerCard: View {
                 HStack {
                     Text("MANAGER \(career.managerName.uppercased())").font(.display(16, weight: .heavy))
                     Spacer()
-                    Text("🪙 \(career.gold)").font(.score(16))
+                    Text("\(career.gold)").font(.score(16))
                 }
                 HStack(spacing: 10) {
                     Text("LV \(m.level)").font(.display(26)).foregroundStyle(Palette.accent)
@@ -112,7 +112,7 @@ struct FacilitiesView: View {
             Section {
                 if let c {
                     if let b = c.facilities.building, let k = FacilityKind(rawValue: b) {
-                        Text("🏗️ Building \(k.label) level \(c.facility(k) + 1): \(c.facilities.weeksLeft) weeks left")
+                        Text("Building \(k.label) level \(c.facility(k) + 1): \(c.facilities.weeksLeft) weeks left")
                             .font(.subheadline.weight(.semibold))
                         Button("Finish now (\(c.goldCost(.finishBuild)) gold)") {
                             message = store.careerSpendGold(.finishBuild)
@@ -188,7 +188,7 @@ struct StoreView: View {
         let gold = store.career?.gold ?? 0
         List {
             Section {
-                Text("🪙 \(gold) gold").font(.display(30)).foregroundStyle(Palette.accent)
+                Text("\(gold) gold").font(.display(30)).foregroundStyle(Palette.accent)
                 Text("Earn gold from manager levels, titles and every match. Spend it to finish builds, boost training, scout instantly or freshen a player's form.")
                     .font(.caption).foregroundStyle(Palette.muted)
             }
@@ -256,11 +256,11 @@ struct GoldActions: View {
         if let c = store.career, let p = c.players[playerId] {
             VStack(alignment: .leading, spacing: 6) {
                 if p.clubId == c.userClubId {
-                    Button("💨 Fresh legs: form to +3 (\(c.goldCost(.freshLegs)) gold)") {
+                    Button("Fresh legs: form to +3 (\(c.goldCost(.freshLegs)) gold)") {
                         message = store.careerSpendGold(.freshLegs, playerId: playerId) ?? "Feeling fresh!"
                     }
                 } else if c.knowledge(of: playerId) < 100 {
-                    Button("🔭 Instant scout report (\(c.goldCost(.scoutReport)) gold)") {
+                    Button("Instant scout report (\(c.goldCost(.scoutReport)) gold)") {
                         message = store.careerSpendGold(.scoutReport, playerId: playerId) ?? "Fully scouted: potential \(p.potential)."
                     }
                 }

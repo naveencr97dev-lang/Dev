@@ -6,11 +6,40 @@ struct TrainingView: View {
     @EnvironmentObject var store: GameStore
     @State private var plan = TrainingPlan()
     @State private var loaded = false
+    @State private var report: [String]? = nil
 
     var body: some View {
         let c = store.career
         let squad = c.map { car in car.squad(car.userClubId).sorted { $0.age(in: car.year) < $1.age(in: car.year) } } ?? []
         List {
+            Section {
+                if c?.phase == .season {
+                    Button(c?.trainingDoneThisWeek == true ? "This week's session is done" : "Start this week's session") {
+                        report = store.careerRunTraining()
+                        Haptics.success()
+                    }
+                    .buttonStyle(PrimaryButtonStyle())
+                    .disabled(c?.trainingDoneThisWeek == true)
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets())
+                } else {
+                    Text("Training sessions run during the season.").foregroundStyle(Palette.muted)
+                }
+                if let report {
+                    if report.isEmpty {
+                        Text("Session done. No visible gains this week: keep going.").font(.subheadline).foregroundStyle(Palette.muted)
+                    }
+                    ForEach(report, id: \.self) { line in
+                        Label(line, systemImage: "arrow.up.circle.fill").font(.subheadline).foregroundStyle(Palette.accent)
+                    }
+                }
+            } header: {
+                Text("This week")
+            } footer: {
+                Text("One session per week (a week = your next match). If you don't start it, it runs on its own after the match.")
+            }
+            .listRowBackground(GameRowBackground())
+
             Section {
                 ForEach(0..<plan.drills.count, id: \.self) { i in
                     Picker("Slot \(i + 1)", selection: drillBinding(i)) {
@@ -29,10 +58,10 @@ struct TrainingView: View {
                 .pickerStyle(.segmented)
                 if let car = c {
                     if car.trainingBoostWeeks > 0 {
-                        Text("⚡️ Training boost active: \(car.trainingBoostWeeks) weeks left").font(.caption.weight(.bold))
+                        Text("Training boost active: \(car.trainingBoostWeeks) weeks left").font(.caption.weight(.bold))
                             .foregroundStyle(Palette.accent)
                     } else {
-                        Button("⚡️ Training boost +50% for 4 weeks (\(car.goldCost(.trainingBoost)) gold)") {
+                        Button("Training boost +50% for 4 weeks (\(car.goldCost(.trainingBoost)) gold)") {
                             _ = store.careerSpendGold(.trainingBoost)
                         }
                         .font(.subheadline)
@@ -243,7 +272,7 @@ struct ScoutRow: View {
                         }
                     }
                 } label: {
-                    Text("📍 \(scout.region == "ANY" ? "Anywhere" : scout.region)").font(.caption.weight(.bold))
+                    Text("\(scout.region == "ANY" ? "Anywhere" : scout.region)").font(.caption.weight(.bold))
                 }
                 Menu {
                     ForEach(0..<Self.roles.count, id: \.self) { i in
@@ -252,7 +281,7 @@ struct ScoutRow: View {
                         }
                     }
                 } label: {
-                    Text("🎯 \(scout.role?.short ?? "Any role")").font(.caption.weight(.bold))
+                    Text("\(scout.role?.short ?? "Any role")").font(.caption.weight(.bold))
                 }
                 Spacer()
                 Button(scout.youthOnly ? "U21 only ✓" : "All ages") {

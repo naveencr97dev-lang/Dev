@@ -55,7 +55,7 @@ struct CareerFlags: Codable, Hashable {
 /// The whole career save. A pure value type: every rule lives here or in the engines, so the
 /// career can be unit-tested and simulated headlessly.
 struct Career: Codable {
-    static let currentSchema = 8
+    static let currentSchema = 9
     static let maxNews = 80
 
     var schemaVersion = Career.currentSchema
@@ -101,6 +101,9 @@ struct Career: Codable {
     var tactics = Tactics()
     // Schema 8: difficulty and test switches.
     var settings = CareerSettings()
+    // Schema 9: weekly training session and the season's money by category.
+    var trainingDoneThisWeek = false
+    var seasonMoney: [String: Int] = [:]
 
     /// Home grounds, by franchise template order.
     static let homePitches: [Pitch] = [.indianFlat, .dustyTurner, .indianFlat, .caribbeanSlow, .englishSeam,
@@ -292,6 +295,8 @@ struct Career: Codable {
     // MARK: - Season
 
     mutating func startSeason() {
+        seasonMoney = [:]
+        trainingDoneThisWeek = false
         fixtures = []
         fixtureDays = [:]
         results = []
@@ -515,7 +520,8 @@ struct Career: Codable {
         }
         players[r.potmId]?.stats.potm += 1
         if r.teamA == userClubId || r.teamB == userClubId {
-            trainingTick()
+            // Training runs after the match unless the user already ran this week's session.
+            if trainingDoneThisWeek { trainingDoneThisWeek = false } else { trainingTick() }
             let week = results.filter { $0.teamA == userClubId || $0.teamB == userClubId }.count
             if week % max(1, tuning.scoutReportEveryWeeks) == 0 { scoutTick() }
             weeklyIncome(after: r)
@@ -753,6 +759,16 @@ enum CareerSave {
 
     /// JSON migrations, keyed by the version they upgrade from.
     static let migrations: [Int: ([String: Any]) -> [String: Any]] = [
+        // v8 → v9: training session flag, season money, ticket price.
+        8: { json in
+            var j = json
+            j["trainingDoneThisWeek"] = false
+            j["seasonMoney"] = [String: Any]()
+            var settings = j["settings"] as? [String: Any] ?? [:]
+            settings["ticketPrice"] = "normal"
+            j["settings"] = settings
+            return j
+        },
         // v7 → v8: settings (difficulty, market always open).
         7: { json in
             var j = json

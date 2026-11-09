@@ -50,7 +50,7 @@ struct CareerSetupView: View {
                 }
 
                 Section {
-                    Button("🔄 Redraft squads") { redraft() }
+                    Button("Redraft squads") { redraft() }
                     Button("Start career ▶︎") { start() }
                         .buttonStyle(PrimaryButtonStyle())
                         .disabled(picked == nil)

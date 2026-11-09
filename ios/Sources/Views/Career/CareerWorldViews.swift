@@ -13,7 +13,7 @@ struct WindowCard: View {
         let started = c.intl.event?.key == c.pendingWindow
         AppCard(tint: Palette.four) {
             VStack(alignment: .leading, spacing: DS.Space.md) {
-                Text("🌍 INTERNATIONAL WINDOW").font(.display(15, weight: .heavy)).foregroundStyle(Palette.four)
+                Text("INTERNATIONAL WINDOW").font(.display(15, weight: .heavy)).foregroundStyle(Palette.four)
                 if !started {
                     Text("The league pauses for international cricket.").font(.subheadline)
                     Button("Open the window ▶︎") { store.careerEnsureWindow() }
@@ -101,7 +101,7 @@ struct CareerWorldTab: View {
                             ForEach(c.intl.history) { h in
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(h.title).font(.subheadline.weight(.semibold))
-                                    if let w = h.winner { Text("🏆 \(c.intl.nations.first { $0.code == w }?.name ?? w)").font(.caption) }
+                                    if let w = h.winner { Text("\(c.intl.nations.first { $0.code == w }?.name ?? w)").font(.caption) }
                                     if let n = h.userNation, let r = h.userResult {
                                         Text("You (\(n)): \(r)").font(.caption).foregroundStyle(Palette.muted)
                                     }

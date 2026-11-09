@@ -23,7 +23,7 @@ struct CareerSquadTab: View {
                         if !issues.isEmpty {
                             VStack(alignment: .leading, spacing: 2) {
                                 ForEach(issues, id: \.self) { issue in
-                                    Text("⚠︎ \(issue)").font(.caption.weight(.bold)).foregroundStyle(.orange)
+                                    Label(issue, systemImage: "exclamationmark.triangle.fill").font(.caption.weight(.bold)).foregroundStyle(.orange)
                                 }
                                 Text("The best XI will be picked automatically until this is fixed.")
                                     .font(.caption2).foregroundStyle(Palette.muted)
@@ -121,7 +121,7 @@ struct CareerPlayerRow: View {
                 HStack(spacing: 5) {
                     Text(player.name).font(.body.weight(.semibold)).lineLimit(1)
                     if player.overseas { Image(systemName: "airplane").font(.caption2).foregroundStyle(Palette.muted) }
-                    if player.legend { Text("★").font(.caption).foregroundStyle(Palette.accent) }
+                    if player.legend { Image(systemName: "star.fill").font(.caption2).foregroundStyle(CareerPalette.gold) }
                     if !player.traits.isEmpty { Text(player.traits.map(\.icon).joined()).font(.caption) }
                 }
                 HStack(spacing: 6) {

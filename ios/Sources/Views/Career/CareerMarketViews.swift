@@ -209,7 +209,7 @@ struct CareerAuctionView: View {
                     Text("Value \(Money.format(p.value(in: c.year))) · base \(Money.format(p.basePrice(in: c.year)))")
                         .font(.caption).foregroundStyle(Palette.muted)
                     if let limit = c.auctionTopRivalLimit {
-                        Text("🦈 Top rival limit: \(limit > 0 ? Money.format(limit) : "nobody interested")")
+                        Text("Top rival limit: \(limit > 0 ? Money.format(limit) : "nobody interested")")
                             .font(.caption.weight(.bold)).foregroundStyle(Palette.accent)
                     }
                 }
@@ -526,7 +526,7 @@ struct TransferActions: View {
             Text("Free agent · wants \(Money.format(c.userWageDemand(p))) a season").font(.caption).foregroundStyle(Palette.muted)
         }
         Stepper("Wage \(Money.format(wage))", value: $wage, in: c.tuning.minWage...c.tuning.salaryCap, step: wage < 200 ? 5 : 25)
-        Button("✅ Pay asking price: \(p.clubId == nil ? "" : Money.format(c.askingPrice(p)) + " + ")\(Money.format(c.userWageDemand(p)))/yr") {
+        Button("Pay asking price: \(p.clubId == nil ? "" : Money.format(c.askingPrice(p)) + " + ")\(Money.format(c.userWageDemand(p)))/yr") {
             fee = c.askingPrice(p)
             wage = c.userWageDemand(p)
             let outcome = store.careerMakeOffer(playerId: p.id, fee: p.clubId == nil ? 0 : fee, wage: wage)

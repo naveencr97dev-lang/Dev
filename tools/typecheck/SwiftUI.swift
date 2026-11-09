@@ -646,3 +646,11 @@ extension View {
     public func mask<M: View>(_ m: M) -> _Mod { _Mod() }
     public func mask<M: View>(alignment: Alignment = .center, @ViewBuilder _ m: () -> M) -> _Mod { _Mod() }
 }
+public struct SafeAreaRegions: OptionSet {
+    public let rawValue: Int
+    public init(rawValue: Int) { self.rawValue = rawValue }
+    public static let all = SafeAreaRegions(rawValue: 1), container = SafeAreaRegions(rawValue: 2), keyboard = SafeAreaRegions(rawValue: 4)
+}
+extension View {
+    public func ignoresSafeArea(_ regions: SafeAreaRegions = .all, edges: Edge.Set = .all) -> _Mod { _Mod() }
+}

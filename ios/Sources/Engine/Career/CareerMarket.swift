@@ -98,6 +98,7 @@ extension Career {
     mutating func post(_ clubId: Int, _ text: String, _ amount: Int) {
         guard clubId < finance.count else { return }
         finance[clubId].bank += amount
+        if clubId == userClubId { trackMoney(text, amount) }
         finance[clubId].ledger.insert(LedgerEntry(year: year, day: currentDay, text: text, amount: amount), at: 0)
         if finance[clubId].ledger.count > 40 { finance[clubId].ledger.removeLast(finance[clubId].ledger.count - 40) }
     }

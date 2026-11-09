@@ -6,23 +6,14 @@ struct TeamBadge: View {
     var size: CGFloat = 40
 
     var body: some View {
-        let color = Color(hex: team.colorHex)
-        ZStack {
-            RoundedRectangle(cornerRadius: size * 0.28, style: .continuous).fill(color)
-            Slant(skew: 0.6)
-                .fill(Color.white.opacity(0.16))
-                .frame(width: size * 0.42)
-                .offset(x: size * 0.18)
-            Text(team.short)
-                .font(.display(size * 0.36))
-                .foregroundStyle(.white)
-                .minimumScaleFactor(0.6)
-                .lineLimit(1)
-                .padding(.horizontal, 3)
-        }
-        .frame(width: size, height: size)
-        .clipShape(RoundedRectangle(cornerRadius: size * 0.28, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: size * 0.28, style: .continuous).stroke(Color.white.opacity(0.18), lineWidth: 1))
+        Text(team.short)
+            .font(.system(size: size * 0.34, weight: .bold))
+            .foregroundStyle(.white)
+            .minimumScaleFactor(0.6)
+            .lineLimit(1)
+            .padding(.horizontal, 3)
+            .frame(width: size, height: size)
+            .background(RoundedRectangle(cornerRadius: size * 0.24, style: .continuous).fill(Color(hex: team.colorHex)))
     }
 }
 
