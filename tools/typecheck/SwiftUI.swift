@@ -333,6 +333,10 @@ public struct Toggle: View {
     public init(_ title: String, isOn: Binding<Bool>) {}
     public var body: Never { fatalError() }
 }
+public struct Stepper: View {
+    public init<S: StringProtocol>(_ title: S, value: Binding<Int>, in bounds: ClosedRange<Int>, step: Int = 1) {}
+    public var body: Never { fatalError() }
+}
 public struct TextField: View {
     public init(_ title: String, text: Binding<String>) {}
     public var body: Never { fatalError() }

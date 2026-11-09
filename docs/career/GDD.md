@@ -169,6 +169,16 @@ The existing match ratings (bat and bowl overall) are **derived** from these att
 - Trades are allowed in transfer windows only. Squad and overseas limits are always enforced.
 - **Free agents:** you can sign one at any time if you have a squad slot.
 
+### 5.2b As built (M2)
+
+- **Windows:** the off-season (after the auction), the first two league rounds, and the break before
+  round 25.
+- **Auction:** turn-based (no timer). AI limits come from value × squad need × personality × noise,
+  capped by cap room minus a reserve to reach 18 players.
+- **Asking prices:** value × 1.5 for an XI regular, × 1.15 for a bench player. Offers below 75% of the
+  ask are rejected; anything closer gets a counter.
+- **Wage demands:** the higher of the player's market value and 110% of his current wage.
+
 ### 5.3 Contracts
 
 - Wage, length (1–3 years) and a release fee.

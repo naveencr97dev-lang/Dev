@@ -15,7 +15,7 @@ struct CareerSquadTab: View {
                 AppCard {
                     VStack(alignment: .leading, spacing: DS.Space.md) {
                         HStack {
-                            Text("\(squad.count) players · \(squad.filter(\.overseas).count)/\(c.tuning.maxOverseasSquad) overseas")
+                            Text("\(squad.count) players · \(squad.filter(\.overseas).count)/\(c.tuning.maxOverseasSquad) overseas · wages \(Money.format(c.payroll(club.id)))")
                                 .font(.subheadline)
                             Spacer()
                             Text("STR \(c.strength(club.id))").font(.display(18)).foregroundStyle(Palette.accent)
@@ -124,7 +124,8 @@ struct CareerPlayerRow: View {
             Spacer(minLength: 4)
             VStack(alignment: .trailing, spacing: 0) {
                 Text("\(player.rating)").font(.display(26)).foregroundStyle(strengthColor(player.rating))
-                Text("OVR").font(.display(10, weight: .heavy)).foregroundStyle(Palette.muted)
+                Text(player.contract.map { Money.format($0.wage) } ?? "OVR")
+                    .font(.display(10, weight: .heavy)).foregroundStyle(Palette.muted).lineLimit(1)
             }
         }
         .padding(.vertical, 2)
@@ -267,6 +268,8 @@ struct CareerPlayerView: View {
                     }
                     SectionLabel(text: "Career")
                     careerStats(p.stats)
+                    SectionLabel(text: "Transfer")
+                    TransferActions(playerId: playerId)
                 }
                 .padding(DS.Space.lg)
             }

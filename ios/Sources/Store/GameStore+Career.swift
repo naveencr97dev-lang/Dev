@@ -91,12 +91,65 @@ extension GameStore {
         mutateCareer { $0.simToSeasonEnd() }
     }
 
+    // MARK: Off-season
+
     @discardableResult
-    func careerStartNextSeason() -> Career.RolloverReport {
+    func careerBeginOffseason() -> Career.RolloverReport {
         var report = Career.RolloverReport()
-        mutateCareer { report = $0.startNextSeason() }
+        mutateCareer { report = $0.beginOffseason() }
         logs = [:]
         return report
+    }
+
+    func careerConfirmRetention(_ ids: [String]) {
+        mutateCareer { $0.confirmRetention(userKeeps: ids) }
+    }
+
+    @discardableResult
+    func careerUserBid() -> Bool {
+        var ok = false
+        mutateCareer(save: false) { ok = $0.userBid() }
+        return ok
+    }
+
+    @discardableResult
+    func careerPassLot() -> SaleLine? {
+        var sale: SaleLine?
+        mutateCareer { sale = $0.passLot() }
+        return sale
+    }
+
+    func careerSimAuction(autoBid: Bool) {
+        mutateCareer { $0.simRestOfAuction(autoBid: autoBid) }
+    }
+
+    @discardableResult
+    func careerStartSeason() -> [String] {
+        var signed: [String] = []
+        mutateCareer { signed = $0.startSeasonFromOffseason() }
+        return signed
+    }
+
+    // MARK: Transfers
+
+    func careerMakeOffer(playerId: String, fee: Int, wage: Int) -> OfferOutcome {
+        var out = OfferOutcome.rejected("No career")
+        mutateCareer { out = $0.makeOffer(playerId: playerId, fee: fee, wage: wage) }
+        return out
+    }
+
+    func careerList(_ id: String, asking: Int) { mutateCareer { $0.listForTransfer(id, asking: asking) } }
+    func careerUnlist(_ id: String) { mutateCareer { $0.unlist(id) } }
+    func careerAcceptOffer(_ id: Int) -> Bool {
+        var ok = false
+        mutateCareer { ok = $0.acceptOffer(id) }
+        return ok
+    }
+    func careerRejectOffer(_ id: Int) { mutateCareer { $0.rejectOffer(id) } }
+    func careerRelease(_ id: String) -> Bool {
+        var ok = false
+        mutateCareer { ok = $0.release(id) }
+        return ok
     }
 
     /// Picks the best XI and order for the user's club.

@@ -82,7 +82,27 @@ one owner and one AI developer.
 - **Gate:** play 2 full seasons end to end on the phone. The balance test passes with
   par scores in range.
 
-### M2: Squad and market (2 sprints)
+### M2: Squad and market (2 sprints) ✅ built (generic first pass, waiting for feedback)
+- **Built:**
+  - Contracts: the wage is the auction price, and contracts run to the next mega auction.
+  - A ₹120 Cr salary cap, and banks with a ledger. Season revenue and prize money are paid after the final.
+  - The off-season flow: retentions (mega years), then the auction, then the transfer window.
+  - The auction is turn-based and fits the phone: you bid, the AI answers at once, Pass lets the AI
+    settle the lot. "Sim rest" can let your staff bid for you.
+  - The Market tab: search, offers with a fee and wage, counter-offers, 3 talks per player per window,
+    free agents, transfer list with AI bids, unsolicited bids, release with 50% compensation.
+  - AI clubs strengthen from free agents each window.
+  - Save schema 2, with a tested v1 migration.
+- **Windows:** the off-season (after the auction), rounds 1–2, and before round 25.
+- **20-season harness:** 8 different champions, payrolls under the cap, the user club stays
+  competitive when staff auto-bid.
+- **Known gaps:**
+  - Banks only grow, because wages aren't charged to the bank yet (M4 finances).
+  - Long-run attacks out-rate batting, and flat scores drift from about 180 to about 160 after
+    10+ seasons (Beta tuning).
+  - No AI-to-AI trades, and no loans.
+
+### M2 plan (original)
 - **Must:**
   - Contracts and wages, and the squad rules (18–25 players, 8 overseas).
   - Retentions.

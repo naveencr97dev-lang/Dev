@@ -14,7 +14,8 @@ struct CareerHubView: View {
                 Picker("View", selection: $tab) {
                     Text("Home").tag(0)
                     Text("Squad").tag(1)
-                    Text("Fixtures").tag(2)
+                    Text("Market").tag(5)
+                    Text("Matches").tag(2)
                     Text("Table").tag(3)
                     Text("Club").tag(4)
                 }
@@ -29,6 +30,7 @@ struct CareerHubView: View {
                         case 1: CareerSquadTab()
                         case 2: CareerFixturesTab(path: $path)
                         case 3: CareerTableTab(path: $path)
+                        case 5: CareerMarketTab()
                         default: CareerClubTab(path: $path)
                         }
                     }
@@ -77,6 +79,7 @@ struct CareerHubView: View {
 
     private var title: String {
         guard let c = store.career else { return "Career" }
+        if c.phase == .offseason { return "\(c.userClub.short) · \(c.year) off-season" }
         return "\(c.userClub.short) · \(c.year) · \(CareerCalendar.label(c.currentDay))"
     }
 }
@@ -95,7 +98,7 @@ enum CareerText {
     }
 
     static func rollover(_ r: Career.RolloverReport) -> String {
-        var parts = ["New season! \(r.retired.count) retirements, \(r.youth) youngsters entered the pool."]
+        var parts = ["Off-season! \(r.retired.count) retirements, \(r.youth) youngsters entered the pool."]
         if !r.userRetired.isEmpty { parts.append("Retired from your squad: \(r.userRetired.joined(separator: ", ")).") }
         if !r.signed.isEmpty { parts.append("Signed to fill your squad: \(r.signed.joined(separator: ", ")).") }
         if !r.bigRisers.isEmpty { parts.append("Big improvers: \(r.bigRisers.joined(separator: ", ")).") }
@@ -117,9 +120,13 @@ struct CareerHomeTab: View {
 
                 if c.phase == .seasonEnd {
                     SeasonEndCard(career: c) {
-                        let report = store.careerStartNextSeason()
+                        let report = store.careerBeginOffseason()
                         note = CareerText.rollover(report)
                         Haptics.success()
+                    }
+                } else if c.phase == .offseason {
+                    OffseasonCard(career: c) { signed in
+                        note = signed.isEmpty ? "Season \(c.year) is under way." : "The board filled your squad: \(signed.joined(separator: ", "))."
                     }
                 } else if let f = c.nextFixture {
                     if c.isUserFixture(f) {
@@ -278,8 +285,8 @@ struct SeasonEndCard: View {
                     }
                     .font(.subheadline)
                 }
-                Button("Start \(c.year + 1) season ▶︎", action: onNext).buttonStyle(PrimaryButtonStyle())
-                Text("Players age a year, develop or decline, veterans retire and a youth intake joins the pool.")
+                Button("Go to the \(String(c.year + 1)) off-season ▶︎", action: onNext).buttonStyle(PrimaryButtonStyle())
+                Text("Players age a year, develop or decline, veterans retire and a youth intake joins the pool. Then retentions (mega-auction years), the auction and the transfer window.")
                     .font(.caption2).foregroundStyle(Palette.muted)
             }
         }
@@ -592,6 +599,8 @@ struct CareerClubTab: View {
                             .font(.caption).foregroundStyle(Palette.muted)
                     }
                 }
+
+                FinanceCard(career: c)
 
                 SectionLabel(text: "History")
                 if c.history.isEmpty {
