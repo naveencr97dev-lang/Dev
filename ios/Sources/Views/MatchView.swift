@@ -21,7 +21,9 @@ struct MatchView: View {
     /// Time since the last ball was revealed (at 1× scale).
     @State private var ballClock: Double = 0
     @State private var inningsBreak = false
-    @State private var breakTaken = false
+    /// Innings whose break card has been shown (1 = the chase, 2/4… = super overs).
+    @State private var lastBreakInnings = 0
+    @State private var superOverBreak = false
     @State private var breakClock: Double = 0
     @State private var paused = false
     @State private var showReel = false
@@ -90,9 +92,10 @@ struct MatchView: View {
 
     /// Last 3 overs of a chase that's still alive: let every ball breathe.
     private func isTense(_ e: BallEvent) -> Bool {
-        guard e.innings == 1, let r = result else { return false }
-        let need = r.innings[0].runs + 1 - e.score
-        let left = 120 - (e.over * 6 + e.ballInOver)
+        guard let r = result, let target = r.target(forInnings: e.innings) else { return false }
+        let need = target - e.score
+        let left = r.maxBalls(e.innings) - (e.over * 6 + e.ballInOver)
+        if e.innings >= 2 { return need > 0 }   // every super-over chase ball is tense
         return need > 0 && left <= 18 && need <= left * 2 + 6
     }
 
@@ -126,9 +129,13 @@ struct MatchView: View {
         guard ballClock >= ballWait else { return }
         ballClock = 0
         // Innings break before the chase starts.
-        if shown > 0, shown < log.count, log[shown].innings != log[shown - 1].innings, !breakTaken {
+        // Breaks before the chase and before each super over.
+        if shown > 0, shown < log.count, log[shown].innings != log[shown - 1].innings,
+           (log[shown].innings == 1 || (log[shown].innings >= 2 && log[shown].innings % 2 == 0)),
+           log[shown].innings > lastBreakInnings {
+            superOverBreak = log[shown].innings >= 2
             withAnimation(.spring()) { inningsBreak = true }
-            breakTaken = true
+            lastBreakInnings = log[shown].innings
             breakClock = 0
             return
         }
@@ -179,7 +186,7 @@ struct MatchView: View {
                     if let e = current, !anticipating { BigCall(event: e).id(shown) }
                 }
             if let e = current {
-                CreaseCard(event: e, battingTeam: store.team(r.innings[e.innings].teamId))
+                CreaseCard(event: e, battingTeam: store.team(r.card(e.innings).teamId))
             }
         }
         let feed = VStack(alignment: .leading, spacing: DS.Space.sm) {
@@ -197,7 +204,7 @@ struct MatchView: View {
             SectionLabel(text: "Runs per over")
             AppCard(padding: DS.Space.md) {
                 LiveOverBars(perOver: MatchView.liveOvers(log, upTo: shown, innings: inningsNow),
-                             color: Color(hex: store.team(r.innings[min(inningsNow, 1)].teamId)?.colorHex ?? "#D7FF3A"))
+                             color: Color(hex: store.team(r.card(inningsNow).teamId)?.colorHex ?? "#D7FF3A"))
             }
             SectionLabel(text: "Commentary")
             AppCard(padding: DS.Space.md) {
@@ -233,7 +240,10 @@ struct MatchView: View {
                     }
                 }
             }
-            if inningsBreak {
+            if inningsBreak && superOverBreak {
+                SuperOverBreakCard(result: r, superOverIndex: max(0, (lastBreakInnings - 2) / 2), onContinue: continueAfterBreak)
+                    .transition(.scale(scale: 0.8).combined(with: .opacity))
+            } else if inningsBreak {
                 InningsBreakCard(result: r, onContinue: continueAfterBreak)
                     .transition(.scale(scale: 0.8).combined(with: .opacity))
             }
@@ -260,7 +270,7 @@ struct MatchView: View {
                         ScoreBug(result: r, event: current, compact: true)
                         statusLine(current: current, anticipating: anticipating, compact: true)
                         if let e = current {
-                            CreaseCard(event: e, battingTeam: store.team(r.innings[e.innings].teamId), compact: true)
+                            CreaseCard(event: e, battingTeam: store.team(r.card(e.innings).teamId), compact: true)
                         }
                         HStack(spacing: 5) {
                             ForEach(Array(thisOver.enumerated()), id: \.offset) { _, e in
@@ -345,8 +355,8 @@ struct ScoreBug: View {
 
     var body: some View {
         let inn = event?.innings ?? 0
-        let batting = store.team(result.innings[min(inn, 1)].teamId)
-        let bowling = store.team(result.innings[min(inn, 1) == 0 ? 1 : 0].teamId)
+        let batting = store.team(result.card(inn).teamId)
+        let bowling = store.team(result.fieldingTeam(inn))
         let balls = event.map { $0.over * 6 + $0.ballInOver } ?? 0
         VStack(spacing: 0) {
             HStack(spacing: 0) {
@@ -383,15 +393,15 @@ struct ScoreBug: View {
     }
 
     private func equation(inn: Int, balls: Int) -> String {
-        if inn == 0 {
+        let tag = inn >= 2 ? "SUPER OVER · " : ""
+        guard let target = result.target(forInnings: inn) else {
             let rr = balls > 0 ? Double(event?.score ?? 0) * 6 / Double(balls) : 0
-            return "RUN RATE \(String(format: "%.2f", rr))"
+            return tag + "RUN RATE \(String(format: "%.2f", rr))"
         }
-        let target = result.innings[0].runs + 1
         let need = max(0, target - (event?.score ?? 0))
-        let left = 120 - balls
-        if need == 0 { return "TARGET REACHED" }
-        return "NEED \(need) OFF \(left) · TARGET \(target)"
+        let left = result.maxBalls(inn) - balls
+        if need == 0 { return tag + "TARGET REACHED" }
+        return tag + "NEED \(need) OFF \(left) · TARGET \(target)"
     }
 }
 
@@ -528,6 +538,12 @@ struct MatchResultContent: View {
                 // Post-match order: scorecard, then worm, then highlights.
                 ForEach(Array(result.innings.prefix(2).enumerated()), id: \.offset) { _, inn in
                     InningsCardView(innings: inn)
+                }
+                if let so = result.superOvers, !so.isEmpty {
+                    SectionLabel(text: so.count > 2 ? "Super Overs" : "Super Over")
+                    ForEach(Array(so.enumerated()), id: \.offset) { _, inn in
+                        InningsCardView(innings: inn)
+                    }
                 }
                 manhattan
                 if let moments = result.highlights, !moments.isEmpty {

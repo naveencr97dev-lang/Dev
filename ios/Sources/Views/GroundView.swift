@@ -100,3 +100,37 @@ struct FieldOrWheel: View {
         }
     }
 }
+
+/// Shown when the scores are level: the super over is about to start.
+struct SuperOverBreakCard: View {
+    @EnvironmentObject var store: GameStore
+    let result: MatchResult
+    /// 0 for the first super over, 1 if that was tied too, …
+    let superOverIndex: Int
+    let onContinue: () -> Void
+
+    var body: some View {
+        let first = result.card(2 + superOverIndex * 2)
+        let battingFirst = store.team(first.teamId)
+        VStack(spacing: DS.Space.md) {
+            Text(superOverIndex == 0 ? "SCORES LEVEL!" : "SUPER OVER TIED!")
+                .font(.display(30)).foregroundStyle(Palette.accent)
+            Text(superOverIndex == 0
+                 ? "\(result.innings[0].score) v \(result.innings[1].score)"
+                 : "Another super over decides it")
+                .font(.score(22))
+            Text("SUPER OVER\(superOverIndex > 0 ? " \(superOverIndex + 1)" : "")")
+                .font(.display(22)).padding(.horizontal, 14).padding(.vertical, 6)
+                .background(Capsule().fill(Palette.wicket))
+            if let b = battingFirst {
+                Text("\(b.short) bat first: one over, two wickets.")
+                    .font(.subheadline).foregroundStyle(Palette.muted)
+            }
+            Button("Bowl it ▶︎", action: onContinue).buttonStyle(PrimaryButtonStyle()).frame(maxWidth: 260)
+        }
+        .padding(DS.Space.xl)
+        .background(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous).fill(Palette.surface))
+        .overlay(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous).stroke(Palette.accent, lineWidth: 2))
+        .padding(DS.Space.lg)
+    }
+}

@@ -93,8 +93,27 @@ struct MatchResult: Codable, Hashable, Identifiable {
     let potmTeam: Int
     /// Key moments, in match order (optional so older saves still load).
     var highlights: [Highlight]? = nil
+    /// Super-over innings in order (pairs; more than one pair if a super over was tied too).
+    var superOvers: [InningsCard]? = nil
 
     var loserId: Int { winnerId == teamA ? teamB : teamA }
+
+    /// Innings by log index: 0-1 the match, 2+ the super overs.
+    func card(_ index: Int) -> InningsCard {
+        if index < innings.count { return innings[index] }
+        let so = superOvers ?? []
+        let i = index - innings.count
+        return i < so.count ? so[i] : innings[innings.count - 1]
+    }
+
+    /// The team not batting in innings `index`.
+    func fieldingTeam(_ index: Int) -> Int { card(index).teamId == teamA ? teamB : teamA }
+
+    /// Target in a chase (innings 1, 3, 5…), else nil.
+    func target(forInnings index: Int) -> Int? { index % 2 == 1 ? card(index - 1).runs + 1 : nil }
+
+    /// Balls available in innings `index` (120, or 6 in a super over).
+    func maxBalls(_ index: Int) -> Int { index < 2 ? card(index).maxBalls : 6 }
 }
 
 /// A key moment kept with the result for the post-match highlights reel.
@@ -227,6 +246,7 @@ struct MatchEngine {
         var winner: Side
         var margin: String
         var superOver = false
+        var superOvers: [InningsCard] = []
         if second.runs > first.runs {
             winner = bowlFirst
             let wkts = (bowlFirst.xi.count - 1) - second.wickets
@@ -238,8 +258,15 @@ struct MatchEngine {
             margin = "won by \(r) run\(r == 1 ? "" : "s")"
         } else {
             superOver = true
-            winner = decideSuperOver(batFirst, bowlFirst, pitch: pitch)
-            margin = "won the Super Over"
+            let so = decideSuperOver(batFirst, bowlFirst, pitch: pitch, log: &log)
+            winner = so.0
+            superOvers = so.1
+            if superOvers.count >= 2 {
+                let a = superOvers[superOvers.count - 2], b = superOvers[superOvers.count - 1]
+                margin = "won the Super Over (\(a.score) v \(b.score))"
+            } else {
+                margin = "won the Super Over"
+            }
         }
 
         if superOver {
@@ -258,6 +285,7 @@ struct MatchEngine {
                            margin: margin, superOver: superOver, potmId: potm.0.id, potmName: potm.0.name,
                            potmTeam: potm.1)
         result.highlights = Array(picked)
+        result.superOvers = superOvers.isEmpty ? nil : superOvers
         return result
     }
 
@@ -268,15 +296,19 @@ struct MatchEngine {
                 bytes[8], bytes[9], bytes[10], bytes[11], bytes[12], bytes[13], bytes[14], bytes[15])
     }
 
-    private mutating func decideSuperOver(_ x: Side, _ y: Side, pitch: Pitch) -> Side {
-        for _ in 0..<5 {
-            var discard: [BallEvent] = []
-            let top = { (s: Side) in Side(teamId: s.teamId, xi: Array(s.xi.prefix(3))) }
-            let i1 = innings(batting: top(x), bowling: y, target: nil, maxOvers: 1, index: 2, pitch: pitch, log: &discard)
-            let i2 = innings(batting: top(y), bowling: x, target: i1.runs + 1, maxOvers: 1, index: 3, pitch: pitch, log: &discard)
-            if i1.runs != i2.runs { return i1.runs > i2.runs ? x : y }
+    /// Plays super overs (the side that batted second bats first) until one is decided.
+    /// Their balls go into the log as innings 2, 3, 4… so the live view can show them.
+    private mutating func decideSuperOver(_ x: Side, _ y: Side, pitch: Pitch,
+                                          log: inout [BallEvent]) -> (Side, [InningsCard]) {
+        var cards: [InningsCard] = []
+        let top = { (s: Side) in Side(teamId: s.teamId, xi: Array(s.xi.prefix(3))) }
+        for round in 0..<5 {
+            let i1 = innings(batting: top(y), bowling: x, target: nil, maxOvers: 1, index: 2 + round * 2, pitch: pitch, log: &log)
+            let i2 = innings(batting: top(x), bowling: y, target: i1.runs + 1, maxOvers: 1, index: 3 + round * 2, pitch: pitch, log: &log)
+            cards += [i1, i2]
+            if i1.runs != i2.runs { return (i1.runs > i2.runs ? y : x, cards) }
         }
-        return rng.unit() < 0.5 ? x : y
+        return (rng.unit() < 0.5 ? x : y, cards)
     }
 
     // MARK: Innings
