@@ -50,9 +50,9 @@ struct CareerSquadTab: View {
                     }
                     Hairline(inset: 54)
                     NavigationLink { CareerScreen(title: "Squad report") { SquadReportView() } } label: {
-                        let unhappy = squad.filter { c.morale($0) < 45 }.count
+                        let cold = squad.filter { club.xi.contains($0.id) && $0.form <= -4 }.count
                         DashTile(icon: "list.bullet.clipboard", title: "Squad report",
-                                 subtitle: unhappy > 0 ? "\(unhappy) unhappy with their role" : "Strengths and weak spots")
+                                 subtitle: cold > 0 ? "\(cold) out of form in the XI" : "Strengths and weak spots")
                     }
                 }
                 .gameFrame()
@@ -248,7 +248,7 @@ struct CareerPlayerView: View {
             if let c = store.career, let p = c.players[playerId] {
                 VStack(alignment: .leading, spacing: DS.Space.lg) {
                     header(c, p)
-                    if p.clubId == c.userClubId { RoleMoraleCard(career: c, player: p) }
+                    FormCard(career: c, player: p)
                     if !p.traits.isEmpty {
                         SectionLabel(text: "Traits")
                         AppCard { TraitChips(traits: p.traits, showBlurb: true) }
@@ -316,19 +316,6 @@ struct CareerPlayerView: View {
                 }
                 Text("Value \(Money.format(p.value(in: c.year))) · Potential \(c.potentialLabel(p))\(c.knowledge(of: p.id) < 100 ? " (scouted \(c.knowledge(of: p.id))%)" : "")")
                     .font(.subheadline.weight(.semibold))
-                let recent = c.recentRatings(p.id)
-                if !recent.isEmpty {
-                    HStack(spacing: 6) {
-                        Text("Last \(recent.count)").font(.caption.weight(.semibold)).foregroundStyle(Palette.muted)
-                        ForEach(Array(recent.enumerated()), id: \.offset) { _, x in
-                            Text(String(format: "%.1f", x)).font(.score(14)).foregroundStyle(RatingStyle.color(x))
-                        }
-                        Spacer()
-                        if let avg = c.averageRating(p.id) {
-                            Text("avg \(String(format: "%.2f", avg))").font(.caption.weight(.semibold)).foregroundStyle(Palette.muted)
-                        }
-                    }
-                }
                 if !p.line.isEmpty {
                     Text(p.line).font(.caption).foregroundStyle(Palette.muted)
                 }
@@ -392,52 +379,43 @@ struct CareerClubView: View {
     }
 }
 
-/// Career › Squad › Roles and morale: the promised role, morale, playing time and the player's future.
-struct RoleMoraleCard: View {
-    @EnvironmentObject var store: GameStore
+/// Career › Squad › Form: the player's form, its trend and his recent match ratings.
+struct FormCard: View {
     let career: Career
     let player: CareerPlayer
 
     var body: some View {
         let c = career, p = player
-        let m = c.morale(p)
-        let share = c.playedShare(p.id)
+        let trend = c.formTrend(p.id)
+        let recent = c.recentRatings(p.id)
         VStack(alignment: .leading, spacing: DS.Space.sm) {
-            SectionLabel(text: "Role and morale")
+            SectionLabel(text: "Form")
             VStack(spacing: 0) {
-                HStack {
-                    Text("Squad role").font(.display(16, weight: .regular))
-                    Spacer()
-                    Menu {
-                        ForEach(SquadRole.allCases) { r in
-                            Button { store.careerSetSquadRole(p.id, r) } label: {
-                                if r == c.squadRole(p) { Label(r.label, systemImage: "checkmark") } else { Text(r.label) }
-                            }
-                        }
-                    } label: {
-                        HStack(spacing: 4) {
-                            Text(c.squadRole(p).label)
-                            Image(systemName: "chevron.up.chevron.down").font(.system(size: 12 * TextScale.factor, weight: .semibold))
-                        }
-                        .font(.display(16, weight: .semibold)).foregroundStyle(Palette.accent)
-                    }
-                }
-                .padding(.horizontal, 16).padding(.vertical, 12)
+                InfoRow(label: "Form", value: "\(Career.formLabel(p.form)) · \(CareerText.form(p.form))",
+                        color: CareerText.formColor(p.form), chevron: false)
                 Hairline(inset: 16)
-                InfoRow(label: "Morale", value: "\(m) · \(c.future(p))", color: MoraleStyle.color(m), chevron: false)
+                InfoRow(label: "Trend", value: trend > 0 ? "Rising" : (trend < 0 ? "Falling" : "Level"),
+                        color: trend > 0 ? Palette.accent : (trend < 0 ? Palette.wicket : .white), chevron: false)
                 Hairline(inset: 16)
-                InfoRow(label: "Playing time", value: share.map { "\(Int($0 * 100))% of recent matches (expects \(Int(c.squadRole(p).expectedShare * 100))%)" } ?? "Not enough matches yet",
+                InfoRow(label: "Match rating", value: c.averageRating(p.id).map { "\(String(format: "%.2f", $0)) over \(c.matchRatings(p.id).count) matches" } ?? "No matches this season",
                         chevron: false)
+                if !recent.isEmpty {
+                    Hairline(inset: 16)
+                    HStack {
+                        Text("Last \(recent.count)").font(.display(16, weight: .regular))
+                        Spacer()
+                        ForEach(Array(recent.enumerated()), id: \.offset) { _, x in
+                            Text(String(format: "%.1f", x)).font(.score(16)).foregroundStyle(RatingStyle.color(x))
+                        }
+                    }
+                    .padding(.horizontal, 16).padding(.vertical, 12)
+                }
             }
             .gameFrame()
-            Text("Playing less than his role promises lowers morale. Very unhappy players ask to leave. A demotion costs 10 morale a step.")
+            Text("Form comes from recent performances and moves his batting and bowling by up to 3 in matches. It drifts back towards steady between games.")
                 .font(.display(12, weight: .regular)).foregroundStyle(Palette.muted)
         }
     }
-}
-
-enum MoraleStyle {
-    static func color(_ m: Int) -> Color { m >= 70 ? Palette.accent : (m >= 45 ? .white : (m >= 25 ? .orange : Palette.wicket)) }
 }
 
 /// Career › Squad › Squad report: averages, the three best players, strengths and weak spots.

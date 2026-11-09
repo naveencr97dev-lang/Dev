@@ -81,7 +81,7 @@ Last updated 2026-11-09 (after customer-panel rounds 1-4 and the SM26 recon) on 
 - **Swift toolchain:** if `/opt/swift` is missing, install it with
   `curl -sSfL https://download.swift.org/swift-6.0.3-release/ubuntu2404/swift-6.0.3-RELEASE/swift-6.0.3-RELEASE-ubuntu24.04.tar.gz | tar xz --strip-components=1 -C /opt/swift`
   (run `mkdir -p /opt/swift` first). Then `export PATH=/opt/swift/usr/bin:$PATH`.
-- **Engine tests:** `cd ios && swift test` (82 tests, all green). Pipe the output to a file and
+- **Engine tests:** `cd ios && swift test` (80 tests, all green). Pipe the output to a file and
   check the "Executed … with 0 failures" line before committing. One push once went out red because
   a grep in a command chain hid the failure.
 - **Whole-app type-check:** `tools/typecheck/run.sh`. It checks all 48 files against SwiftUI, UIKit
@@ -104,7 +104,7 @@ Last updated 2026-11-09 (after customer-panel rounds 1-4 and the SM26 recon) on 
 ## 6. What's built (career mode)
 
 The engine is in `ios/Sources/Engine/Career/`, the screens in `ios/Sources/Views/Career/`, and the
-store glue in `ios/Sources/Store/GameStore+Career.swift`. **Save schema 12**, with a JSON migration
+store glue in `ios/Sources/Store/GameStore+Career.swift`. **Save schema 13**, with a JSON migration
 for each version in `CareerSave.migrations`.
 
 - **Season:** 10 fictional clubs, 36 league matches each, home pitches, IPL playoffs, awards,
@@ -120,10 +120,11 @@ for each version in `CareerSave.migrations`.
 - **Assistant manager** (`CareerAssistant.swift`): explains losing runs with fixes, and a retirement
   watch at season start. Settings › **Assistant picks my XI** (on for new careers; manual picks turn it off).
 - **Mega auction:** **Right to Match** cards (retentions + RTM = 6).
-- **Roles and morale** (`CareerMorale.swift`, from the SM26 recon in `docs/reference/SM26-RECON.md`):
-  squad roles are playing-time promises, morale follows playing time, and only broken promises
-  end in transfer requests. A bigger role promised at signing lowers the wage (mood bar in the bid).
-  Squad › Squad report lists strengths and weak spots. Squad › Development (young players' progress)
+- **Form, not morale** (`CareerSquadReport.swift`): the owner chose form over SM26-style morale, so
+  squad roles and morale were removed in schema 13. The player page has a Form card (form label and
+  value, trend from match ratings, last 5 ratings); transfer bids show the player's form and a
+  negotiation bar (offer vs demand, talks left). Squad › Squad report lists strengths and weak spots,
+  including who's in and out of form. Squad › Development (young players' progress)
   and Squad › Club stats (category leaders with match ratings). Match ratings (3-10) come from the
   scorecards (`Career.matchRating`); the player page shows the last 5.
 - **Squad:** XI from about 20 players, batting order, bowling plan of 5, tactics.

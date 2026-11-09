@@ -201,10 +201,8 @@ extension CareerTests {
             players[k] = p
         }
         json["players"] = players
-        var back = try CareerSave.decode(JSONSerialization.data(withJSONObject: json))
-        XCTAssertNil(back.players.values.first { $0.clubId == back.userClubId }?.squadRole)
-        back.assignDefaultRoles()   // the store does this on load
-        XCTAssertTrue(back.squad(back.userClubId).allSatisfy { $0.squadRole != nil && $0.morale != nil })
+        let back = try CareerSave.decode(JSONSerialization.data(withJSONObject: json))
+        XCTAssertEqual(back.squad(back.userClubId).count, c.squad(c.userClubId).count)
         XCTAssertEqual(back.tuning.investObjectiveBank, CareerTuning.standard.investObjectiveBank)
     }
 }

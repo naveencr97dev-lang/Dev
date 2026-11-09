@@ -34,7 +34,13 @@ The SM26 Team section is a left rail: Squad / Reports / Stats / Opposition / Squ
 XI's Squad tab now has Development, Club stats and Squad report tiles. Still to do: Opposition (a
 scouting report on the next opponent) and Squad Planner.
 
-## Built from this recon (schema 12)
+## Built from this recon
+
+> **Update (schema 13):** the owner chose to replace morale with **form**. Squad roles, morale and
+> transfer requests were removed; form (with match ratings) fills that slot on the player page, in
+> transfer bids and in the squad report. The notes below record what was built first.
+
+### First build (schema 12)
 
 - `CareerMorale.swift`:
   - Squad roles (promises), morale 0–100.

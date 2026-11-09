@@ -475,7 +475,6 @@ struct TransferActions: View {
     @State private var loaded = false
     @State private var message: String? = nil
     @State private var confirmRelease = false
-    @State private var role: SquadRole? = nil
 
     var body: some View {
         if let c = store.career, let p = c.players[playerId], !p.retired {
@@ -503,8 +502,7 @@ struct TransferActions: View {
             .onAppear {
                 if !loaded {
                     fee = c.askingPrice(p)
-                    role = c.expectedRole(p)
-                    wage = c.wageDemand(p, promising: role ?? .rotation)
+                    wage = c.userWageDemand(p)
                     loaded = true
                 }
             }
@@ -537,36 +535,22 @@ struct TransferActions: View {
     }
 
     @ViewBuilder private func bid(_ c: Career, _ p: CareerPlayer) -> some View {
-        let promise = role ?? c.expectedRole(p)
-        let demand = c.wageDemand(p, promising: promise)
+        let demand = c.userWageDemand(p)
         if p.clubId != nil {
-            Text("Owner: \(p.clubId.flatMap { c.club($0)?.name } ?? "") · asking \(Money.format(c.askingPrice(p))) · wants \(Money.format(demand)) a season as \(promise.label.lowercased())")
+            Text("Owner: \(p.clubId.flatMap { c.club($0)?.name } ?? "") · asking \(Money.format(c.askingPrice(p))) · wants \(Money.format(demand)) a season")
                 .font(.caption).foregroundStyle(Palette.muted)
             Stepper("Fee \(Money.format(fee))", value: $fee, in: 0...50_000, step: fee < 500 ? 25 : 100)
         } else {
-            Text("Free agent · wants \(Money.format(demand)) a season as \(promise.label.lowercased())").font(.caption).foregroundStyle(Palette.muted)
+            Text("Free agent · wants \(Money.format(demand)) a season").font(.caption).foregroundStyle(Palette.muted)
         }
-        HStack {
-            Text("Promise")
-            Spacer()
-            Picker("Promise", selection: Binding(get: { promise }, set: { r in
-                role = r
-                wage = c.wageDemand(p, promising: r)
-            })) {
-                ForEach(SquadRole.allCases.filter { $0 != .notNeeded }) { r in Text(r.label).tag(r) }
-            }
-            .pickerStyle(.menu)
-        }
-        if promise == .key && c.keyPlayerCount >= 4 {
-            Text("You already have \(c.keyPlayerCount) key players. Promise more than the XI can hold and someone ends up unhappy.")
-                .font(.caption.weight(.semibold)).foregroundStyle(.orange)
-        }
+        Text("Form: \(Career.formLabel(p.form)) (\(CareerText.form(p.form)))\(c.averageRating(p.id).map { " · match rating \(String(format: "%.2f", $0))" } ?? "")")
+            .font(.caption.weight(.semibold)).foregroundStyle(CareerText.formColor(p.form))
         Stepper("Wage \(Money.format(wage))", value: $wage, in: c.tuning.minWage...c.tuning.salaryCap, step: wage < 200 ? 5 : 25)
-        MoodBar(value: c.offerMood(p, wage: wage, role: promise), talksLeft: max(0, 3 - c.market.talks[p.id, default: 0]))
+        MoodBar(value: c.offerMood(p, wage: wage), talksLeft: max(0, 3 - c.market.talks[p.id, default: 0]))
         Button("Pay asking price: \(p.clubId == nil ? "" : Money.format(c.askingPrice(p)) + " + ")\(Money.format(demand))/yr") {
             fee = c.askingPrice(p)
             wage = demand
-            let outcome = store.careerMakeOffer(playerId: p.id, fee: p.clubId == nil ? 0 : fee, wage: wage, role: promise)
+            let outcome = store.careerMakeOffer(playerId: p.id, fee: p.clubId == nil ? 0 : fee, wage: wage)
             message = outcome.message
             if case .accepted = outcome { Haptics.success() } else { Haptics.warning() }
         }
@@ -574,7 +558,7 @@ struct TransferActions: View {
         .disabled(!c.windowOpen)
         Text("Or negotiate:").font(.caption).foregroundStyle(Palette.muted)
         Button(p.clubId == nil ? "Offer contract" : "Make offer") {
-            let outcome = store.careerMakeOffer(playerId: p.id, fee: p.clubId == nil ? 0 : fee, wage: wage, role: promise)
+            let outcome = store.careerMakeOffer(playerId: p.id, fee: p.clubId == nil ? 0 : fee, wage: wage)
             message = outcome.message
             switch outcome {
             case .accepted: Haptics.success()

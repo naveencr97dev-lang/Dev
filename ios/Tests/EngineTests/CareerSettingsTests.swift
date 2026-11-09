@@ -43,7 +43,6 @@ extension CareerTests {
         // Difficulty moves prices and the user's ratings.
         let p = c.marketPlayers(sort: .value).first { $0.clubId != nil }!
         let normalAsk = c.askingPrice(p), normalWage = c.userWageDemand(p)
-        for id in c.userClub.squad { c.players[id]?.morale = Career.defaultMorale }   // neutral morale: test difficulty alone
         let normalBat = c.side(c.userClubId).xi.map(\.bat)
         c.settings.difficulty = .hard
         XCTAssertGreaterThan(c.askingPrice(p), normalAsk)
