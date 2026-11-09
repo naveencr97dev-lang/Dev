@@ -20,6 +20,7 @@ public struct _ConditionalContent<T: View, F: View>: View { public var body: Nev
 public struct AnyView: View { public init<V: View>(_ v: V) {}; public var body: Never { fatalError() } }
 /// Every modifier returns this.
 public struct _Mod: View, Shape {
+    public init() {}
     public var body: Never { fatalError() }
     public func path(in rect: CGRect) -> Path { Path() }
 }
@@ -52,6 +53,7 @@ extension Optional: View where Wrapped: View { public var body: Never { fatalErr
 
 @propertyWrapper @dynamicMemberLookup public struct Binding<Value> {
     public init(get: @escaping () -> Value, set: @escaping (Value) -> Void) { g = get }
+    public init(projectedValue: Binding<Value>) { g = projectedValue.g }
     private let g: () -> Value
     public var wrappedValue: Value { get { g() } nonmutating set {} }
     public var projectedValue: Binding<Value> { self }
@@ -513,4 +515,109 @@ public enum ColorScheme: Hashable { case light, dark }
 
 extension MutableCollection where Self: RangeReplaceableCollection {
     public mutating func move(fromOffsets source: IndexSet, toOffset destination: Int) {}
+}
+
+// MARK: - Timers, App and Scene
+
+public struct TimerPublisher {
+    public func autoconnect() -> TimerPublisher { self }
+}
+extension Timer {
+    public static func publish(every: TimeInterval, on: RunLoop, in mode: RunLoop.Mode) -> TimerPublisher { TimerPublisher() }
+}
+extension View {
+    public func onReceive(_ p: TimerPublisher, perform: @escaping (Date) -> Void) -> _Mod { _Mod() }
+}
+
+public protocol Scene {}
+public struct WindowGroup<C: View>: Scene {
+    public init(@ViewBuilder content: () -> C) {}
+}
+extension Scene {
+    public func onChange<V: Equatable>(of v: V, perform: @escaping (V) -> Void) -> some Scene { self }
+}
+@resultBuilder public struct SceneBuilder {
+    public static func buildBlock<S: Scene>(_ s: S) -> S { s }
+}
+@MainActor public protocol App {
+    associatedtype Body: Scene
+    @SceneBuilder var body: Body { get }
+    init()
+}
+extension App {
+    public static func main() {}
+}
+
+// MARK: - More APIs used by the quick-game screens
+
+public struct ContentTransition { public static func numericText(countsDown: Bool = false) -> ContentTransition { ContentTransition() } }
+public struct GridItem {
+    public enum Size { case flexible(minimum: CGFloat = 10, maximum: CGFloat = .infinity), fixed(CGFloat), adaptive(minimum: CGFloat) }
+    public init(_ size: Size, spacing: CGFloat? = nil, alignment: Alignment? = nil) {}
+}
+public struct LazyVGrid<C: View>: View {
+    public init(columns: [GridItem], alignment: HorizontalAlignment = .center, spacing: CGFloat? = nil, @ViewBuilder content: () -> C) {}
+    public var body: Never { fatalError() }
+}
+public struct Transaction {
+    public init() {}
+    public var disablesAnimations = false
+    public var animation: Animation? = nil
+}
+public func withTransaction<R>(_ t: Transaction, _ body: () throws -> R) rethrows -> R { try body() }
+public struct FillStyle { public init(eoFill: Bool = false, antialiased: Bool = true) {} }
+extension AnyTransition {
+    public static func asymmetric(insertion: AnyTransition, removal: AnyTransition) -> AnyTransition { AnyTransition() }
+    public static func scale(scale: CGFloat, anchor: UnitPoint = .center) -> AnyTransition { AnyTransition() }
+    public static func offset(x: CGFloat = 0, y: CGFloat = 0) -> AnyTransition { AnyTransition() }
+    public static func push(from edge: Edge) -> AnyTransition { AnyTransition() }
+}
+extension Picker {
+    public init(selection: Binding<T>, @ViewBuilder _ content: () -> C, @ViewBuilder label: () -> L) {}
+}
+extension View {
+    public func contentTransition(_ t: ContentTransition) -> _Mod { _Mod() }
+}
+extension Shape {
+    public func fill<S: ShapeStyle>(_ s: S, style: FillStyle) -> _Mod { _Mod() }
+}
+extension View {
+    public func rotation3DEffect(_ a: Angle, axis: (x: CGFloat, y: CGFloat, z: CGFloat), anchor: UnitPoint = .center,
+                                 anchorZ: CGFloat = 0, perspective: CGFloat = 1) -> _Mod { _Mod() }
+}
+extension Shape {
+    public func stroke(style: StrokeStyle) -> _Mod { _Mod() }
+    public func stroke(lineWidth: CGFloat = 1) -> _Mod { _Mod() }
+}
+extension View {
+    public func scaleEffect(x: CGFloat = 1, y: CGFloat = 1, anchor: UnitPoint = .center) -> _Mod { _Mod() }
+    public func scaleEffect(_ s: CGFloat, anchor: UnitPoint) -> _Mod { _Mod() }
+}
+public struct Form<C: View>: View {
+    public init(@ViewBuilder content: () -> C) {}
+    public var body: Never { fatalError() }
+}
+public struct EditButton: View { public init() {}; public var body: Never { fatalError() } }
+extension Binding: Sequence where Value: MutableCollection & RandomAccessCollection {
+    public typealias Element = Binding<Value.Element>
+    public typealias Iterator = IndexingIterator<Binding<Value>>
+}
+extension Binding: Collection where Value: MutableCollection & RandomAccessCollection {
+    public typealias Index = Value.Index
+    public var startIndex: Value.Index { wrappedValue.startIndex }
+    public var endIndex: Value.Index { wrappedValue.endIndex }
+    public func index(after i: Value.Index) -> Value.Index { wrappedValue.index(after: i) }
+    public subscript(position: Value.Index) -> Binding<Value.Element> {
+        Binding<Value.Element>(get: { self.wrappedValue[position] }, set: { _ in })
+    }
+}
+extension Binding: BidirectionalCollection where Value: MutableCollection & RandomAccessCollection {
+    public func index(before i: Value.Index) -> Value.Index { wrappedValue.index(before: i) }
+}
+extension Binding: RandomAccessCollection where Value: MutableCollection & RandomAccessCollection {}
+extension Binding: Identifiable where Value: Identifiable {
+    public var id: Value.ID { wrappedValue.id }
+}
+extension RangeReplaceableCollection where Self: MutableCollection {
+    public mutating func remove(atOffsets offsets: IndexSet) {}
 }

@@ -22,11 +22,28 @@ one owner and one AI developer.
 9. **Save versioning from day one.** Every schema change ships with a migration and a test that
    loads an old save.
 
+## Layers (80/20)
+
+Build in layers. The first 20% of effort makes the app run and every main system work; tuning
+comes later, driven by playtests.
+
+| Layer | Goal | Status |
+|---|---|---|
+| **1. Core systems** | One working, generic version of each system (M0–M6) | ✅ done |
+| **2. Runs end to end** | Whole app type-checks; a player-journey test proves no dead ends across seasons; a Codemagic build installs and plays | ✅ type-check and journey test done · ⏳ device build by the user |
+| **3. Fix from playtests** | Crashes, broken flows, confusing screens from the user's feedback | next |
+| **4. Fine-tune** | Balance (scores, economy, AI spending), polish, landscape audit, onboarding | later |
+| **5. Extras** | M7 ODIs, in-match changes, dew/DLS, loans, AI trades | later |
+
+Rules for layers 3–5: fix what the user reports first, keep every change behind the existing
+tests, and don't start a later layer while an earlier one has open breakages.
+
 ## Definition of done (every feature)
 
 - [ ] The engine logic has unit tests, and `swift test` passes.
-- [ ] `swiftc -parse` is clean on all views, and `tools/typecheck/run.sh` (SwiftUI stubs, type-checks the
-      store, theme and career screens on Linux) passes.
+- [ ] `tools/typecheck/run.sh` passes. It type-checks **the whole app** on Linux against
+      SwiftUI, UIKit and Charts stubs.
+- [ ] `CareerTests.testPlayerJourneyHasNoDeadEnds` passes (3 seasons driven by the Home screen's actions).
 - [ ] Portrait fits, and landscape fits the 830 × 420 pt safe area with no scrolling.
 - [ ] Old saves still load.
 - [ ] The GDD is updated if behaviour changed.

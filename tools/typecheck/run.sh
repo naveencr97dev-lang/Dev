@@ -12,20 +12,11 @@ swiftc -parse-as-library -emit-module -module-name SwiftUI -emit-module-path "$O
   tools/typecheck/SwiftUI.swift
 swiftc -parse-as-library -emit-module -module-name UIKit -emit-module-path "$OUT/UIKit.swiftmodule" \
   tools/typecheck/UIKit.swift
+swiftc -parse-as-library -emit-module -module-name Charts -emit-module-path "$OUT/Charts.swiftmodule" \
+  -I "$OUT" tools/typecheck/Charts.swift
 
 S=ios/Sources
-FILES=(
-  $(find "$S/Engine" -name '*.swift')
-  "$S"/Store/*.swift
-  "$S"/Theme/*.swift
-  "$S"/Views/Components.swift
-  "$S"/Views/HomeView.swift
-  "$S"/Views/SquadsView.swift
-  "$S"/Views/SeasonView.swift
-  "$S"/Views/WagonWheel.swift
-  "$S"/Views/GroundView.swift
-  $(find "$S/Views/Career" -name '*.swift')
-  tools/typecheck/AppDecls.swift
-)
+# Every app source file: the whole app must type-check.
+FILES=( $(find "$S" -name '*.swift' | sort) )
 swiftc -typecheck -parse-as-library -swift-version 5 -I "$OUT" "${FILES[@]}"
-echo "typecheck OK (${#FILES[@]} files)"
+echo "typecheck OK (${#FILES[@]} files, the whole app)"
