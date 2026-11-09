@@ -634,3 +634,7 @@ extension EnvironmentValues {
 extension View {
     public func navigationDestination<C: View>(isPresented: Binding<Bool>, @ViewBuilder destination: () -> C) -> _Mod { _Mod() }
 }
+public enum DynamicTypeSize: Hashable { case xSmall, small, medium, large, xLarge, xxLarge, xxxLarge }
+extension View {
+    public func dynamicTypeSize(_ s: DynamicTypeSize) -> _Mod { _Mod() }
+}

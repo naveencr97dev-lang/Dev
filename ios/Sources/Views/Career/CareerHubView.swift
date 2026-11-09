@@ -52,6 +52,7 @@ struct CareerHubView: View {
                                 Label("Quick-sim rest of season", systemImage: "forward.end.fill")
                             }
                         }
+                        TextSizePicker()
                         Button { store.exitCareer() } label: {
                             Label("Main menu", systemImage: "house")
                         }

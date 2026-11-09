@@ -55,6 +55,16 @@ struct HomeView: View {
             }
         }
         .onAppear { withAnimation(.spring(response: 0.6, dampingFraction: 0.75)) { appear = true } }
+        .overlay(alignment: .topTrailing) {
+            Menu {
+                TextSizePicker()
+            } label: {
+                Image(systemName: "textformat.size")
+                    .font(.title3)
+                    .foregroundStyle(Palette.muted)
+                    .padding(DS.Space.lg)
+            }
+        }
         .sheet(isPresented: $showCareerSetup) {
             CareerSetupView().environmentObject(store).environment(\.careerTheme, true)
         }

@@ -62,14 +62,44 @@ enum DS {
     }
 }
 
+/// App-wide text size (Settings → Text size). Scales the custom display/score fonts; system text
+/// styles follow through `dynamicTypeSize` at the root.
+enum TextScale {
+    static let storageKey = "textScaleV1"
+    /// Default is Small: the standard sizes felt too big on the phone.
+    static let defaultValue = 0.9
+    static let options: [(label: String, value: Double)] = [("Extra small", 0.8), ("Small", 0.9), ("Standard", 1.0), ("Large", 1.1)]
+    static var factor: CGFloat = CGFloat(defaultValue)
+
+    static func dynamicType(_ v: Double) -> DynamicTypeSize {
+        v <= 0.8 ? .xSmall : (v <= 0.9 ? .small : (v <= 1.0 ? .large : .xLarge))
+    }
+}
+
+/// Picker for the text size, used inside menus.
+struct TextSizePicker: View {
+    @AppStorage(TextScale.storageKey) private var scale = TextScale.defaultValue
+
+    var body: some View {
+        Picker(selection: $scale) {
+            ForEach(TextScale.options, id: \.value) { o in
+                Text(o.label).tag(o.value)
+            }
+        } label: {
+            Label("Text size", systemImage: "textformat.size")
+        }
+        .pickerStyle(.menu)
+    }
+}
+
 extension Font {
     /// Broadcast headline: heavy, compressed, italic.
     static func display(_ size: CGFloat, weight: Font.Weight = .black) -> Font {
-        .system(size: size, weight: weight).width(.compressed).italic()
+        .system(size: size * TextScale.factor, weight: weight).width(.compressed).italic()
     }
     /// Scoreboard numerals: condensed, tabular.
     static func score(_ size: CGFloat, weight: Font.Weight = .heavy) -> Font {
-        .system(size: size, weight: weight).width(.condensed).monospacedDigit()
+        .system(size: size * TextScale.factor, weight: weight).width(.condensed).monospacedDigit()
     }
 }
 

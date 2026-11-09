@@ -53,6 +53,7 @@ struct SeasonView: View {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Menu {
                         Button { showSquads = true } label: { Label("Squads & batting order", systemImage: "person.3") }
+                        TextSizePicker()
                         QuitMenuItem(confirm: $confirmQuit)
                     } label: { Image(systemName: "ellipsis.circle") }
                 }
