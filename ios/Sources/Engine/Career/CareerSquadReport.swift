@@ -82,7 +82,9 @@ extension Career {
         if spinners >= 3 && seamers >= 4 { r.strengths.append("Bowling options for every surface.") }
 
         // Shape, age, size, form.
-        if s.filter({ $0.role == .WK }).count < 2 { r.weaknesses.append("No backup wicket-keeper.") }
+        let keepers = s.filter { $0.role == .WK }.count
+        if keepers == 0 { r.weaknesses.insert("No wicket-keeper in the squad: someone else keeps wicket. Sign one.", at: 0) }
+        else if keepers < 2 { r.weaknesses.append("No backup wicket-keeper.") }
         if r.averageAge >= 30 { r.weaknesses.append("An ageing squad (average \(String(format: "%.1f", r.averageAge))). Plan for retirements.") }
         else if r.averageAge <= 25.5 { r.strengths.append("A young squad with room to grow (average \(String(format: "%.1f", r.averageAge))).") }
         else { r.strengths.append("A good mix of youth and experience.") }

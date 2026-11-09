@@ -74,6 +74,8 @@ struct CareerTuning: Codable, Hashable {
     var aiReserveBank = 2_500
     var aiDealsPerWindow = 2
     var aiUpgradeMargin = 3
+    /// Largest gap (XI strength points) allowed between clubs after the opening draft.
+    var draftBalance = 2
     /// Bank (lakhs) at season start above which the board sets an invest objective.
     var investObjectiveBank = 10_000
 
@@ -105,7 +107,8 @@ struct CareerTuning: Codable, Hashable {
     var goldForTitle = 200
 
     // Form
-    var formDecay = 1
+    /// Form drifts back towards 0 by this much a match (2 since panel round 5: 1 let spirals run).
+    var formDecay = 2
     var formCap = 10
 
     static let standard = CareerTuning()

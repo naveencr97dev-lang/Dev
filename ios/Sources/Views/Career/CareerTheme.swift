@@ -37,6 +37,39 @@ extension EnvironmentValues {
     }
 }
 
+/// Landscape on a phone (about 440 pt tall): rows and cards tighten, layouts go two-column.
+struct CompactLandscapeKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+extension EnvironmentValues {
+    var compactLandscape: Bool {
+        get { self[CompactLandscapeKey.self] }
+        set { self[CompactLandscapeKey.self] = newValue }
+    }
+}
+
+/// Two columns in landscape, one stacked column in portrait.
+struct AdaptiveColumns<Left: View, Right: View>: View {
+    @Environment(\.compactLandscape) private var landscape
+    @ViewBuilder var left: Left
+    @ViewBuilder var right: Right
+
+    var body: some View {
+        if landscape {
+            HStack(alignment: .top, spacing: DS.Space.md) {
+                VStack(alignment: .leading, spacing: DS.Space.md) { left }.frame(maxWidth: .infinity, alignment: .topLeading)
+                VStack(alignment: .leading, spacing: DS.Space.md) { right }.frame(maxWidth: .infinity, alignment: .topLeading)
+            }
+        } else {
+            VStack(alignment: .leading, spacing: DS.Space.md) {
+                left
+                right
+            }
+        }
+    }
+}
+
 struct ManagerBackground: View {
     var body: some View { Palette.ink.ignoresSafeArea() }
 }
@@ -124,21 +157,22 @@ struct ResourceChip: View {
 
 /// Navigation row: naked SF Symbol, title, detail, optional count, chevron.
 struct DashTile: View {
+    @Environment(\.compactLandscape) private var compact
     let icon: String
     let title: String
     var subtitle: String = ""
     var badge: String? = nil
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: compact ? 10 : 12) {
             Image(systemName: icon)
-                .font(.system(size: 17 * TextScale.factor, weight: .medium))
+                .font(.system(size: (compact ? 15 : 17) * TextScale.factor, weight: .medium))
                 .foregroundStyle(Palette.accent)
                 .frame(width: 28)
             VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(.system(size: 16 * TextScale.factor, weight: .semibold)).foregroundStyle(.white)
+                Text(title).font(.system(size: (compact ? 15 : 16) * TextScale.factor, weight: .semibold)).foregroundStyle(.white)
                 if !subtitle.isEmpty {
-                    Text(subtitle).font(.system(size: 14 * TextScale.factor)).foregroundStyle(Palette.muted).lineLimit(1)
+                    Text(subtitle).font(.system(size: (compact ? 12 : 14) * TextScale.factor)).foregroundStyle(Palette.muted).lineLimit(1)
                 }
             }
             Spacer(minLength: 8)
@@ -149,8 +183,8 @@ struct DashTile: View {
             }
             Image(systemName: "chevron.right").font(.system(size: 13 * TextScale.factor, weight: .semibold)).foregroundStyle(Palette.stroke)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
+        .padding(.horizontal, compact ? 12 : 14)
+        .padding(.vertical, compact ? 7 : 10)
         .contentShape(Rectangle())
     }
 }

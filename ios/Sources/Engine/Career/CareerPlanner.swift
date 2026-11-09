@@ -108,8 +108,10 @@ extension Career {
             for x in ranked where ids.count < slot.starters && canStart(x) { ids.append(x.id); start(x) }
             // Nobody left who fits: the best remaining player does the job.
             let value = { (x: CareerPlayer) in max(x.bat, x.bowl) + min(x.bat, x.bowl) / 2 }
-            for x in squadNow.sorted(by: { value($0) != value($1) ? value($0) > value($1) : $0.id < $1.id })
-                where ids.count < slot.starters && canStart(x) && slot != .keeper {
+            // With no wicket-keeper in the squad, the best gloveman keeps (panel: the planner failed 66 times).
+            let fallback = { (x: CareerPlayer) in slot == .keeper ? x.attr.keeping : value(x) }
+            for x in squadNow.sorted(by: { fallback($0) != fallback($1) ? fallback($0) > fallback($1) : $0.id < $1.id })
+                where ids.count < slot.starters && canStart(x) {
                 ids.append(x.id); start(x)
             }
             ids += ranked.map(\.id).filter { !ids.contains($0) }.prefix(max(0, SquadPlan.depth - ids.count))

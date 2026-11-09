@@ -26,8 +26,10 @@ final class CareerTests: XCTestCase {
             XCTAssertLessThanOrEqual(squad.filter(\.overseas).count, c.tuning.maxOverseasSquad, "\(club.short) overseas", file: file, line: line)
             XCTAssertTrue(squad.allSatisfy { $0.clubId == club.id && !$0.retired }, file: file, line: line)
             XCTAssertTrue(c.xiIssues(club.id).isEmpty, "\(club.short) XI: \(c.xiIssues(club.id))", file: file, line: line)
-            // Minimum-wage signings needed to reach 18 players are exempt from the cap.
-            XCTAssertLessThanOrEqual(c.payroll(club.id), c.tuning.salaryCap + 8 * c.tuning.minWage, "\(club.short) over the cap", file: file, line: line)
+            // Minimum-wage signings needed to reach 18 players are exempt from the cap (the board tops
+            // squads up even when the cap is full), so each minimum-wage contract counts as exempt.
+            let exempt = squad.filter { ($0.contract?.wage ?? 0) <= c.tuning.minWage }.count * c.tuning.minWage
+            XCTAssertLessThanOrEqual(c.payroll(club.id), c.tuning.salaryCap + exempt, "\(club.short) over the cap", file: file, line: line)
             XCTAssertTrue(squad.allSatisfy { $0.contract != nil }, "\(club.short) uncontracted player", file: file, line: line)
             for id in club.squad {
                 XCTAssertFalse(seen.contains(id), "\(id) in two squads", file: file, line: line)

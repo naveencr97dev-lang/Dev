@@ -12,56 +12,60 @@ struct CareerHubView: View {
     @State private var tab: HubTab = .home
     @State private var leagueSection = 0
 
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
+    private var landscape: Bool { verticalSizeClass == .compact }
+
     var body: some View {
         NavigationStack(path: $path) {
-            ZStack(alignment: .bottom) {
-                ManagerBackground()
-                ScrollView {
-                    if let c = store.career {
-                        VStack(alignment: .leading, spacing: DS.Space.md) {
-                            switch tab {
-                            case .home:
-                                CareerTopBar(career: c)
-                                CareerHomeTab(path: $path, note: $note)
-                            case .squad:
-                                CareerSquadTab()
-                            case .transfers:
-                                CareerMarketTab()
-                            case .league:
-                                Picker("League", selection: $leagueSection) {
-                                    Text("Fixtures").tag(0)
-                                    Text("Table").tag(1)
-                                    Text("Stats").tag(2)
-                                    Text("World").tag(3)
-                                }
-                                .pickerStyle(.segmented)
-                                switch leagueSection {
-                                case 0: CareerFixturesTab(path: $path)
-                                case 1: CareerTableTab(path: $path)
-                                case 2: StatsBoards()
-                                default: CareerWorldTab(path: $path)
-                                }
-                            case .club:
-                                ClubOfficeTiles(career: c)
-                                CareerClubTab(path: $path)
+            Group {
+                if let c = store.career, landscape {
+                    // Landscape (casting): SM-style shell, a top bar with Continue and a left rail.
+                    HStack(spacing: 0) {
+                        HubRail(tab: $tab, career: c)
+                        VStack(spacing: 0) {
+                            HubTopBar(career: c, menu: { hubMenu }) { perform(c.nextAction) }
+                            ScrollView {
+                                VStack(alignment: .leading, spacing: DS.Space.sm) { tabContent(c) }
+                                    .padding(.horizontal, DS.Space.md)
+                                    .padding(.vertical, DS.Space.sm)
                             }
                         }
-                        .padding(.horizontal, DS.Space.md)
-                        .padding(.top, DS.Space.sm)
-                        .padding(.bottom, 170)
-                        .frame(maxWidth: 900)
-                        .frame(maxWidth: .infinity)
                     }
-                }
-                if let c = store.career {
-                    VStack(spacing: 4) {
-                        ContinueBar(career: c) { perform(c.nextAction) }
-                        HubTabBar(tab: $tab, career: c)
+                    .background(ManagerBackground())
+                    .environment(\.compactLandscape, true)
+                    .toolbar(.hidden, for: .navigationBar)
+                } else {
+                    ZStack(alignment: .bottom) {
+                        ManagerBackground()
+                        ScrollView {
+                            if let c = store.career {
+                                VStack(alignment: .leading, spacing: DS.Space.md) {
+                                    if tab == .home { CareerTopBar(career: c) }
+                                    tabContent(c)
+                                }
+                                .padding(.horizontal, DS.Space.md)
+                                .padding(.top, DS.Space.sm)
+                                .padding(.bottom, 170)
+                                .frame(maxWidth: 900)
+                                .frame(maxWidth: .infinity)
+                            }
+                        }
+                        if let c = store.career {
+                            VStack(spacing: 4) {
+                                ContinueBar(career: c) { perform(c.nextAction) }
+                                HubTabBar(tab: $tab, career: c)
+                            }
+                        }
+                    }
+                    .navigationTitle("Career")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .navigationBarTrailing) {
+                            Menu { hubMenu } label: { Image(systemName: "ellipsis.circle") }
+                        }
                     }
                 }
             }
-            .navigationTitle("Career")
-            .navigationBarTitleDisplayMode(.inline)
             .navigationDestination(for: Route.self) { route in
                 switch route {
                 case .match(let id): MatchView(fixtureId: id)
@@ -72,28 +76,56 @@ struct CareerHubView: View {
             }
             .navigationDestination(isPresented: $showRetention) { RetentionView() }
             .navigationDestination(isPresented: $showAuction) { CareerAuctionView() }
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Menu {
-                        if store.career?.phase == .season {
-                            Button { confirmSimSeason = true } label: {
-                                Label("Quick-sim rest of season", systemImage: "forward.end.fill")
-                            }
-                        }
-                        TextSizePicker()
-                        SoundToggles()
-                        Button { store.exitCareer() } label: {
-                            Label("Main menu", systemImage: "house")
-                        }
-                    } label: {
-                        Image(systemName: "ellipsis.circle")
-                    }
-                }
-            }
             .confirmationDialog("Simulate every remaining match, yours included?", isPresented: $confirmSimSeason,
                                 titleVisibility: .visible) {
                 Button("Sim to season end") { store.careerSimToSeasonEnd() }
                 Button("Cancel", role: .cancel) {}
+            }
+        }
+    }
+
+    /// The ⋯ menu (navigation bar in portrait, top bar in landscape).
+    @ViewBuilder private var hubMenu: some View {
+        if store.career?.phase == .season {
+            Button { confirmSimSeason = true } label: {
+                Label("Quick-sim rest of season", systemImage: "forward.end.fill")
+            }
+        }
+        TextSizePicker()
+        SoundToggles()
+        Button { store.exitCareer() } label: {
+            Label("Main menu", systemImage: "house")
+        }
+    }
+
+    /// The selected tab's content (both layouts).
+    @ViewBuilder private func tabContent(_ c: Career) -> some View {
+        switch tab {
+        case .home:
+            CareerHomeTab(path: $path, note: $note)
+        case .squad:
+            CareerSquadTab()
+        case .transfers:
+            CareerMarketTab()
+        case .league:
+            Picker("League", selection: $leagueSection) {
+                Text("Fixtures").tag(0)
+                Text("Table").tag(1)
+                Text("Stats").tag(2)
+                Text("World").tag(3)
+            }
+            .pickerStyle(.segmented)
+            switch leagueSection {
+            case 0: CareerFixturesTab(path: $path)
+            case 1: CareerTableTab(path: $path)
+            case 2: StatsBoards()
+            default: CareerWorldTab(path: $path)
+            }
+        case .club:
+            AdaptiveColumns {
+                ClubOfficeTiles(career: c)
+            } right: {
+                CareerClubTab(path: $path)
             }
         }
     }
@@ -201,8 +233,9 @@ struct HubTabBar: View {
         .background(Palette.surface.opacity(0.98).ignoresSafeArea(edges: .bottom))
     }
 
-    private func badge(_ t: HubTab) -> String? {
-        let c = career
+    private func badge(_ t: HubTab) -> String? { HubTabBar.badge(t, career) }
+
+    static func badge(_ t: HubTab, _ c: Career) -> String? {
         switch t {
         case .squad: return c.xiIssues(c.userClubId).isEmpty ? nil : "!"
         case .transfers: return c.market.offers.isEmpty ? nil : "\(c.market.offers.count)"
@@ -210,6 +243,96 @@ struct HubTabBar: View {
         case .league: return c.intl.job == nil && !c.intl.offers.isEmpty ? "\(c.intl.offers.count)" : nil
         case .home: return nil
         }
+    }
+}
+
+/// Landscape: the tabs as a slim left rail.
+struct HubRail: View {
+    @Binding var tab: HubTab
+    let career: Career
+
+    var body: some View {
+        VStack(spacing: 2) {
+            ForEach(HubTab.allCases, id: \.self) { t in
+                Button {
+                    tab = t
+                    Haptics.tap()
+                } label: {
+                    VStack(spacing: 2) {
+                        Image(systemName: t.icon).font(.system(size: 17 * TextScale.factor, weight: .medium))
+                            .overlay(alignment: .topTrailing) {
+                                if let b = HubTabBar.badge(t, career) {
+                                    Text(b).font(.system(size: 9, weight: .bold)).foregroundStyle(.white)
+                                        .padding(.horizontal, 4).padding(.vertical, 1)
+                                        .background(Capsule().fill(Palette.wicket))
+                                        .offset(x: 10, y: -5)
+                                }
+                            }
+                        Text(t.label).font(.system(size: 10 * TextScale.factor, weight: .medium)).lineLimit(1).minimumScaleFactor(0.8)
+                    }
+                    .foregroundStyle(tab == t ? Palette.accent : Palette.muted)
+                    .frame(width: 70)
+                    .frame(maxHeight: .infinity)
+                    .background(RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(tab == t ? Palette.accent.opacity(0.12) : Color.clear))
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.vertical, 6)
+        .padding(.horizontal, 4)
+        .frame(width: 78)
+        .background(Palette.surface.ignoresSafeArea())
+    }
+}
+
+/// Landscape: club, date, money, the ⋯ menu and a compact Continue in one 44 pt bar.
+struct HubTopBar<MenuContent: View>: View {
+    let career: Career
+    @ViewBuilder var menu: () -> MenuContent
+    let onContinue: () -> Void
+
+    var body: some View {
+        let c = career
+        let label = c.nextActionLabel
+        HStack(spacing: 12) {
+            TeamBadge(team: c.userClub, size: 26)
+            VStack(alignment: .leading, spacing: 0) {
+                Text(c.userClub.short).font(.system(size: 14 * TextScale.factor, weight: .bold)).foregroundStyle(.white)
+                Text(c.phase == .offseason ? "Off-season" : CareerCalendar.label(c.currentDay))
+                    .font(.system(size: 11 * TextScale.factor)).foregroundStyle(Palette.muted)
+            }
+            .fixedSize()
+            ResourceChip(icon: "indianrupeesign.circle.fill", value: Money.format(c.bank(c.userClubId)), color: Palette.accent)
+            ResourceChip(icon: "circle.hexagongrid.fill", value: "\(c.gold)", color: CareerPalette.gold)
+            ResourceChip(icon: "star.fill", value: "Lv \(c.manager.level)", color: Palette.four)
+            Spacer(minLength: 8)
+            Menu { menu() } label: {
+                Image(systemName: "ellipsis.circle").font(.system(size: 20 * TextScale.factor)).foregroundStyle(Palette.muted)
+            }
+            Button(action: onContinue) {
+                HStack(spacing: 8) {
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text(label.title).font(.system(size: 15 * TextScale.factor, weight: .bold)).lineLimit(1)
+                        if !label.detail.isEmpty {
+                            Text(label.detail).font(.system(size: 11 * TextScale.factor, weight: .semibold)).lineLimit(1)
+                        }
+                    }
+                    Image(systemName: "chevron.right").font(.system(size: 13 * TextScale.factor, weight: .bold))
+                }
+                .foregroundStyle(Palette.ink)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 6)
+                .frame(maxWidth: 300, alignment: .leading)
+                .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Palette.accent))
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, DS.Space.md)
+        .padding(.vertical, 6)
+        .background(Palette.ink)
+        .overlay(alignment: .bottom) { Hairline() }
     }
 }
 
@@ -288,7 +411,7 @@ struct CareerHomeTab: View {
 
     var body: some View {
         if let c = store.career {
-            VStack(alignment: .leading, spacing: DS.Space.xl) {
+            AdaptiveColumns {
                 // The one thing to do now.
                 if c.phase == .seasonEnd {
                     SeasonEndCard(career: c) {
@@ -318,6 +441,7 @@ struct CareerHomeTab: View {
                 }
                 if c.phase == .season { AssistantCard(career: c) }
                 SeasonSummary(career: c, path: $path)
+            } right: {
                 BoardObjectivesCard(career: c)
                 NewsFeed(news: Array(c.news.prefix(3)))
                 if c.news.count > 3 {
@@ -333,6 +457,7 @@ struct CareerHomeTab: View {
 
 /// Home hero: the next match, big and plain.
 struct NextMatchHero: View {
+    @Environment(\.compactLandscape) private var compact
     let career: Career
     let fixture: Fixture
     let quickSim: () -> Void
@@ -342,14 +467,14 @@ struct NextMatchHero: View {
         let home = fixture.home == c.userClubId
         let oppId = home ? fixture.away : fixture.home
         let isNext = c.nextFixture?.id == fixture.id
-        VStack(alignment: .leading, spacing: DS.Space.md) {
+        VStack(alignment: .leading, spacing: compact ? DS.Space.sm : DS.Space.md) {
             Text("NEXT MATCH · \(CareerText.fixtureLabel(c, fixture).uppercased())")
                 .font(.display(12, weight: .semibold)).foregroundStyle(Palette.muted)
             if let opp = c.club(oppId) {
                 HStack(spacing: DS.Space.md) {
-                    TeamBadge(team: opp, size: 52)
+                    TeamBadge(team: opp, size: compact ? 38 : 52)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("\(home ? "vs" : "at") \(opp.name)").font(.display(28, weight: .bold)).lineLimit(1).minimumScaleFactor(0.7)
+                        Text("\(home ? "vs" : "at") \(opp.name)").font(.display(compact ? 20 : 28, weight: .bold)).lineLimit(1).minimumScaleFactor(0.7)
                         Text("\(home ? "Home" : "Away") · \(fixture.pitch.label) · they're \(Career.ordinal(c.position(of: oppId)))")
                             .font(.display(14, weight: .regular)).foregroundStyle(Palette.muted).lineLimit(1)
                     }
@@ -362,7 +487,7 @@ struct NextMatchHero: View {
                 Text("Other games in the round sim first.").font(.display(12, weight: .regular)).foregroundStyle(Palette.muted)
             }
         }
-        .padding(DS.Space.lg)
+        .padding(compact ? DS.Space.md : DS.Space.lg)
         .frame(maxWidth: .infinity, alignment: .leading)
         .gameFrame()
     }
@@ -414,6 +539,7 @@ struct SeasonSummary: View {
 
 /// Label on the left, value on the right, optional chevron.
 struct InfoRow: View {
+    @Environment(\.compactLandscape) private var compact
     let label: String
     let value: String
     var color: Color = .white
@@ -428,8 +554,8 @@ struct InfoRow: View {
                 Image(systemName: "chevron.right").font(.system(size: 13 * TextScale.factor, weight: .semibold)).foregroundStyle(Palette.stroke)
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 13)
+        .padding(.horizontal, compact ? 14 : 16)
+        .padding(.vertical, compact ? 8 : 11)
         .contentShape(Rectangle())
     }
 }

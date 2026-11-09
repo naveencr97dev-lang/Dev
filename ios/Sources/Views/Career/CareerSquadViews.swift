@@ -4,6 +4,7 @@ import SwiftUI
 
 struct CareerSquadTab: View {
     @EnvironmentObject var store: GameStore
+    @Environment(\.compactLandscape) private var compact
 
     var body: some View {
         if let c = store.career {
@@ -11,9 +12,9 @@ struct CareerSquadTab: View {
             let squad = c.squad(club.id)
             let issues = c.xiIssues(club.id)
             let bench = squad.filter { !club.xi.contains($0.id) }.sorted { $0.rating > $1.rating }
-            VStack(alignment: .leading, spacing: DS.Space.lg) {
+            AdaptiveColumns {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Squad").font(.display(28, weight: .bold))
+                    Text("Squad").font(.display(compact ? 20 : 28, weight: .bold))
                     Text("\(squad.count) players · \(squad.filter(\.overseas).count)/\(c.tuning.maxOverseasSquad) overseas · wages \(Money.format(c.payroll(club.id))) · strength \(c.strength(club.id))")
                         .font(.display(14, weight: .regular)).foregroundStyle(Palette.muted)
                 }
@@ -68,7 +69,7 @@ struct CareerSquadTab: View {
                     Label("Auto-pick best XI and order", systemImage: "sparkles")
                 }
                 .buttonStyle(SecondaryButtonStyle())
-
+            } right: {
                 SectionLabel(text: "Playing XI · batting order")
                 AppCard(padding: DS.Space.md) {
                     VStack(spacing: 6) {

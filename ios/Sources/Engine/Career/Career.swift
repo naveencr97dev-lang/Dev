@@ -154,6 +154,7 @@ struct Career: Codable {
                        rules: rules, tuning: tuning, flags: flags, clubs: clubs, clubInfo: info,
                        players: players, nextPlayerId: tuning.depthPlayers + 1, rng: rng)
         c.draftSquads()
+        c.balanceDraft()
         c.finance = c.clubs.map { _ in ClubFinance(bank: tuning.startingBank) }
         c.assignDraftContracts()
         for i in c.clubs.indices { c.autoPickXI(clubIndex: i) }
@@ -170,6 +171,38 @@ struct Career: Codable {
     }
 
     /// Balanced snake draft so every club starts with a fair squad of `startSquad`.
+    /// After the opening draft: swap same-role players between the strongest and weakest XIs until
+    /// every XI is within `draftBalance` points (panel: CHE started 3 below the AI average, never won
+    /// a title in two 20-season runs, and a CONTINUE-only manager won 18%). Deterministic.
+    mutating func balanceDraft() {
+        for i in clubs.indices { autoPickXI(clubIndex: i) }
+        for _ in 0..<120 {
+            let ranked = clubs.indices.sorted { strength(clubs[$0].id) != strength(clubs[$1].id)
+                ? strength(clubs[$0].id) > strength(clubs[$1].id) : clubs[$0].id < clubs[$1].id }
+            guard let hi = ranked.first, let lo = ranked.last else { return }
+            let gap = strength(clubs[hi].id) - strength(clubs[lo].id)
+            guard gap > tuning.draftBalance else { return }
+            // The swap whose rating gain is closest to evening the two XIs out.
+            let want = Double(gap * 11) / 2
+            var best: (String, String, Double)? = nil
+            for a in clubs[hi].xi.sorted().compactMap({ players[$0] }) {
+                for b in clubs[lo].squad.sorted().compactMap({ players[$0] })
+                    where b.role == a.role && b.overseas == a.overseas && b.rating < a.rating {
+                    let miss = abs(Double(a.rating - b.rating) - want)
+                    if best == nil || miss < best!.2 { best = (a.id, b.id, miss) }
+                }
+            }
+            guard let (aId, bId, _) = best else { return }
+            let (hiId, loId) = (clubs[hi].id, clubs[lo].id)
+            clubs[hi].squad = clubs[hi].squad.map { $0 == aId ? bId : $0 }
+            clubs[lo].squad = clubs[lo].squad.map { $0 == bId ? aId : $0 }
+            players[aId]?.clubId = loId
+            players[bId]?.clubId = hiId
+            autoPickXI(clubIndex: hi)
+            autoPickXI(clubIndex: lo)
+        }
+    }
+
     mutating func draftSquads() {
         let shape = tuning.squadShape
         let roleIndex: (Role) -> Int = { r in [Role.WK, .BAT, .AR, .BOWL].firstIndex(of: r)! }
@@ -519,11 +552,13 @@ struct Career: Codable {
         var delta: [String: Int] = [:]
         var played = Set<String>()
         for inn in r.innings.prefix(2) {
-            for b in inn.batters {
+            for (pos, b) in inn.batters.enumerated() {
                 played.insert(b.id)
                 guard b.batted else { continue }
                 var d = 0
-                if b.runs >= 50 { d = 4 } else if b.runs >= 30 { d = 2 } else if b.dismissal != nil && b.runs < 10 { d = -2 }
+                // Only the top six lose form for a cheap dismissal: a No. 9 out for 4 is normal, and
+                // punishing it sent weak sides into a form spiral (panel: 42 defeats in a row).
+                if b.runs >= 50 { d = 4 } else if b.runs >= 30 { d = 2 } else if pos < 6 && b.dismissal != nil && b.runs < 10 { d = -2 }
                 delta[b.id, default: 0] += d
                 players[b.id]?.stats.runs += b.runs
                 players[b.id]?.stats.ballsFaced += b.balls

@@ -50,3 +50,15 @@ extension CareerTests {
         XCTAssertNil(((again["players"] as! [String: Any])[id] as! [String: Any])["morale"])
     }
 }
+
+extension CareerTests {
+    /// Panel round 5: the opening draft left CHE 3 below the AI average and it never won a title.
+    func testOpeningDraftIsBalanced() {
+        for seed in [11, 900, 2027, 4242] as [UInt64] {
+            let c = newCareer(seed: seed)
+            let s = c.clubs.map { c.strength($0.id) }
+            XCTAssertLessThanOrEqual(s.max()! - s.min()!, c.tuning.draftBalance + 1, "seed \(seed): \(s)")
+            for club in c.clubs { XCTAssertGreaterThanOrEqual(club.squad.count, c.tuning.minSquad) }
+        }
+    }
+}

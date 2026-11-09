@@ -87,3 +87,34 @@ the same off-season.
 - Also found: the negotiation bar showed "close" at exactly the asking wage (floating-point rounding).
   Fixed. Objectives were met 85%+ on Normal by 5 players, so home-win targets went up a notch
   ("too easy" 5 → 2).
+
+## Round 5: device feedback (landscape) and two panel sessions
+
+**Device feedback: landscape looked awful.** At about 440 pt tall, the large "Career" bar (~90 pt),
+the floating CONTINUE bar (~62 pt, covering rows) and the bottom tab bar (~65 pt) left about 220 pt,
+or three rows.
+
+Landscape now uses the SM26-style shell:
+- **Top bar** (~44 pt): club, date, money, gold, level, ⋯ and a compact **Continue**.
+- **Left rail** for the tabs.
+- **Two columns** on Home, Squad and Club.
+- Tighter rows (DashTile, InfoRow, the hero) in landscape, and slightly tighter in portrait too.
+
+Portrait keeps the bottom tabs and the Continue bar.
+
+**Panel sessions:**
+- Session 1: KOL and LKO, 4 seasons.
+- Session 2: CHE, HYD and GUJ, 5 seasons.
+
+| Finding | Evidence | Fix |
+|---|---|---|
+| **CHE broken for casual managers** | CONTINUE-only 18% wins, a **42-defeat** run; Easy rookie 35%. CHE started 3 points below the AI average and won 0 of 40 titles in two 20-season runs. | **Balanced opening draft**: same-role swaps until every XI is within 2 points (new careers). |
+| **Form spiral** | Every player −2 to −10 during losing runs, 48 all out | Only the **top six** lose form for a cheap dismissal; form drifts back by **2** a match (was 1). |
+| **Squad planner failed 66 times at CHE** | No wicket-keeper left in the squad, so the keeper job stayed empty | The best gloveman keeps. The squad report flags "No wicket-keeper" first. |
+| Harness: KOL ₹0.15 Cr over the cap | 9 minimum-wage top-ups after a thin auction (the check allowed 8) | The check follows the rule: each minimum-wage contract is exempt. |
+
+**After the fixes (session 2 rerun, CHE):**
+- CONTINUE-only player: 18% → **37%** wins, longest losing run 42 → 9.
+- Easy rookie: 35% → 46%. Auction bidder: 18% → 37%.
+- Planner failures: 66 → 0. Blowouts: 47% → 31%.
+- 20 seasons: CHE won 3 titles; titles went to 7 clubs, and the most any club won was 35%.
