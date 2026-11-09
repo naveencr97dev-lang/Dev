@@ -81,7 +81,7 @@ Last updated 2026-11-09 (after customer-panel rounds 1-4 and the SM26 recon) on 
 - **Swift toolchain:** if `/opt/swift` is missing, install it with
   `curl -sSfL https://download.swift.org/swift-6.0.3-release/ubuntu2404/swift-6.0.3-RELEASE/swift-6.0.3-RELEASE-ubuntu24.04.tar.gz | tar xz --strip-components=1 -C /opt/swift`
   (run `mkdir -p /opt/swift` first). Then `export PATH=/opt/swift/usr/bin:$PATH`.
-- **Engine tests:** `cd ios && swift test` (84 tests, all green). Pipe the output to a file and
+- **Engine tests:** `cd ios && swift test` (87 tests, all green). Pipe the output to a file and
   check the "Executed … with 0 failures" line before committing. One push once went out red because
   a grep in a command chain hid the failure.
 - **Whole-app type-check:** `tools/typecheck/run.sh`. It checks all 48 files against SwiftUI, UIKit
@@ -127,7 +127,11 @@ for each version in `CareerSave.migrations`.
   including who's in and out of form.
 - **Squad planner** (`CareerPlanner.swift`, Squad › Squad planner): a depth chart for 7 cricket jobs
   (11 starters, up to 4 deep), auto-fill, scout's target per job, a succession warning, and "Use as
-  my XI". Schema 14 adds the optional `plan`. Squad › Development (young players' progress)
+  my XI". Schema 14 adds the optional `plan`.
+- **Tactics** (`CareerStrategy.swift`, `CareerTacticsView`): game plans with a Defence ↔ Attack bar
+  and a "suits this pitch" badge (from simulation), phase settings, toss call, captain (+1) and
+  batting roles (Anchor / Normal / Hitter). Tactic risk is pitch-aware since the probe found
+  All-out attack best on every pitch. New optional fields on `Tactics`, so no schema change. Squad › Development (young players' progress)
   and Squad › Club stats (category leaders with match ratings). Match ratings (3-10) come from the
   scorecards (`Career.matchRating`); the player page shows the last 5.
 - **Squad:** XI from about 20 players, batting order, bowling plan of 5, tactics.

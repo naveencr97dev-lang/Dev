@@ -213,10 +213,35 @@ enum BatIntent: String, Codable, CaseIterable {
     }
 }
 
-/// Per phase (powerplay, middle, death).
+/// What to do on winning the toss.
+enum TossCall: String, Codable, CaseIterable {
+    case batFirst, bowlFirst
+    var label: String { self == .batFirst ? "Bat first" : "Bowl first" }
+}
+
+/// A batter's individual brief, on top of the phase intent.
+enum BatRole: String, Codable, CaseIterable {
+    case anchor, normal, hitter
+    var label: String { rawValue.capitalized }
+    var blurb: String {
+        switch self {
+        case .anchor: return "Bats through the innings: fewer risks, fewer sixes"
+        case .normal: return "Plays to the phase plan"
+        case .hitter: return "Swings from ball one: more sixes, more risk"
+        }
+    }
+}
+
+/// Per phase (powerplay, middle, death), plus the toss call, captain and batting roles (career).
 struct Tactics: Codable, Hashable {
     var field: [FieldSetting] = [.balanced, .balanced, .balanced]
     var intent: [BatIntent] = [.rotate, .rotate, .rotate]
+    /// nil = the captain reads the pitch (the old behaviour). Optional fields so old saves load.
+    var toss: TossCall? = nil
+    var captain: String? = nil
+    var roles: [String: BatRole]? = nil
+    /// The game plan last applied (nil = custom).
+    var plan: String? = nil
     static let phases = ["Powerplay (1-6)", "Middle (7-16)", "Death (17-20)"]
 }
 
@@ -267,7 +292,9 @@ struct MatchEngine {
         let other = tossWinner.teamId == a.teamId ? b : a
         // Captains bowl first more often when the pitch helps bowlers early.
         let bowlFirstChance = pitch == .englishSeam ? 0.75 : (pitch == .indianFlat ? 0.6 : 0.5)
-        let batFirst = rng.unit() < bowlFirstChance ? other : tossWinner
+        var batFirst = rng.unit() < bowlFirstChance ? other : tossWinner
+        // A manager's toss call overrides the captain (the draw above is still made, so nothing else moves).
+        if let call = tossWinner.tactics?.toss { batFirst = call == .batFirst ? tossWinner : other }
         let bowlFirst = batFirst.teamId == a.teamId ? b : a
 
         let first = innings(batting: batFirst, bowling: bowlFirst, target: nil, maxOvers: 20, index: 0, pitch: pitch, log: &log)
@@ -735,17 +762,29 @@ struct MatchEngine {
 
         // Tactics: batting intent shifts aggression; the field trades boundaries for wickets.
         let phaseIndex = powerplay ? 0 : (death ? 2 : 1)
+        // The batter's own brief (career): anchors cut risk, hitters swing.
+        if maxOvers == 20, let role = battingTactics?.roles?[batter.id] {
+            switch role {
+            case .anchor: w[6] *= 0.8; w[5] *= 0.75; w[4] *= 0.93; w[1] *= 1.1
+            case .hitter: w[5] *= 1.35; w[4] *= 1.08; w[6] *= 1.2; w[0] *= 0.95
+            case .normal: break
+            }
+        }
         if maxOvers == 20, let t = battingTactics, phaseIndex < t.intent.count {
+            // Risk depends on the surface: swinging on a seamer or a turner costs far more wickets
+            // than on a flat track (the probe found All-out attack best on every pitch before this).
+            let risk = pitch.wicketMult / 0.95
             switch t.intent[phaseIndex] {
-            case .attack: w[4] *= 1.12; w[5] *= 1.25; w[6] *= 1.12; w[0] *= 0.95
-            case .block: w[4] *= 0.85; w[5] *= 0.7; w[6] *= 0.82; w[1] *= 1.1
+            case .attack: w[4] *= 1.12; w[5] *= 1.25; w[6] *= 1.15 * risk; w[0] *= 0.95
+            case .block: w[4] *= 0.8; w[5] *= 0.65; w[6] *= 0.86 / risk.squareRoot(); w[1] *= 1.1; w[0] *= 1.08
             case .rotate: break
             }
         }
         if maxOvers == 20, let t = bowlingTactics, phaseIndex < t.field.count {
+            // An attacking field leaks more on a fast, flat outfield.
             switch t.field[phaseIndex] {
-            case .attack: w[6] *= 1.12; w[4] *= 1.08; w[5] *= 1.04
-            case .defend: w[6] *= 0.9; w[4] *= 0.85; w[5] *= 0.95; w[1] *= 1.1
+            case .attack: w[6] *= 1.12; w[4] *= 1.04 * pitch.fourMult; w[5] *= 1.02 * pitch.sixMult
+            case .defend: w[6] *= 0.84; w[4] *= 0.88; w[5] *= 0.96; w[1] *= 1.1
             case .balanced: break
             }
         }

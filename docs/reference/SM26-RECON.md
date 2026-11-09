@@ -48,6 +48,36 @@ Panel: a tinkerer who runs the team through the planner won 66% / 62% of matches
 with Auto-pick. It had 0 illegal plans and 0 weaker-XI matches. The job-aware XI (openers open,
 finishers finish) beats Auto-pick.
 
+### Batch 4: Tactics
+
+| SM26 element | Cricket? | Auction XI |
+|---|---|---|
+| Strategy presets with a Defence ↔ Attack bar | ✅ | **Game plans**: Balanced, Powerplay blitz, See off the new ball, Build and launch, Squeeze, All-out attack. One tap sets the batting intent and field for all three phases. Each has an aggression bar, and the plan that suits the next pitch is badged. |
+| Team roles: captain, penalties, free kicks, corners | Partly | **Captain** (+1 batting and bowling). Set pieces have no cricket equivalent. Who bowls when is the existing bowling plan. |
+| General / Attack / Defence dropdowns | Partly | Existing phase field and intent, plus a new **toss call** (bat first, bowl first, captain's call) |
+| Per-player roles with a description | ✅ | **Batting roles** Anchor / Normal / Hitter for the top eight (engine: per-batter risk) |
+| Formation, team chemistry, sweeper keeper, time wasting, crossing | ❌ | Skipped: the batting order is cricket's formation; chemistry went with morale |
+| Magic wand | ✅ | The "suits this pitch" badge |
+
+**Balance bug found while building this.** Simulating each plan on each pitch (600 matches per
+cell) showed **All-out attack winning on every pitch** (77–79% against 71% for Balanced): aggressive
+settings had no real cost. The cost now depends on the pitch:
+- Attacking batting risks more wickets on seaming and turning surfaces (by the pitch's wicket factor).
+- Blocking costs more dot balls.
+- An attacking field leaks more boundaries on fast, flat outfields.
+
+After the fix, every plan averages within ±4% of Balanced, and the best plan differs by pitch:
+
+| Pitch | Best plan | Win % (Balanced) |
+|---|---|---|
+| Flat | Build and launch | 74.0 (71.2) |
+| Seam | See off the new ball | 67.7 (61.1) |
+| Bounce | See off the new ball | 72.4 (71.2) |
+| Turner | Squeeze | 69.4 (61.8) |
+| Slow | All-out attack | 74.4 (66.6) |
+
+Career only: Quick Auction never passes tactics, so its engine is unchanged (all engine tests pass).
+
 ## Built from this recon
 
 > **Update (schema 13):** the owner chose to replace morale with **form**. Squad roles, morale and

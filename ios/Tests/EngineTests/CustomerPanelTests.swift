@@ -249,6 +249,9 @@ final class CustomerPanelTests: XCTestCase {
             if c.facilities.building == nil, c.bank(c.userClubId) > 2_000 {
                 _ = c.upgrade(FacilityKind.allCases[c.leaguePlayed % FacilityKind.allCases.count])
             }
+            // Follow the game-plan badge for the next pitch (keeps captain, toss and roles).
+            if let pitch = c.nextUserFixture?.pitch { c.tactics = GamePlan.suggested(for: pitch).apply(to: c.tactics) }
+            if c.tactics.captain == nil { c.tactics.captain = c.userClub.xi.compactMap { c.players[$0] }.max { $0.rating < $1.rating }?.id }
             // A losing run: follow the assistant's advice, like a real manager would.
             if [3, 6, 9, 12].contains(r.losingRun), let report = c.assistantReport() {
                 for line in report.advice {

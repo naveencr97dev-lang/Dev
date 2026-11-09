@@ -299,6 +299,8 @@ extension Career {
     /// Per-player rating boosts for the user's XI from perks and the Analytics Room.
     func userBoost(for p: Player, position: Int, attackSlot: Int?, fixture: Fixture?) -> (bat: Int, bowl: Int) {
         var bat = difficulty.userBoost, bowl = difficulty.userBoost
+        // The captain leads by example.
+        if p.id == tactics.captain { bat += 1; bowl += 1 }
         let analytics = (facility(.analytics) - 1) / 3
         bat += analytics; bowl += analytics
         if manager.has(.captainsCall) { bat += 1; bowl += 1 }

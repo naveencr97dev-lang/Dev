@@ -101,7 +101,12 @@ struct MatchCentreView: View {
             Section {
                 Button("Apply from the next ball") {
                     var ch = change()
-                    ch.tactics = Tactics(field: [field, field, field], intent: [intent, intent, intent])
+                    // Keep the toss call, captain and batting roles; only the phase settings change.
+                    var t = tactics
+                    t.field = [field, field, field]
+                    t.intent = [intent, intent, intent]
+                    t.plan = nil
+                    ch.tactics = t
                     send(ch, "Tactics changed: \(field.label) field, \(intent.label) batting.")
                 }
                 .buttonStyle(PrimaryButtonStyle())

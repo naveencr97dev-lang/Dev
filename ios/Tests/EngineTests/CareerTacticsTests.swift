@@ -42,3 +42,56 @@ extension CareerTests {
         XCTAssertEqual(back.tactics, Tactics())
     }
 }
+
+/// Game plans, toss call, captain and batting roles (SM26 tactics recon, cricket version).
+extension CareerTests {
+    func testGamePlansSetAllSixAndKeepTheRest() {
+        var t = Tactics()
+        t.captain = "x"; t.toss = .bowlFirst; t.roles = ["x": .anchor]
+        let applied = GamePlan.seeItOff.apply(to: t)
+        XCTAssertEqual(applied.intent, GamePlan.seeItOff.tactics.intent)
+        XCTAssertEqual(applied.field, GamePlan.seeItOff.tactics.field)
+        XCTAssertEqual(applied.captain, "x"); XCTAssertEqual(applied.toss, .bowlFirst); XCTAssertEqual(applied.roles?["x"], .anchor)
+        XCTAssertEqual(applied.matchingPlan, .seeItOff)
+        XCTAssertEqual(GamePlan.balanced.aggression, 50)
+        XCTAssertEqual(GamePlan.allOut.aggression, 100)
+        XCTAssertTrue(Pitch.allCases.allSatisfy { GamePlan.suggestions[$0] != nil })
+    }
+
+    func testTossCallIsObeyed() {
+        var c = newCareer(seed: 901)
+        for call in TossCall.allCases {
+            c.tactics.toss = call
+            var obeyed = 0, won = 0
+            for f in c.leagueFixtures.filter({ c.isUserFixture($0) }).prefix(30) {
+                let (r, _, _) = c.simulate(f, changes: [])
+                guard r.tossWinner == c.userClubId else { continue }
+                won += 1
+                let battedFirst = r.innings[0].teamId == c.userClubId
+                if battedFirst == (call == .batFirst) { obeyed += 1 }
+            }
+            XCTAssertGreaterThan(won, 0)
+            XCTAssertEqual(obeyed, won, "\(call)")
+        }
+    }
+
+    func testHittersHitMoreSixesThanAnchors() {
+        var c = newCareer(seed: 902)
+        func sixes(_ role: BatRole) -> Int {
+            var cc = c
+            cc.tactics.roles = Dictionary(uniqueKeysWithValues: cc.userClub.xi.map { ($0, role) })
+            var n = 0
+            for (k, f) in cc.leagueFixtures.filter({ cc.isUserFixture($0) }).prefix(36).enumerated() {
+                cc.rng = SeededRNG(seed: UInt64(77 + k))
+                let (r, _, _) = cc.simulate(f, changes: [])
+                n += r.innings.prefix(2).filter { $0.teamId == cc.userClubId }.flatMap(\.batters).map(\.sixes).reduce(0, +)
+            }
+            return n
+        }
+        XCTAssertGreaterThan(sixes(.hitter), sixes(.anchor))
+        c.tactics.captain = c.userClub.xi[0]
+        let p = c.player(c.userClub.xi[0])!
+        XCTAssertEqual(c.userBoost(for: p, position: 0, attackSlot: nil, fixture: nil).bat,
+                       newCareer(seed: 902).userBoost(for: p, position: 0, attackSlot: nil, fixture: nil).bat + 1, "captain +1")
+    }
+}
