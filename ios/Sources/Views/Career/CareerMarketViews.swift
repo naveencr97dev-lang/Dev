@@ -289,6 +289,10 @@ struct CareerMarketTab: View {
                 PurseStrip(career: c)
                 Text((c.windowOpen ? "🟢 " : "🔴 ") + c.windowLabel)
                     .font(.subheadline.weight(.semibold))
+                NavigationLink { ScoutingView() } label: {
+                    SquadAction(icon: "binoculars", text: "Scouts \(c.scouting.scouts.count)/\(c.scoutCap) · \(c.scouting.reports.count) reports")
+                }
+                .buttonStyle(.plain)
 
                 if !c.market.offers.isEmpty {
                     SectionLabel(text: "Offers for your players")
@@ -358,6 +362,8 @@ struct MarketRow: View {
                     .font(.caption2.monospacedDigit()).foregroundStyle(Palette.muted)
                 Text("Wage ~\(Money.format(c.wageDemand(player)))")
                     .font(.caption2.monospacedDigit()).foregroundStyle(Palette.muted)
+                Text("POT \(c.potentialLabel(player))")
+                    .font(.caption2.weight(.bold).monospacedDigit()).foregroundStyle(Palette.four)
             }
         }
         .padding(DS.Space.md)

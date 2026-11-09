@@ -40,6 +40,14 @@ struct CareerSquadTab: View {
                                 SquadAction(icon: "figure.cricket", text: "Bowling")
                             }
                         }
+                        HStack(spacing: DS.Space.sm) {
+                            NavigationLink { TrainingView() } label: {
+                                SquadAction(icon: "dumbbell", text: "Training")
+                            }
+                            NavigationLink { AcademyView() } label: {
+                                SquadAction(icon: "graduationcap", text: "Academy \(c.academy.count)")
+                            }
+                        }
                         Button {
                             store.careerAutoXI()
                             Haptics.success()
@@ -298,7 +306,8 @@ struct CareerPlayerView: View {
                     big("\(p.bowl)", "BOWL", strengthColor(p.bowl))
                     big(CareerText.form(p.form), "FORM", CareerText.formColor(p.form))
                 }
-                Text("Value \(Money.format(p.value(in: c.year)))").font(.subheadline.weight(.semibold))
+                Text("Value \(Money.format(p.value(in: c.year))) · Potential \(c.potentialLabel(p))\(c.knowledge(of: p.id) < 100 ? " (scouted \(c.knowledge(of: p.id))%)" : "")")
+                    .font(.subheadline.weight(.semibold))
                 if !p.line.isEmpty {
                     Text(p.line).font(.caption).foregroundStyle(Palette.muted)
                 }

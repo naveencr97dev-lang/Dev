@@ -114,7 +114,23 @@ one owner and one AI developer.
 - **Could:** loans.
 - **Gate:** the AI keeps all 10 squads legal and competitive over a 20-season simulation.
 
-### M3: Scouting, training, youth (2 sprints)
+### M3: Scouting, training, youth (2 sprints) ✅ built (generic first pass)
+- **Built:**
+  - **Training:** a weekly plan of 3 drill slots from 10 drills, intensity (light, normal, hard
+    trading growth against form), and an individual focus per player. It ticks after each of your
+    matches, and AI clubs train too. Growth depends on age and is capped at potential.
+  - **Scouting:** you start with a 2★ chief scout and can hire up to 2 scouts (1–5★) from candidates
+    refreshed each off-season. Wages come from the bank. Assign each scout a nation, a role and an
+    optional U21-only brief. Knowledge narrows potential ranges (unscouted players show a ±10
+    range), and reports appear in the Scouting screen.
+  - **Academy:** 2–4 local kids each off-season (max 8). They train 1.3× faster, sit outside the
+    squad and cap, and can be promoted on a minimum contract or released.
+  - Save schema 3, with a tested v2 migration.
+- **20-season harness:** 8 different champions, at most 25% of titles. Flat average 187. The AI's
+  personality now nudges auction bids by only ±10%; it used to let one club buy the stars every time.
+- **Cap rule:** minimum-wage signings needed to reach 18 players may go up to ₹0.8 Cr over the cap.
+
+### M3 plan (original)
 - **Must:**
   - Scout staff, assignments and fog-of-war ranges.
   - Attribute search and a shortlist.

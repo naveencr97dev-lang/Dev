@@ -55,7 +55,7 @@ struct CareerFlags: Codable, Hashable {
 /// The whole career save. A pure value type: every rule lives here or in the engines, so the
 /// career can be unit-tested and simulated headlessly.
 struct Career: Codable {
-    static let currentSchema = 2
+    static let currentSchema = 3
     static let maxNews = 80
 
     var schemaVersion = Career.currentSchema
@@ -85,6 +85,11 @@ struct Career: Codable {
     var finance: [ClubFinance] = []
     var market = MarketState()
     var offseason: OffseasonState? = nil
+    // Schema 3 (M3): training, scouting, the youth academy.
+    var training = TrainingPlan()
+    var scouting = ScoutingState()
+    /// The user's academy (player ids).
+    var academy: [String] = []
 
     /// Home grounds, by franchise template order.
     static let homePitches: [Pitch] = [.indianFlat, .dustyTurner, .indianFlat, .caribbeanSlow, .englishSeam,
@@ -134,6 +139,9 @@ struct Career: Codable {
         c.finance = c.clubs.map { _ in ClubFinance(bank: tuning.startingBank) }
         c.assignDraftContracts()
         for i in c.clubs.indices { c.autoPickXI(clubIndex: i) }
+        c.scouting.scouts = [Scout(id: 0, name: "Chief scout", stars: 2, wage: tuning.scoutWage * 2)]
+        c.refreshScoutCandidates()
+        _ = c.academyIntake()
         c.startSeason()
         c.addNews(.info, "\(managerName) takes charge of \(c.clubs[clubIndex].name). The \(year) season starts on \(CareerCalendar.label(c.tuning.roundDays.first ?? 10)).")
         return c
@@ -205,7 +213,7 @@ struct Career: Codable {
     }
 
     var freeAgents: [CareerPlayer] {
-        players.values.filter { $0.clubId == nil && !$0.retired }
+        players.values.filter { $0.clubId == nil && !$0.retired && $0.academyOf == nil }
             .sorted { $0.rating != $1.rating ? $0.rating > $1.rating : $0.id < $1.id }
     }
 
@@ -418,6 +426,10 @@ struct Career: Codable {
             }
         }
         players[r.potmId]?.stats.potm += 1
+        if r.teamA == userClubId || r.teamB == userClubId {
+            trainingTick()
+            scoutTick()
+        }
         let cap = tuning.formCap
         for id in played.sorted() {
             guard var p = players[id] else { continue }
@@ -497,6 +509,7 @@ struct Career: Codable {
         var signed: [String] = []
         var bigRisers: [String] = []
         var youth = 0
+        var academy: [String] = []
     }
 
     /// Runs the whole off-season automatically (headless sims and tests): the user keeps their best
@@ -561,8 +574,10 @@ struct Career: Codable {
             if age >= threshold { chance = tuning.retireBase + tuning.retirePerYear * Double(age - threshold) }
             if age >= 31 && p.rating < tuning.weakVeteranRating { chance = max(chance, 0.5) }
             // Unsigned journeymen drift out of the game.
-            if p.clubId == nil && p.generated && age >= 26 && (p.rating < 50 || age >= 30) { chance = max(chance, 0.6) }
-            if p.clubId == nil && p.generated && age >= 22 && p.potential < 68 { chance = max(chance, 0.4) }
+            let unsigned = p.clubId == nil && p.generated && p.academyOf == nil
+            if unsigned && age >= 26 && (p.rating < 50 || age >= 30) { chance = max(chance, 0.6) }
+            if unsigned && age >= 22 && p.potential < 68 { chance = max(chance, 0.4) }
+            if p.academyOf != nil { chance = 0 }
             if age >= 41 { chance = 1 }
             if chance > 0 && rng.unit() < chance {
                 p.retired = true
@@ -629,6 +644,14 @@ enum CareerSave {
 
     /// JSON migrations, keyed by the version they upgrade from.
     static let migrations: [Int: ([String: Any]) -> [String: Any]] = [
+        // v2 → v3: training, scouting, academy.
+        2: { json in
+            var j = json
+            j["training"] = CareerSave.jsonObject(TrainingPlan())
+            j["scouting"] = CareerSave.jsonObject(ScoutingState())
+            j["academy"] = [Any]()
+            return j
+        },
         // v1 → v2: money and the transfer market. Contracts are filled in after decoding.
         1: { json in
             var j = json
@@ -641,6 +664,10 @@ enum CareerSave {
     ]
 
     static func encode(_ c: Career) throws -> Data { try JSONEncoder().encode(c) }
+
+    static func jsonObject<T: Encodable>(_ v: T) -> Any {
+        (try? JSONSerialization.jsonObject(with: JSONEncoder().encode(v))) ?? [String: Any]()
+    }
 
     static func decode(_ data: Data) throws -> Career {
         guard var json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else { throw LoadError.notACareer }

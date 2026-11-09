@@ -29,9 +29,20 @@ Run one franchise season after season. The design is in `docs/career/GDD.md` and
   - Veterans retire.
   - A youth intake joins the pool.
   - Squads are topped back up to 18.
-- **Coming next:** auctions and the transfer market (M2), scouting, training and youth (M3),
-  facilities, finances, manager traits and gold (M4), international management (M5), and the 2D
-  match view (M6).
+- **M2, contracts and market:**
+  - Wages count against a ₹120 Cr salary cap.
+  - A mega auction every 3rd season, with up to 6 retentions; a mini auction in the other years.
+  - The auction is turn-based: Bid, or Pass to let the AI settle the lot. You can sim the rest, with
+    or without your staff bidding for you.
+  - Market tab: fee and wage offers with counter-offers, free agents, a transfer list, AI bids for
+    your players, releases.
+  - Windows: the off-season, rounds 1–2, and before round 25.
+- **M3, development:**
+  - Training: weekly drills, intensity and an individual focus per player.
+  - Scouts: give them a nation, role or U21 brief to reveal potential.
+  - Youth academy: a yearly intake of local kids, promoted on a minimum contract.
+- **Coming next:** facilities, finances, manager traits and gold (M4), international management
+  (M5), and the 2D match view (M6).
 
 ## How a game goes
 

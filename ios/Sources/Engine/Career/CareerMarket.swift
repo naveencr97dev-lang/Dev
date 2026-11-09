@@ -159,8 +159,16 @@ extension Career {
     @discardableResult
     mutating func beginOffseason() -> RolloverReport {
         guard phase == .seasonEnd else { return RolloverReport() }
-        let report = ageAndRefreshPool()
+        var report = ageAndRefreshPool()
         market = MarketState(nextOfferId: market.nextOfferId, aiWindowsDone: market.aiWindowsDone)
+        payScouts()
+        refreshScoutCandidates()
+        academy = academy.filter { players[$0] != nil && players[$0]?.retired == false }
+        let kids = academyIntake()
+        if !kids.isEmpty {
+            addNews(.squad, "🎓 Academy intake: \(kids.joined(separator: ", ")).")
+            report.academy = kids
+        }
         let mega = isMegaYear(year)
         offseason = OffseasonState(stage: mega ? .retention : .auction, mega: mega)
         phase = .offseason
@@ -291,7 +299,9 @@ extension Career {
         var need = deficit > 0 ? 1.35 : (deficit <= -2 ? 0.6 : 1.0)
         if squad.count < tuning.minSquad { need *= 1.15 }
         if squad.count >= tuning.auctionSquadTarget { need *= 0.5 }
-        let v = Double(p.value(in: year)) * need * club.personality * rng.range(0.8, 1.2)
+        // Personality nudges bids (±10%) without letting one club buy every star.
+        let temper = 1 + (club.personality - 1) * 0.5
+        let v = Double(p.value(in: year)) * need * temper * rng.range(0.8, 1.2)
         let limit = min(Int(v), capRoom(club.id) - auctionReserve(club.id))
         return limit >= base ? limit : 0
     }
@@ -584,7 +594,7 @@ extension Career {
             for _ in 0..<2 {
                 let squad = self.squad(clubs[ci].id).sorted { $0.rating < $1.rating }
                 let overseas = squad.filter(\.overseas).count
-                let room = capRoom(clubs[ci].id)
+                let room = capRoom(clubs[ci].id) - max(0, tuning.minSquad - squad.count - 1) * tuning.minWage
                 let weakest = squad.first
                 let candidates = freeAgents.filter { fa in
                     let osOK = !fa.overseas || overseas < tuning.maxOverseasSquad

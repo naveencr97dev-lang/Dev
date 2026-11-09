@@ -152,6 +152,30 @@ extension GameStore {
         return ok
     }
 
+    // MARK: Development
+
+    func careerSetTraining(_ plan: TrainingPlan) { mutateCareer { $0.setTraining(plan) } }
+
+    func careerHireScout(_ id: Int) -> String? {
+        var err: String?
+        mutateCareer { err = $0.hireScout(id) }
+        return err
+    }
+
+    func careerFireScout(_ id: Int) { mutateCareer { $0.fireScout(id) } }
+
+    func careerAssignScout(_ id: Int, region: String, role: Role?, youthOnly: Bool) {
+        mutateCareer { $0.assignScout(id, region: region, role: role, youthOnly: youthOnly) }
+    }
+
+    func careerPromote(_ id: String) -> String? {
+        var err: String?
+        mutateCareer { err = $0.promote(id) }
+        return err
+    }
+
+    func careerReleaseAcademy(_ id: String) { mutateCareer { $0.releaseFromAcademy(id) } }
+
     /// Picks the best XI and order for the user's club.
     func careerAutoXI() {
         mutateCareer { c in c.autoPickXI(clubIndex: c.userClubIndex) }

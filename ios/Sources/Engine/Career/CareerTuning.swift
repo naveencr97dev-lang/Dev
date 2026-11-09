@@ -67,6 +67,18 @@ struct CareerTuning: Codable, Hashable {
     var counterThreshold = 0.75
     var releaseCompensation = 0.5
 
+    // Training, scouting, academy (M3)
+    var trainingSlots = 3
+    /// Chance per week that a drilled attribute gains a point (before age and intensity).
+    var drillChance = 0.05
+    var focusMultiplier = 2.5
+    var academyBoost = 1.3
+    var academyMax = 8
+    /// Width of the potential range for a player nobody has scouted.
+    var unknownPotentialWidth = 20
+    var scoutCap = 2
+    var scoutWage = 25
+
     // Form
     var formDecay = 1
     var formCap = 10

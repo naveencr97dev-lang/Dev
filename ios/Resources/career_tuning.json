@@ -1,4 +1,6 @@
 {
+  "academyBoost" : 1.3,
+  "academyMax" : 8,
   "askBenchMultiplier" : 1.15,
   "askXIMultiplier" : 1.5,
   "auctionSquadTarget" : 21,
@@ -12,7 +14,9 @@
     70
   ],
   "depthPlayers" : 160,
+  "drillChance" : 0.05,
   "engineBatBoost" : 8,
+  "focusMultiplier" : 2.5,
   "formCap" : 10,
   "formDecay" : 1,
   "growth" : [
@@ -93,6 +97,8 @@
   "retirePerYear" : 0.2,
   "roundGap" : 6,
   "salaryCap" : 12000,
+  "scoutCap" : 2,
+  "scoutWage" : 25,
   "seasonRevenue" : 1200,
   "secondTraitChance" : 0.25,
   "squadShape" : [
@@ -103,7 +109,9 @@
   ],
   "startSquad" : 20,
   "startingBank" : 2500,
+  "trainingSlots" : 3,
   "traitChance" : 0.5,
+  "unknownPotentialWidth" : 20,
   "weakVeteranRating" : 56,
   "youthGemChance" : 0.08,
   "youthIntake" : 30
