@@ -171,7 +171,25 @@ one owner and one AI developer.
 - **Gate:** the economy simulation shows no insolvency spiral and no runaway cash, both
   without gold.
 
-### M5: International (2 sprints)
+### M5: International (2 sprints) ✅ built (generic first pass)
+- **Built:**
+  - **20 nations** (12 full members, 8 associates) with Elo ranking points. Nations without enough
+    real players get generated pools (at least 16 each).
+  - **Windows** pause the league before rounds 13 and 25. The April window of even years is the
+    **T20 World Cup**: 4 groups of 5 drawn by ranking (snake), a Super 8, semi-finals and a final,
+    at a random full-member host. Every other window is a round of 3-match bilateral series
+    between neighbouring nations in the rankings.
+  - **National job:** offers each off-season by reputation (manager level, titles, World Cups).
+    Small nations are open from day one. You pick a 15-man squad (the XI is auto-picked).
+  - **Board:** a target per event (rank-based). Two misses in a row and you're sacked (on by default).
+  - **Screens:** a World tab (job and offers, squad picker, current event with group tables and
+    results, rankings, history) and an international window card on Home. Live internationals use
+    the normal match screen.
+  - Save schema 5, with a tested v4 migration.
+- **Harness:** 20 seasons simulate at 0.65 s per season (release build), with 7 different champions.
+- **Known gaps:** no ODIs (M7). Caps are counted, but international stats aren't shown yet.
+
+### M5 plan (original)
 - **Must:**
   - 20 nations and their player pools.
   - Rankings.

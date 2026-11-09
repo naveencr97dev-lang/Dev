@@ -41,8 +41,18 @@ Run one franchise season after season. The design is in `docs/career/GDD.md` and
   - Training: weekly drills, intensity and an individual focus per player.
   - Scouts: give them a nation, role or U21 brief to reveal potential.
   - Youth academy: a yearly intake of local kids, promoted on a minimum contract.
-- **Coming next:** facilities, finances, manager traits and gold (M4), international management
-  (M5), and the 2D match view (M6).
+- **M4, club and manager:**
+  - 7 facilities (levels 1–10).
+  - Full season accounts.
+  - Manager XP, levels and 24 perks in 3 trees.
+  - Gold, and a store in test mode where every pack is free and the 1,000,000-gold Tester Pack is
+    unlimited.
+- **M5, international:**
+  - 20 nations with world rankings.
+  - The league pauses for international windows: 3-match series, or the T20 World Cup in April of
+    even years.
+  - National job offers by reputation, a 15-man squad, board targets and sacking.
+- **Coming next:** match-day tactics and the 2D match view (M6), and ODIs (M7).
 
 ## How a game goes
 

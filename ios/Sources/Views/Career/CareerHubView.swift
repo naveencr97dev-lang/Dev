@@ -15,8 +15,9 @@ struct CareerHubView: View {
                     Text("Home").tag(0)
                     Text("Squad").tag(1)
                     Text("Market").tag(5)
-                    Text("Matches").tag(2)
+                    Text("Games").tag(2)
                     Text("Table").tag(3)
+                    Text("World").tag(6)
                     Text("Club").tag(4)
                 }
                 .pickerStyle(.segmented)
@@ -31,6 +32,7 @@ struct CareerHubView: View {
                         case 2: CareerFixturesTab(path: $path)
                         case 3: CareerTableTab(path: $path)
                         case 5: CareerMarketTab()
+                        case 6: CareerWorldTab(path: $path)
                         default: CareerClubTab(path: $path)
                         }
                     }
@@ -124,6 +126,8 @@ struct CareerHomeTab: View {
                         note = CareerText.rollover(report)
                         Haptics.success()
                     }
+                } else if c.pendingWindow != nil {
+                    WindowCard(career: c, path: $path, note: $note)
                 } else if c.phase == .offseason {
                     OffseasonCard(career: c) { signed in
                         note = signed.isEmpty ? "Season \(c.year) is under way." : "The board filled your squad: \(signed.joined(separator: ", "))."
