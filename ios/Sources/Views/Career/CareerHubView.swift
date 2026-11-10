@@ -129,10 +129,11 @@ struct CareerHubView: View {
             default: CareerWorldTab(path: $path)
             }
         case .club:
+            // Device feedback: club essentials on the left, the league table on the right.
             AdaptiveColumns {
-                ClubOfficeTiles(career: c)
-            } right: {
                 CareerClubTab(path: $path)
+            } right: {
+                CareerPointsTable(career: c) { path.append(.team($0)) }
             }
         }
     }
@@ -382,7 +383,8 @@ struct ClubOfficeTiles: View {
             }
             Hairline(inset: 54)
             NavigationLink { ManagerView() } label: {
-                DashTile(icon: "star", title: "Manager", subtitle: "Level \(c.manager.level) · traits",
+                DashTile(icon: "star", title: "Manager",
+                         subtitle: "Level \(c.manager.level) · \(c.manager.xp)/\(ManagerProfile.xpFor(level: c.manager.level)) XP · \(c.manager.points) trait point\(c.manager.points == 1 ? "" : "s")",
                          badge: c.manager.points > 0 ? "\(c.manager.points)" : nil)
             }
             Hairline(inset: 54)
@@ -392,6 +394,11 @@ struct ClubOfficeTiles: View {
             Hairline(inset: 54)
             NavigationLink { NewsScreen() } label: {
                 DashTile(icon: "newspaper", title: "News", subtitle: "\(c.news.count) items")
+            }
+            Hairline(inset: 54)
+            NavigationLink { CareerScreen(title: "History") { ClubHistoryView() } } label: {
+                DashTile(icon: "clock.arrow.circlepath", title: "History",
+                         subtitle: "\(c.history.count) season\(c.history.count == 1 ? "" : "s") · roll of honour")
             }
             Hairline(inset: 54)
             NavigationLink { CareerSettingsView() } label: {
@@ -901,6 +908,7 @@ struct CareerLeaders: View {
 
 // MARK: - Club
 
+/// Club tab, left column: a one-line club header, the office tiles, and the finances.
 struct CareerClubTab: View {
     @EnvironmentObject var store: GameStore
     @Binding var path: [Route]
@@ -909,67 +917,69 @@ struct CareerClubTab: View {
         if let c = store.career {
             let club = c.userClub
             let info = c.info(c.userClubId)
-            VStack(alignment: .leading, spacing: DS.Space.lg) {
-                AppCard(tint: Color(hex: club.colorHex)) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(club.name.uppercased()).font(.display(26))
-                        if let info {
-                            Text("\(info.homePitch.icon) Home ground: \(info.homePitch.label)").font(.subheadline)
-                            Text(info.homePitch.blurb).font(.caption).foregroundStyle(Palette.muted)
-                            Text("Titles: \(info.titles)").font(.subheadline)
-                        }
-                        Text("Manager since \(String(c.startYear)) · \(c.history.count) season\(c.history.count == 1 ? "" : "s") completed")
-                            .font(.caption).foregroundStyle(Palette.muted)
-                    }
+            HStack(spacing: 10) {
+                TeamBadge(team: club, size: 30)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(club.name).font(.system(size: 17 * TextScale.factor, weight: .bold)).foregroundStyle(.white).lineLimit(1)
+                    Text([info.map { "\($0.homePitch.icon) \($0.homePitch.label)" }, "\(info?.titles ?? 0) title\(info?.titles == 1 ? "" : "s")",
+                          "since \(String(c.startYear))"].compactMap { $0 }.joined(separator: " · "))
+                        .font(.system(size: 12 * TextScale.factor)).foregroundStyle(Palette.muted).lineLimit(1)
                 }
-
-                ManagerCard(career: c)
-                HStack(spacing: DS.Space.sm) {
-                    NavigationLink { FacilitiesView() } label: {
-                        SquadAction(icon: "building.2", text: "Facilities")
-                    }
-                    NavigationLink { ManagerView() } label: {
-                        SquadAction(icon: "star.circle", text: "Traits \(c.manager.points)")
-                    }
-                    NavigationLink { StoreView() } label: {
-                        SquadAction(icon: "bag", text: "Store")
-                    }
+            }
+            ClubOfficeTiles(career: c)
+            SectionLabel(text: "Finances")
+            let net = MoneyCategory.allCases.reduce(0) { $0 + c.seasonTotal($1) }
+            VStack(spacing: 0) {
+                InfoRow(label: "Bank", value: Money.format(c.bank(c.userClubId)), chevron: false)
+                Hairline(inset: 16)
+                InfoRow(label: "Wages", value: "\(Money.format(c.payroll(c.userClubId))) of \(Money.format(c.tuning.salaryCap)) cap", chevron: false)
+                Hairline(inset: 16)
+                NavigationLink { CareerScreen(title: "Money") { SeasonMoneyCard(career: c) } } label: {
+                    InfoRow(label: "This season", value: (net >= 0 ? "+" : "−") + Money.format(abs(net)),
+                            color: net >= 0 ? Palette.accent : Palette.wicket)
                 }
-                .buttonStyle(.plain)
+                Hairline(inset: 16)
+                NavigationLink { CareerScreen(title: "Ledger") { FinanceCard(career: c) } } label: {
+                    InfoRow(label: "Ledger", value: "Every payment")
+                }
+            }
+            .gameFrame()
+            .buttonStyle(.plain)
+        }
+    }
+}
 
-                FinanceCard(career: c)
+/// Club › History: seasons gone and every club's titles.
+struct ClubHistoryView: View {
+    @EnvironmentObject var store: GameStore
 
+    var body: some View {
+        if let c = store.career {
+            VStack(alignment: .leading, spacing: DS.Space.md) {
                 SectionLabel(text: "History")
                 if c.history.isEmpty {
                     Text("Your first season is under way.").font(.subheadline).foregroundStyle(.secondary)
                 } else {
                     VStack(spacing: DS.Space.sm) {
-                        ForEach(c.history.reversed()) { h in
-                            HistoryRow(career: c, record: h)
-                        }
+                        ForEach(c.history.reversed()) { h in HistoryRow(career: c, record: h) }
                     }
                 }
-
                 SectionLabel(text: "Roll of honour")
-                AppCard(padding: DS.Space.md) {
-                    VStack(spacing: 8) {
-                        ForEach(c.clubInfo.sorted { $0.titles != $1.titles ? $0.titles > $1.titles : $0.id < $1.id }) { i in
-                            if let t = c.club(i.id) {
-                                Button { path.append(.team(t.id)) } label: {
-                                    HStack(spacing: 10) {
-                                        TeamBadge(team: t, size: 26)
-                                        Text(t.name).font(.subheadline)
-                                        Spacer()
-                                        Text(i.titles > 0 ? String(repeating: "🏆", count: min(i.titles, 6)) + (i.titles > 6 ? " ×\(i.titles)" : "") : "–")
-                                            .font(.caption)
-                                    }
-                                    .contentShape(Rectangle())
-                                }
-                                .buttonStyle(.plain)
+                VStack(spacing: 8) {
+                    ForEach(c.clubInfo.sorted { $0.titles != $1.titles ? $0.titles > $1.titles : $0.id < $1.id }) { i in
+                        if let t = c.club(i.id) {
+                            HStack(spacing: 10) {
+                                TeamBadge(team: t, size: 26)
+                                Text(t.name).font(.subheadline)
+                                Spacer()
+                                Text(i.titles > 0 ? String(repeating: "🏆", count: min(i.titles, 6)) + (i.titles > 6 ? " ×\(i.titles)" : "") : "–")
+                                    .font(.caption)
                             }
                         }
                     }
                 }
+                .padding(DS.Space.md)
+                .gameFrame()
             }
         }
     }
