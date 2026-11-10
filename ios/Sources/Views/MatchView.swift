@@ -585,7 +585,163 @@ struct ResultScreen: View {
     }
 }
 
+/// After the match: the broadcast-style summary board, then the full scorecard on demand.
 struct MatchResultContent: View {
+    @EnvironmentObject var store: GameStore
+    let result: MatchResult
+    @State private var showReel = false
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: DS.Space.md) {
+                MatchSummaryBoard(result: result)
+                HStack(spacing: DS.Space.sm) {
+                    NavigationLink {
+                        FullScorecardView(result: result)
+                            .background(AppBackground())
+                            .navigationTitle("Scorecard")
+                            .navigationBarTitleDisplayMode(.inline)
+                    } label: {
+                        Label("Full scorecard", systemImage: "list.bullet.rectangle")
+                    }
+                    .buttonStyle(SecondaryButtonStyle())
+                    if !(result.highlights ?? []).isEmpty {
+                        Button { showReel = true } label: { Label("Highlights", systemImage: "play.fill") }
+                            .buttonStyle(PrimaryButtonStyle())
+                    }
+                }
+                if result.stage == .final, !store.inCareer, store.game?.phase == .season, store.game?.championId != nil {
+                    Button("🏆 Trophy ceremony") { store.finishSeason() }
+                        .buttonStyle(PrimaryButtonStyle())
+                }
+            }
+            .padding(.horizontal, DS.Space.md)
+            .padding(.vertical, DS.Space.sm)
+            .frame(maxWidth: 860)
+            .frame(maxWidth: .infinity)
+        }
+        .fullScreenCover(isPresented: $showReel) {
+            HighlightsReel(result: result) { showReel = false }
+                .environmentObject(store)
+        }
+    }
+}
+
+/// Broadcast-style summary (like a TV graphic): a title band, then for each innings a team band
+/// with overs and score, the top three batters beside the top three bowlers against them, and a
+/// result band at the foot.
+struct MatchSummaryBoard: View {
+    @EnvironmentObject var store: GameStore
+    let result: MatchResult
+
+    var body: some View {
+        let a = result.innings[0], b = result.innings.count > 1 ? result.innings[1] : result.innings[0]
+        VStack(spacing: 0) {
+            titleBand
+            inningsBlock(a)
+            inningsBlock(b)
+            resultBand
+        }
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
+    }
+
+    private var titleBand: some View {
+        let home = store.team(result.teamA)?.short ?? "", away = store.team(result.teamB)?.short ?? ""
+        return HStack(alignment: .firstTextBaseline, spacing: 10) {
+            Text(result.stage == .league ? "LEAGUE MATCH" : result.stage.label.uppercased())
+                .font(.system(size: 20 * TextScale.factor, weight: .black))
+                .foregroundStyle(.white)
+            Text("\(home) v \(away) · \(result.pitch.icon) \(result.pitch.label)")
+                .font(.system(size: 12 * TextScale.factor, weight: .semibold)).foregroundStyle(.white.opacity(0.75))
+                .lineLimit(1)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 14).padding(.vertical, 8)
+        .background(Palette.surfaceHi)
+    }
+
+    private func inningsBlock(_ inn: InningsCard) -> some View {
+        let team = store.team(inn.teamId)
+        let batters = inn.batters.filter(\.batted)
+            .sorted { $0.runs != $1.runs ? $0.runs > $1.runs : $0.balls < $1.balls }.prefix(3)
+        let bowlers = inn.bowlers.filter { $0.balls > 0 }
+            .sorted { $0.wickets != $1.wickets ? $0.wickets > $1.wickets : $0.runs < $1.runs }.prefix(3)
+        let rows = max(batters.count, bowlers.count)
+        return VStack(spacing: 0) {
+            HStack(spacing: 10) {
+                if let team { TeamBadge(team: team, size: 24) }
+                Text(team?.name.uppercased() ?? "").font(.system(size: 15 * TextScale.factor, weight: .heavy)).lineLimit(1)
+                Spacer(minLength: 6)
+                Text("OVERS \(inn.overs)").font(.system(size: 11 * TextScale.factor, weight: .bold)).opacity(0.85)
+                Text(inn.wickets >= 10 ? "\(inn.runs)" : "\(inn.runs)-\(inn.wickets)").font(.score(24))
+                    .frame(minWidth: 70, alignment: .trailing)
+            }
+            .foregroundStyle(team.map { MatchSummaryBoard.isLight($0.colorHex) } == true ? Palette.ink : .white)
+            .padding(.horizontal, 14).padding(.vertical, 6)
+            .background(team.map { Color(hex: $0.colorHex) } ?? Palette.surfaceHi)
+            ForEach(0..<rows, id: \.self) { i in
+                HStack(spacing: 0) {
+                    cell(name: i < batters.count ? batters[i].name : nil,
+                         big: i < batters.count ? "\(batters[i].runs)\(batters[i].dismissal == nil ? "*" : "")" : "",
+                         small: i < batters.count ? "\(batters[i].balls)" : "")
+                    Rectangle().fill(Palette.stroke).frame(width: 1)
+                    cell(name: i < bowlers.count ? bowlers[i].name : nil,
+                         big: i < bowlers.count ? "\(bowlers[i].wickets)-\(bowlers[i].runs)" : "",
+                         small: i < bowlers.count ? bowlers[i].overs : "")
+                }
+                .frame(height: 30)
+                .background(i % 2 == 0 ? Palette.surface : Palette.surface.opacity(0.75))
+            }
+        }
+    }
+
+    /// "Will JACKS   96* 55": first names light, surname bold, big figure, small balls/overs.
+    private func cell(name: String?, big: String, small: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 6) {
+            if let name {
+                let parts = name.split(separator: " ")
+                let last = parts.last.map(String.init) ?? name
+                let first = parts.dropLast().joined(separator: " ")
+                HStack(spacing: 4) {
+                    if !first.isEmpty { Text(first).font(.system(size: 13 * TextScale.factor)).foregroundStyle(Palette.muted) }
+                    Text(last.uppercased()).font(.system(size: 13 * TextScale.factor, weight: .bold))
+                }
+                .lineLimit(1).minimumScaleFactor(0.75)
+                Spacer(minLength: 4)
+                Text(big).font(.score(19))
+                Text(small).font(.score(11, weight: .regular)).foregroundStyle(Palette.muted).frame(width: 28, alignment: .leading)
+            } else {
+                Spacer()
+            }
+        }
+        .padding(.horizontal, 14)
+        .frame(maxWidth: .infinity)
+    }
+
+    /// Light team colours (yellow, gold) need dark text on the band.
+    static func isLight(_ hex: String) -> Bool {
+        let h = hex.trimmingCharacters(in: CharacterSet(charactersIn: "#"))
+        guard h.count >= 6, let v = UInt32(h.prefix(6), radix: 16) else { return false }
+        let r = Double((v >> 16) & 0xFF) / 255, g = Double((v >> 8) & 0xFF) / 255, b = Double(v & 0xFF) / 255
+        return 0.299 * r + 0.587 * g + 0.114 * b > 0.6
+    }
+
+    private var resultBand: some View {
+        HStack(spacing: 10) {
+            Text("\(store.team(result.winnerId)?.short ?? "") \(result.margin)".uppercased())
+                .font(.system(size: 14 * TextScale.factor, weight: .heavy))
+            Spacer(minLength: 6)
+            Label(result.potmName, systemImage: "star.fill").font(.system(size: 13 * TextScale.factor, weight: .semibold))
+                .lineLimit(1)
+        }
+        .foregroundStyle(Palette.ink)
+        .padding(.horizontal, 14).padding(.vertical, 8)
+        .background(Palette.accent)
+    }
+}
+
+/// The complete scorecard: summary, bowling and batting panels with team toggles.
+struct FullScorecardView: View {
     @EnvironmentObject var store: GameStore
     @Environment(\.verticalSizeClass) private var vSize
     let result: MatchResult
