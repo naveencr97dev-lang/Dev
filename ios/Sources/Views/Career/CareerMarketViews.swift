@@ -99,7 +99,7 @@ struct RetentionView: View {
                             Image(systemName: selected.contains(p.id) ? "checkmark.circle.fill" : "circle")
                                 .font(.title3)
                                 .foregroundStyle(selected.contains(p.id) ? Palette.accent : Palette.muted)
-                            CareerPlayerRow(player: p, year: c?.year ?? 0)
+                            CareerPlayerRow(player: p, year: c?.year ?? 0, pitchFit: c?.suitsUserPitch(p))
                             Text(Money.format(c?.retentionWage(p) ?? 0)).font(.caption.monospacedDigit()).foregroundStyle(Palette.muted)
                         }
                         .contentShape(Rectangle())
@@ -204,8 +204,12 @@ struct CareerAuctionView: View {
             Text("LOT \(a.index + 1) OF \(a.queue.count)").font(.display(14, weight: .heavy)).foregroundStyle(Palette.muted)
             AppCard {
                 VStack(alignment: .leading, spacing: DS.Space.sm) {
-                    CareerPlayerRow(player: p, year: c.year)
+                    CareerPlayerRow(player: p, year: c.year, pitchFit: c.suitsUserPitch(p))
                     if !p.traits.isEmpty { TraitChips(traits: p.traits, inline: true) }
+                    if let fit = c.pitchFitLine(p) {
+                        Label(fit.text, systemImage: fit.good ? "house.fill" : "house")
+                            .font(.caption.weight(.semibold)).foregroundStyle(fit.good ? Palette.accent : Color.orange)
+                    }
                     Text("Value \(Money.format(p.value(in: c.year))) · base \(Money.format(p.basePrice(in: c.year)))")
                         .font(.caption).foregroundStyle(Palette.muted)
                     if c.isRTMLot(p.id) {
@@ -501,6 +505,7 @@ struct MarketRow: View {
                 HStack(spacing: 4) {
                     Text(p.name).font(.system(size: 14 * TextScale.factor, weight: .semibold)).foregroundStyle(.white).lineLimit(1)
                     if p.overseas { Image(systemName: "airplane").font(.system(size: 9 * TextScale.factor)).foregroundStyle(Palette.muted) }
+                    PitchFitMark(fit: c.suitsUserPitch(p))
                 }
                 if !landscape {
                     Text("\(p.roleDescription) · \(club?.short ?? "Free") · \(p.age(in: c.year))")

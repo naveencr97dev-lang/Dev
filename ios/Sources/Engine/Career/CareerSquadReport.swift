@@ -80,6 +80,7 @@ extension Career {
         if spinners < 2 { r.weaknesses.append("Only \(spinners) spinner\(spinners == 1 ? "" : "s") of quality\(home == .dustyTurner || home == .caribbeanSlow ? ", on a home pitch that turns" : "").") }
         if seamers < 3 { r.weaknesses.append("Only \(seamers) seamer\(seamers == 1 ? "" : "s") of quality\(home == .englishSeam || home == .aussieBounce ? ", on a home pitch for pace" : "").") }
         if spinners >= 3 && seamers >= 4 { r.strengths.append("Bowling options for every surface.") }
+        if let v = homePitchVerdict() { if v.good { r.strengths.append(v.text) } else { r.weaknesses.append(v.text) } }
 
         // Shape, age, size, form.
         let keepers = s.filter { $0.role == .WK }.count

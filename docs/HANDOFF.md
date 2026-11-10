@@ -1,10 +1,11 @@
 # Handoff: Auction XI (read this first in a new chat)
 
-Last updated 2026-11-09 (after customer-panel rounds 1-4 and the SM26 recon) on branch `claude/gracious-davinci-yq0yej`.
+Last updated 2026-11-10 (after home-pitch squad building) on branch `claude/ecstatic-feynman-6ve2uz`.
 
 ## 1. Where things are
 
-- **Repo:** `naveencr97dev-lang/Dev`. Work on branch **`claude/gracious-davinci-yq0yej`**, then
+- **Repo:** `naveencr97dev-lang/Dev`. Work on branch **`claude/ecstatic-feynman-6ve2uz`** (it continues
+  `claude/gracious-davinci-yq0yej` from `17b9a6b`; point Codemagic at the new branch), then
   commit and push after every change.
   - The old branch `claude/beautiful-keller-qgp1vc` holds the same history up to `e505be7`.
   - The separate Streaklet app is on `claude/reverse-engineer-repo-rnfy93`.
@@ -81,7 +82,7 @@ Last updated 2026-11-09 (after customer-panel rounds 1-4 and the SM26 recon) on 
 - **Swift toolchain:** if `/opt/swift` is missing, install it with
   `curl -sSfL https://download.swift.org/swift-6.0.3-release/ubuntu2404/swift-6.0.3-RELEASE/swift-6.0.3-RELEASE-ubuntu24.04.tar.gz | tar xz --strip-components=1 -C /opt/swift`
   (run `mkdir -p /opt/swift` first). Then `export PATH=/opt/swift/usr/bin:$PATH`.
-- **Engine tests:** `cd ios && swift test` (90 tests, all green). Pipe the output to a file and
+- **Engine tests:** `cd ios && swift test` (96 tests, all green). Pipe the output to a file and
   check the "Executed … with 0 failures" line before committing. One push once went out red because
   a grep in a command chain hid the failure.
 - **Whole-app type-check:** `tools/typecheck/run.sh`. It checks all 48 files against SwiftUI, UIKit
@@ -125,6 +126,17 @@ for each version in `CareerSave.migrations`.
   value, trend from match ratings, last 5 ratings); transfer bids show the player's form and a
   negotiation bar (offer vs demand, talks left). Squad › Squad report lists strengths and weak spots,
   including who's in and out of form.
+- **Home-pitch squad building** (`CareerPitchFit.swift`): `Pitch.fit` puts the match engine's pitch
+  effects (pace or spin bonus, home country, pitch traits) into rating points. AI clubs use it in the
+  opening draft (each squad still takes two spinners and two quicks), retentions (`keepScore`),
+  auction bids (`pitchValueFactor`), free-agent signings, AI-to-AI transfers, and the XI, which is
+  picked for the day's pitch (`autoPickXI(clubIndex:pitch:)`; the assistant and Auto-pick XI do the
+  same for the user). Measured over 10 seasons: home sides win about 55% (50% before); turning
+  grounds carry about 64% spin among bowlers, pace grounds about 13%. UI: a house mark on squad,
+  market, retention and auction rows (filled green = suits your home pitch, orange outline =
+  struggles), a line on the player page and auction lot, and a squad-report line that compares your
+  XI's fit with the rivals'. Tuning constants are in `PitchFit` (code, not `career_tuning.json`, so
+  no schema change). Tests: `CareerPitchFitTests.swift`.
 - **Squad planner** (`CareerPlanner.swift`, Squad › Squad planner): a depth chart for 7 cricket jobs
   (11 starters, up to 4 deep), auto-fill, scout's target per job, a succession warning, and "Use as
   my XI". Schema 14 adds the optional `plan`.
@@ -189,17 +201,11 @@ for each version in `CareerSave.migrations`.
 
 ## 7. Next steps and known gaps
 
-### Next task, asked for but not started: home-pitch squad building
+### Next task
 
-Clubs build squads for their home pitch, so home advantage is real.
-- Hyderabad (flat) wants flat-track hitters; Chennai (turner) wants spinners and batters who play spin.
-- AI clubs pick for their pitch in auctions, retentions, transfers, AI trades and their XI.
-- A user who ignores the pitch loses at home more often.
-
-Where: L1 `CareerMarket.aiValuation`, retentions, AI trades, `autoPickXI` (pitch-fit factor from
-`Pitch.favoured(by:)`, `homeBonus`, trait `pitches`, bowl type). L0: check conditions swing results
-enough. Test: a pitch-built squad beats an equal-rated generic one at home. UI: "suits your pitch"
-in market and squad.
+Nothing is queued: start with the user's device feedback on the home-pitch build (item 1 below).
+Open from the home-pitch work: the user's side of it is only advice (badge, squad report, auto-pick
+for the pitch); the customer panel and the 20-season balance harness were not re-run after it.
 
 Older playtest notes (three personas): `docs/PLAYTEST-PANEL.md`.
 

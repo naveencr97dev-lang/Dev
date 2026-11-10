@@ -462,6 +462,7 @@ extension View {
     public func opacity(_ o: Double) -> _Mod { _Mod() }
     public func lineLimit(_ n: Int?) -> _Mod { _Mod() }
     public func minimumScaleFactor(_ f: CGFloat) -> _Mod { _Mod() }
+    public func accessibilityLabel<S: StringProtocol>(_ label: S) -> _Mod { _Mod() }
     public func multilineTextAlignment(_ a: TextAlignment) -> _Mod { _Mod() }
     public func fixedSize() -> _Mod { _Mod() }
     public func fixedSize(horizontal: Bool, vertical: Bool) -> _Mod { _Mod() }

@@ -271,3 +271,28 @@ struct CareerScreen<Content: View>: View {
 struct GameRowBackground: View {
     var body: some View { Palette.surface }
 }
+
+/// Home-pitch fit mark on squad and market rows: a filled house when the player suits the user's
+/// home pitch, an outlined orange one when he struggles there, nothing otherwise.
+struct PitchFitMark: View {
+    let fit: Bool?
+    var size: CGFloat = 9
+
+    var body: some View {
+        if let fit {
+            Image(systemName: fit ? "house.fill" : "house")
+                .font(.system(size: size * TextScale.factor, weight: .semibold))
+                .foregroundStyle(fit ? Palette.accent : Color.orange)
+                .accessibilityLabel(fit ? "Suits your home pitch" : "Struggles on your home pitch")
+        }
+    }
+}
+
+extension Career {
+    /// One line for the player page and auction lot, e.g. "Suits your home pitch (Dusty turner)".
+    func pitchFitLine(_ p: CareerPlayer) -> (text: String, good: Bool)? {
+        guard let fit = suitsUserPitch(p) else { return nil }
+        let pitch = homePitch(userClubId).label
+        return (fit ? "Suits your home pitch (\(pitch))" : "Struggles on your home pitch (\(pitch))", fit)
+    }
+}

@@ -8,6 +8,8 @@ struct LineupRow: View {
     var keeper = false
     var captain = false
     var overseas = false
+    /// Home-pitch fit (career): true suits, false struggles, nil neither.
+    var pitchFit: Bool? = nil
     var tag = ""
     var rating: Int? = nil
     var selected = false
@@ -32,6 +34,7 @@ struct LineupRow: View {
             if overseas {
                 Image(systemName: "airplane").font(.system(size: 9 * TextScale.factor)).foregroundStyle(Palette.muted)
             }
+            PitchFitMark(fit: pitchFit)
             Spacer(minLength: 4)
             if !tag.isEmpty {
                 Text(tag).font(.system(size: 11 * TextScale.factor, weight: .semibold)).foregroundStyle(Palette.muted).lineLimit(1)
@@ -156,7 +159,7 @@ struct EditableLineup: View {
                     if i > 0 { Hairline(inset: 10) }
                     if let p = c.players[id] {
                         LineupRow(number: numbered ? i + 1 : nil, name: p.name, keeper: p.role == .WK,
-                                  captain: c.tactics.captain == id, overseas: p.overseas,
+                                  captain: c.tactics.captain == id, overseas: p.overseas, pitchFit: c.suitsUserPitch(p),
                                   tag: "\(p.role.short) · \(CareerText.form(p.form))", rating: p.rating,
                                   selected: selected == id, fill: fill)
                             .onTapGesture { tap(id) }

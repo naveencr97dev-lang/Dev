@@ -203,6 +203,9 @@ struct Career: Codable {
         }
     }
 
+    /// How far down the draft board a club looks for a player who suits its home pitch.
+    static let draftShortlist = 6
+
     mutating func draftSquads() {
         let shape = tuning.squadShape
         let roleIndex: (Role) -> Int = { r in [Role.WK, .BAT, .AR, .BOWL].firstIndex(of: r)! }
@@ -225,8 +228,23 @@ struct Career: Codable {
                     counts[roleIndex(p.role)] < shape[roleIndex(p.role)] && (!p.overseas || overseas < maxOverseas)
                 }
                 let room: (CareerPlayer) -> Bool = { p in !p.overseas || overseas < maxOverseas }
-                guard let pick = pool.firstIndex(where: { players[$0].map(fits) ?? false })
-                        ?? pool.firstIndex(where: { players[$0].map(room) ?? false }) else { continue }
+                // Of the next few who fit the shape, take the one who suits the home pitch best
+                // (but every squad carries a couple of spinners and quicks for away grounds).
+                let variety: (CareerPlayer) -> Double = { p in
+                    guard p.role == .BOWL || p.role == .AR else { return 0 }
+                    let same = squad.filter { ($0.role == .BOWL || $0.role == .AR) && $0.bowlType == p.bowlType }.count
+                    return same < PitchFit.minPerBowlType ? PitchFit.varietyPoints : 0
+                }
+                var shortlist: [Int] = []
+                for i in pool.indices where shortlist.count < Career.draftShortlist {
+                    if players[pool[i]].map(fits) ?? false { shortlist.append(i) }
+                }
+                let suited = shortlist.max { a, b in
+                    let (pa, pb) = (players[pool[a]]!, players[pool[b]]!)
+                    let (sa, sb) = (pitchRating(pa, clubId: cid) + variety(pa), pitchRating(pb, clubId: cid) + variety(pb))
+                    return sa != sb ? sa < sb : a > b
+                }
+                guard let pick = suited ?? pool.firstIndex(where: { players[$0].map(room) ?? false }) else { continue }
                 let id = pool.remove(at: pick)
                 sign(id, to: ci)
             }
@@ -369,9 +387,10 @@ struct Career: Codable {
     }
 
     /// Picks the XI from the squad (AI clubs before every match; the user's when theirs is invalid).
-    mutating func autoPickXI(clubIndex ci: Int) {
+    /// With a pitch (match day), the XI is picked for that surface.
+    mutating func autoPickXI(clubIndex ci: Int, pitch: Pitch? = nil) {
         let squad = clubs[ci].squad.compactMap { player($0) }
-        clubs[ci].xi = TeamSelector.autoXI(squad: squad, rules: rules)
+        clubs[ci].xi = TeamSelector.autoXI(squad: squad, rules: rules, pitch: pitch)
         if clubs[ci].isCPU { clubs[ci].bowlingOrder = [] }
     }
 
@@ -494,7 +513,7 @@ struct Career: Codable {
         for tid in [f.home, f.away] {
             let assistant = tid == userClubId && settings.assistantPicksXI
             if let ci = clubs.firstIndex(where: { $0.id == tid }), clubs[ci].isCPU || assistant || !xiIssues(tid).isEmpty {
-                autoPickXI(clubIndex: ci)
+                autoPickXI(clubIndex: ci, pitch: f.pitch)
             }
         }
     }

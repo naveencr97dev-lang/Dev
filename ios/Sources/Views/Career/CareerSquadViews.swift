@@ -19,7 +19,7 @@ struct CareerSquadTab: View {
             AdaptiveColumns(leftScrolls: false, rightScrolls: false) {
                 HStack(alignment: .firstTextBaseline) {
                     Text("Squad").font(.display(compact ? 18 : 28, weight: .bold))
-                    Text("\(squad.count) players · \(squad.filter(\.overseas).count)/\(c.tuning.maxOverseasSquad) overseas · strength \(c.strength(club.id))")
+                    Text("\(squad.count) players · \(squad.filter(\.overseas).count)/\(c.tuning.maxOverseasSquad) overseas · strength \(c.strength(club.id)) · home: \(c.homePitch(club.id).label)")
                         .font(.system(size: 12 * TextScale.factor)).foregroundStyle(Palette.muted).lineLimit(1)
                 }
                 EditableLineup(title: "Playing XI · batting order", ids: club.xi, fill: compact, selected: $selected, message: $message)
@@ -110,6 +110,8 @@ struct SquadAction: View {
 struct CareerPlayerRow: View {
     let player: CareerPlayer
     let year: Int
+    /// Home-pitch fit for the user's club: true suits, false struggles, nil neither (or not shown).
+    var pitchFit: Bool? = nil
 
     var body: some View {
         HStack(spacing: 10) {
@@ -117,6 +119,7 @@ struct CareerPlayerRow: View {
                 HStack(spacing: 5) {
                     Text(player.name).font(.body.weight(.semibold)).lineLimit(1)
                     if player.overseas { Image(systemName: "airplane").font(.caption2).foregroundStyle(Palette.muted) }
+                    PitchFitMark(fit: pitchFit, size: 10)
                     if player.legend { Image(systemName: "star.fill").font(.caption2).foregroundStyle(CareerPalette.gold) }
                     if !player.traits.isEmpty { Text(player.traits.map(\.icon).joined()).font(.caption) }
                 }
@@ -320,6 +323,11 @@ struct CareerPlayerView: View {
                 if let club { TeamBadge(team: club, size: 18) }
             }
             Text(p.roleDescription).font(.system(size: 12 * TextScale.factor, weight: .semibold)).foregroundStyle(Palette.accent)
+            if let fit = c.pitchFitLine(p) {
+                Label(fit.text, systemImage: fit.good ? "house.fill" : "house")
+                    .font(.system(size: 11 * TextScale.factor, weight: .semibold))
+                    .foregroundStyle(fit.good ? Palette.accent : Color.orange).lineLimit(1).minimumScaleFactor(0.8)
+            }
             Text("Age \(p.age(in: c.year)) · \(club?.name ?? "Free agent")").font(.system(size: 12 * TextScale.factor)).foregroundStyle(Palette.muted)
                 .lineLimit(1)
             HStack(spacing: 0) {
@@ -496,6 +504,10 @@ struct CareerPlayerView: View {
                 Text(p.name.uppercased()).font(.display(30)).lineLimit(1).minimumScaleFactor(0.6)
                 Text("Age \(p.age(in: c.year)) · bats \(p.slot.label.lowercased()) · \(club?.name ?? "Free agent")")
                     .font(.subheadline).foregroundStyle(Palette.muted)
+                if let fit = c.pitchFitLine(p) {
+                    Label(fit.text, systemImage: fit.good ? "house.fill" : "house")
+                        .font(.caption.weight(.semibold)).foregroundStyle(fit.good ? Palette.accent : Color.orange)
+                }
                 HStack(spacing: 0) {
                     big("\(p.rating)", "OVR", strengthColor(p.rating))
                     big("\(p.bat)", "BAT", strengthColor(p.bat))
@@ -625,7 +637,7 @@ struct SquadReportView: View {
                 SectionLabel(text: "Best players")
                 VStack(spacing: 8) {
                     ForEach(r.stars) { p in
-                        NavigationLink { CareerPlayerView(playerId: p.id) } label: { CareerPlayerRow(player: p, year: c.year) }
+                        NavigationLink { CareerPlayerView(playerId: p.id) } label: { CareerPlayerRow(player: p, year: c.year, pitchFit: c.suitsUserPitch(p)) }
                             .buttonStyle(.plain)
                     }
                 }

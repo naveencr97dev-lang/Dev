@@ -191,10 +191,11 @@ extension Career {
         return report
     }
 
-    /// How much a club wants to keep a player at a mega auction.
+    /// How much a club wants to keep a player at a mega auction (players who suit the home pitch more).
     func keepScore(_ p: CareerPlayer) -> Double {
         let age = p.age(in: year)
-        return Double(p.rating) + (age <= 23 ? Double(max(0, p.potential - p.rating)) * 0.5 : 0) - (age >= 33 ? 6 : 0)
+        let fit = p.clubId.map { Double(homeFit(p, clubId: $0)) * PitchFit.squadWeight } ?? 0
+        return Double(p.rating) + fit + (age <= 23 ? Double(max(0, p.potential - p.rating)) * 0.5 : 0) - (age >= 33 ? 6 : 0)
     }
 
     /// Retention price: what the player would ask on the open market.
@@ -323,7 +324,8 @@ extension Career {
         if squad.count >= tuning.auctionSquadTarget { need *= 0.5 }
         // Personality nudges bids (±10%) without letting one club buy every star.
         let temper = (1 + (club.personality - 1) * 0.5) * difficulty.aiBidMult
-        let v = Double(p.value(in: year)) * need * temper * rng.range(0.8, 1.2)
+        // Clubs pay more for players who suit their home pitch, and less for those who don't.
+        let v = Double(p.value(in: year)) * need * temper * pitchValueFactor(p, clubId: club.id) * rng.range(0.8, 1.2)
         let limit = min(Int(v), capRoom(club.id) - auctionReserve(club.id))
         return limit >= base ? limit : 0
     }
@@ -674,7 +676,12 @@ extension Career {
                         || (weakest?.overseas ?? false && squad.count >= 22)
                     return osOK && wageDemand(fa) <= room + (squad.count >= 22 ? (weakest?.contract?.wage ?? 0) : 0)
                 }
-                guard let best = candidates.first else { break }
+                // Of the best few free agents, the one who suits the home pitch.
+                let cid = clubs[ci].id
+                guard let best = candidates.prefix(6).enumerated().max(by: { a, b in
+                    let (sa, sb) = (pitchRating(a.element, clubId: cid), pitchRating(b.element, clubId: cid))
+                    return sa != sb ? sa < sb : a.offset > b.offset
+                })?.element else { break }
                 if squad.count < 22 {
                     guard best.rating >= (squad.map(\.rating).sorted().dropFirst(squad.count / 2).first ?? 0) - 6 else { break }
                     sign(best.id, to: ci, wage: wageDemand(best))
@@ -705,17 +712,19 @@ extension Career {
                       squad(buyer).count < tuning.maxSquad else { break }
                 let xi = clubs[bi].xi.compactMap { players[$0] }
                 let overseas = squad(buyer).filter(\.overseas).count
-                func weakest(_ r: Role) -> Int { xi.filter { $0.role == r }.map(\.rating).min() ?? 0 }
+                // Ratings as the buyer sees them: overall plus fit to the buyer's home pitch.
+                func seen(_ p: CareerPlayer) -> Double { pitchRating(p, clubId: buyer) }
+                func weakest(_ r: Role) -> Double { xi.filter { $0.role == r }.map(seen).min() ?? 0 }
                 let candidates = players.values.filter { p in
                     guard let cid = p.clubId, cid != buyer, cid != userClubId, !p.retired, !moved.contains(p.id),
                           club(cid)?.isCPU == true, sellers[cid, default: 0] < 1,
                           squad(cid).count > tuning.minSquad + 1 else { return false }
-                    return p.rating >= weakest(p.role) + tuning.aiUpgradeMargin
+                    return seen(p) >= weakest(p.role) + Double(tuning.aiUpgradeMargin)
                         && (!p.overseas || overseas < tuning.maxOverseasSquad)
                         && aiFee(p) <= spare && wageDemand(p) <= capRoom(buyer)
                 }
                 guard let t = candidates.max(by: { a, b in
-                    let ga = a.rating - weakest(a.role), gb = b.rating - weakest(b.role)
+                    let ga = seen(a) - weakest(a.role), gb = seen(b) - weakest(b.role)
                     return ga != gb ? ga < gb : a.id > b.id
                 }), let seller = t.clubId else { break }
                 moved.insert(t.id)

@@ -283,9 +283,9 @@ extension GameStore {
 
     func careerBuy(_ pack: StorePack) { mutateCareer { $0.buy(pack) } }
 
-    /// Picks the best XI and order for the user's club.
+    /// Picks the best XI and order for the user's club, for the next match's pitch.
     func careerAutoXI() {
-        mutateCareer { c in c.autoPickXI(clubIndex: c.userClubIndex) }
+        mutateCareer { c in c.autoPickXI(clubIndex: c.userClubIndex, pitch: c.nextUserFixture?.pitch) }
     }
 
     /// Sets the user's XI from a selection, keeping the old batting order for players who stay.

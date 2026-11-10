@@ -2,19 +2,28 @@ import Foundation
 
 enum TeamSelector {
     /// Picks a balanced XI: a keeper, at least five bowling options, max overseas, then best available.
-    /// Returned in batting order.
-    static func autoXI(squad: [Player], rules: Rules) -> [String] {
+    /// Returned in batting order. With a pitch, players are judged by what they are worth on it.
+    static func autoXI(squad: [Player], rules: Rules, pitch: Pitch? = nil) -> [String] {
         var picked: [Player] = []
         func overseas() -> Int { picked.filter(\.overseas).count }
         func canAdd(_ p: Player) -> Bool {
             !picked.contains(p) && (!p.overseas || overseas() < rules.maxOverseasXI)
         }
-        func value(_ p: Player) -> Int { max(p.bat, p.bowl) + min(p.bat, p.bowl) / 2 }
+        func bat(_ p: Player) -> Int { p.bat + (pitch?.batFit(p) ?? 0) }
+        func bowl(_ p: Player) -> Int { p.bowl >= 25 ? p.bowl + (pitch?.bowlFit(p) ?? 0) : p.bowl }
+        // The pitch decides which bowlers play, not how many: when filling the last places a
+        // bowler's pitch bonus is measured against the best kind for the surface, so the bonus
+        // never puts an extra bowler ahead of a batter (that left home sides short of batting).
+        let best = pitch.map { max(0, $0.paceBonus, $0.spinBonus) } ?? 0
+        func value(_ p: Player) -> Int {
+            let w = p.bowl >= 25 ? bowl(p) - best : p.bowl
+            return max(bat(p), w) + min(bat(p), w) / 2
+        }
 
-        if let wk = squad.filter({ $0.role == .WK }).sorted(by: { $0.bat > $1.bat }).first(where: canAdd) {
+        if let wk = squad.filter({ $0.role == .WK }).sorted(by: { bat($0) > bat($1) }).first(where: canAdd) {
             picked.append(wk)
         }
-        for p in squad.sorted(by: { $0.bowl > $1.bowl }) where p.isBowlingOption {
+        for p in squad.sorted(by: { bowl($0) > bowl($1) }) where p.isBowlingOption {
             if picked.filter(\.isBowlingOption).count >= 5 { break }
             if canAdd(p) { picked.append(p) }
         }
