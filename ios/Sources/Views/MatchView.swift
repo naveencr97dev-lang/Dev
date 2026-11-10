@@ -587,44 +587,49 @@ struct ResultScreen: View {
 
 struct MatchResultContent: View {
     @EnvironmentObject var store: GameStore
+    @Environment(\.verticalSizeClass) private var vSize
     let result: MatchResult
     @State private var showReel = false
+    /// Which team's batting and bowling the two scorecard panels show (each has its own toggle).
+    @State private var batTeam: Int? = nil
+    @State private var bowlTeam: Int? = nil
+
+    private var landscape: Bool { vSize == .compact }
+    private var teams: [Int] { result.innings.prefix(2).map(\.teamId) }
+    private var shownBat: Int { batTeam ?? teams.first ?? result.teamA }
+    /// Default bowling view: the side that bowled to the batting innings on show.
+    private var shownBowl: Int { bowlTeam ?? teams.last ?? result.teamB }
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: DS.Space.lg) {
-                header
-                if result.stage == .final, !store.inCareer, store.game?.phase == .season, store.game?.championId != nil {
-                    Button("🏆 Trophy ceremony") { store.finishSeason() }
-                        .buttonStyle(PrimaryButtonStyle())
-                }
-                // Post-match order: scorecard, then worm, then highlights.
-                ForEach(Array(result.innings.prefix(2).enumerated()), id: \.offset) { _, inn in
-                    InningsCardView(innings: inn)
-                }
-                if let so = result.superOvers, !so.isEmpty {
-                    SectionLabel(text: so.count > 2 ? "Super Overs" : "Super Over")
-                    ForEach(Array(so.enumerated()), id: \.offset) { _, inn in
-                        InningsCardView(innings: inn)
-                    }
-                }
-                manhattan
-                if let moments = result.highlights, !moments.isEmpty {
-                    VStack(alignment: .leading, spacing: DS.Space.sm) {
-                        HStack {
-                            SectionLabel(text: "Highlights")
-                            Spacer()
-                            Button { showReel = true } label: {
-                                Label("Watch", systemImage: "play.fill").font(.display(15, weight: .heavy))
-                            }
+        Group {
+            if landscape {
+                // Device feedback: summary and bowling on the left, batting on the right; each scrolls on its own.
+                HStack(alignment: .top, spacing: DS.Space.md) {
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: DS.Space.md) {
+                            header
+                            bowlingPanel
+                            extras
                         }
-                        HighlightsList(moments: moments)
-                        Button { showReel = true } label: { Label("Watch highlights", systemImage: "play.fill") }
-                            .buttonStyle(PrimaryButtonStyle())
+                        .padding(.vertical, DS.Space.sm)
                     }
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: DS.Space.md) { battingPanel }
+                            .padding(.vertical, DS.Space.sm)
+                    }
+                }
+                .padding(.horizontal, DS.Space.md)
+            } else {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: DS.Space.md) {
+                        header
+                        battingPanel
+                        bowlingPanel
+                        extras
+                    }
+                    .padding(DS.Space.md)
                 }
             }
-            .padding(DS.Space.lg)
         }
         .fullScreenCover(isPresented: $showReel) {
             HighlightsReel(result: result) { showReel = false }
@@ -632,26 +637,77 @@ struct MatchResultContent: View {
         }
     }
 
+    /// Winner, margin, player of the match, toss and pitch in a compact card.
     private var header: some View {
         let w = store.team(result.winnerId)
-        return AppCard(tint: w.map { Color(hex: $0.colorHex) }) {
-            VStack(alignment: .leading, spacing: 8) {
-                if result.stage != .league {
-                    Text(result.stage.label.uppercased()).font(.caption.weight(.heavy)).foregroundStyle(Palette.accent)
-                }
-                HStack(spacing: 12) {
-                    if let w { TeamBadge(team: w, size: 50) }
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(w?.name.uppercased() ?? "").font(.display(26))
-                        Text(result.margin.uppercased()).font(.display(17, weight: .heavy)).foregroundStyle(Palette.accent)
+        return VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 10) {
+                if let w { TeamBadge(team: w, size: 32) }
+                VStack(alignment: .leading, spacing: 1) {
+                    if result.stage != .league {
+                        Text(result.stage.label.uppercased()).font(.system(size: 10 * TextScale.factor, weight: .heavy)).foregroundStyle(Palette.accent)
                     }
+                    Text("\(w?.short ?? "") \(result.margin)").font(.system(size: 17 * TextScale.factor, weight: .bold)).lineLimit(1).minimumScaleFactor(0.7)
                 }
-                Divider().overlay(Color.white.opacity(0.2))
-                Label("Player of the Match: \(result.potmName)", systemImage: "star.fill").font(.subheadline.weight(.semibold))
-                Text("\(store.team(result.tossWinner)?.short ?? "") won the toss · \(store.team(result.innings[0].teamId)?.short ?? "") batted first")
-                    .font(.caption).foregroundStyle(.secondary)
-                Text("\(result.pitch.icon) \(result.pitch.label) — \(result.pitch.blurb)")
-                    .font(.caption).foregroundStyle(.secondary)
+                Spacer(minLength: 0)
+                if !(result.highlights ?? []).isEmpty {
+                    Button { showReel = true } label: { Label("Highlights", systemImage: "play.fill").font(.system(size: 12 * TextScale.factor, weight: .bold)) }
+                }
+            }
+            Label("Player of the match: \(result.potmName)", systemImage: "star.fill")
+                .font(.system(size: 13 * TextScale.factor, weight: .semibold))
+            Text("\(store.team(result.tossWinner)?.short ?? "") won the toss · \(store.team(result.innings[0].teamId)?.short ?? "") batted first · \(result.pitch.icon) \(result.pitch.label)")
+                .font(.system(size: 12 * TextScale.factor)).foregroundStyle(Palette.muted).lineLimit(2)
+            if result.stage == .final, !store.inCareer, store.game?.phase == .season, store.game?.championId != nil {
+                Button("🏆 Trophy ceremony") { store.finishSeason() }
+                    .buttonStyle(PrimaryButtonStyle())
+            }
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous).fill(Palette.surface))
+    }
+
+    private var battingPanel: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                SectionLabel(text: "Batting")
+                Spacer()
+                TeamToggle(teams: teams, selected: Binding(get: { shownBat }, set: { batTeam = $0 }), result: result)
+            }
+            if let inn = result.innings.prefix(2).first(where: { $0.teamId == shownBat }) {
+                BattingTable(innings: inn)
+            }
+            if let so = result.superOvers, !so.isEmpty {
+                SectionLabel(text: so.count > 2 ? "Super Overs" : "Super Over")
+                ForEach(Array(so.enumerated()), id: \.offset) { _, inn in InningsCardView(innings: inn) }
+            }
+        }
+    }
+
+    private var bowlingPanel: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                SectionLabel(text: "Bowling")
+                Spacer()
+                TeamToggle(teams: teams, selected: Binding(get: { shownBowl }, set: { bowlTeam = $0 }), result: result, showScore: false)
+            }
+            // A team's bowling is in the innings the other side batted.
+            if let inn = result.innings.prefix(2).first(where: { $0.teamId != shownBowl }) {
+                BowlingTable(innings: inn)
+            }
+        }
+    }
+
+    /// Runs per over and the highlights list, below the scorecards.
+    @ViewBuilder private var extras: some View {
+        manhattan
+        if let moments = result.highlights, !moments.isEmpty {
+            VStack(alignment: .leading, spacing: DS.Space.sm) {
+                SectionLabel(text: "Highlights")
+                HighlightsList(moments: moments)
+                Button { showReel = true } label: { Label("Watch highlights", systemImage: "play.fill") }
+                    .buttonStyle(PrimaryButtonStyle())
             }
         }
     }
@@ -742,76 +798,130 @@ struct InningsCardView: View {
     let innings: InningsCard
 
     var body: some View {
+        VStack(alignment: .leading, spacing: DS.Space.sm) {
+            BattingTable(innings: innings)
+            BowlingTable(innings: innings)
+        }
+    }
+}
+
+/// Two-team switch for a scorecard panel (short name, and the score when it helps).
+struct TeamToggle: View {
+    @EnvironmentObject var store: GameStore
+    let teams: [Int]
+    @Binding var selected: Int
+    let result: MatchResult
+    var showScore = true
+
+    var body: some View {
+        HStack(spacing: 4) {
+            ForEach(teams, id: \.self) { id in
+                let on = id == selected
+                Button { selected = id; Haptics.tap() } label: {
+                    HStack(spacing: 5) {
+                        if let t = store.team(id) { TeamBadge(team: t, size: 16) }
+                        Text(store.team(id)?.short ?? "").font(.system(size: 12 * TextScale.factor, weight: .bold))
+                        if showScore, let inn = result.innings.prefix(2).first(where: { $0.teamId == id }) {
+                            Text(inn.score).font(.score(12))
+                        }
+                    }
+                    .foregroundStyle(on ? Palette.ink : .white)
+                    .padding(.horizontal, 8).padding(.vertical, 4)
+                    .background(Capsule().fill(on ? Palette.accent : Palette.surface))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+}
+
+/// One innings' batting: score line, batters, extras, did not bat. Compact type.
+struct BattingTable: View {
+    @EnvironmentObject var store: GameStore
+    let innings: InningsCard
+
+    var body: some View {
         let team = store.team(innings.teamId)
         let batted = innings.batters.filter(\.batted)
         let dnb = innings.batters.filter { !$0.batted }.map(\.name)
-        VStack(alignment: .leading, spacing: DS.Space.sm) {
+        VStack(spacing: 6) {
             HStack {
-                if let team { TeamBadge(team: team, size: 28) }
-                Text(team?.name.uppercased() ?? "").font(.display(18, weight: .heavy))
+                if let team { TeamBadge(team: team, size: 22) }
+                Text(team?.name ?? "").font(.system(size: 14 * TextScale.factor, weight: .bold)).lineLimit(1)
                 Spacer()
-                Text(innings.score).font(.score(24))
-                Text("(\(innings.overs))").font(.score(14, weight: .regular)).foregroundStyle(Palette.muted)
+                Text(innings.score).font(.score(18))
+                Text("(\(innings.overs))").font(.score(12, weight: .regular)).foregroundStyle(Palette.muted)
             }
-            AppCard(padding: DS.Space.md) {
-                VStack(spacing: 8) {
-                    HStack {
-                        Text("Batter").frame(maxWidth: .infinity, alignment: .leading)
-                        Text("R").frame(width: 42, alignment: .trailing)
-                        Text("B").frame(width: 36, alignment: .trailing)
-                        Text("4s").frame(width: 26, alignment: .trailing)
-                        Text("6s").frame(width: 26, alignment: .trailing)
-                    }
-                    .font(.caption.weight(.bold)).foregroundStyle(.secondary)
-                    ForEach(batted) { b in
-                        HStack(alignment: .top) {
-                            VStack(alignment: .leading, spacing: 1) {
-                                Text(b.name).font(.subheadline.weight(.semibold)).lineLimit(1)
-                                Text(b.dismissal ?? "not out").font(.caption2).foregroundStyle(b.dismissal == nil ? Palette.four : Color.secondary).lineLimit(1)
-                            }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            Text("\(b.runs)").fontWeight(.bold).lineLimit(1).minimumScaleFactor(0.7).frame(width: 42, alignment: .trailing)
-                            Text("\(b.balls)").lineLimit(1).minimumScaleFactor(0.7).frame(width: 36, alignment: .trailing)
-                            Text("\(b.fours)").lineLimit(1).minimumScaleFactor(0.7).frame(width: 26, alignment: .trailing)
-                            Text("\(b.sixes)").lineLimit(1).minimumScaleFactor(0.7).frame(width: 26, alignment: .trailing)
-                        }
-                        .font(.subheadline.monospacedDigit())
-                    }
-                    HStack {
-                        Text("Extras").foregroundStyle(.secondary)
-                        Spacer()
-                        Text("\(innings.extras)")
-                    }
-                    .font(.footnote)
-                    if !dnb.isEmpty {
-                        Text("Did not bat: " + dnb.joined(separator: ", "))
-                            .font(.caption).foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                }
+            HStack {
+                Text("Batter").frame(maxWidth: .infinity, alignment: .leading)
+                Text("R").frame(width: 36, alignment: .trailing)
+                Text("B").frame(width: 32, alignment: .trailing)
+                Text("4s").frame(width: 24, alignment: .trailing)
+                Text("6s").frame(width: 24, alignment: .trailing)
+                Text("SR").frame(width: 44, alignment: .trailing)
             }
-            AppCard(padding: DS.Space.md) {
-                VStack(spacing: 8) {
-                    HStack {
-                        Text("Bowler").frame(maxWidth: .infinity, alignment: .leading)
-                        Text("O").frame(width: 34, alignment: .trailing)
-                        Text("R").frame(width: 34, alignment: .trailing)
-                        Text("W").frame(width: 26, alignment: .trailing)
-                        Text("Econ").frame(width: 42, alignment: .trailing)
+            .font(.system(size: 11 * TextScale.factor, weight: .bold)).foregroundStyle(Palette.muted)
+            ForEach(batted) { b in
+                HStack(alignment: .firstTextBaseline) {
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text(b.name).font(.system(size: 13 * TextScale.factor, weight: .semibold)).lineLimit(1)
+                        Text(b.dismissal ?? "not out").font(.system(size: 11 * TextScale.factor))
+                            .foregroundStyle(b.dismissal == nil ? Palette.four : Palette.muted).lineLimit(1)
                     }
-                    .font(.caption.weight(.bold)).foregroundStyle(.secondary)
-                    ForEach(innings.bowlers.filter { $0.balls > 0 }) { bw in
-                        HStack {
-                            Text(bw.name).font(.subheadline.weight(.semibold)).lineLimit(1).frame(maxWidth: .infinity, alignment: .leading)
-                            Text(bw.overs).lineLimit(1).minimumScaleFactor(0.7).frame(width: 34, alignment: .trailing)
-                            Text("\(bw.runs)").lineLimit(1).minimumScaleFactor(0.7).frame(width: 34, alignment: .trailing)
-                            Text("\(bw.wickets)").fontWeight(.bold).lineLimit(1).frame(width: 26, alignment: .trailing)
-                            Text(String(format: "%.1f", bw.economy)).lineLimit(1).minimumScaleFactor(0.7).frame(width: 42, alignment: .trailing)
-                        }
-                        .font(.subheadline.monospacedDigit())
-                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    Text("\(b.runs)").fontWeight(.bold).frame(width: 36, alignment: .trailing)
+                    Text("\(b.balls)").frame(width: 32, alignment: .trailing)
+                    Text("\(b.fours)").frame(width: 24, alignment: .trailing)
+                    Text("\(b.sixes)").frame(width: 24, alignment: .trailing)
+                    Text(b.balls > 0 ? String(format: "%.0f", b.strikeRate) : "–").foregroundStyle(Palette.muted).frame(width: 44, alignment: .trailing)
                 }
+                .font(.system(size: 13 * TextScale.factor).monospacedDigit())
+                .lineLimit(1).minimumScaleFactor(0.8)
+            }
+            HStack {
+                Text("Extras").foregroundStyle(Palette.muted)
+                Spacer()
+                Text("\(innings.extras)")
+            }
+            .font(.system(size: 12 * TextScale.factor))
+            if !dnb.isEmpty {
+                Text("Did not bat: " + dnb.joined(separator: ", "))
+                    .font(.system(size: 11 * TextScale.factor)).foregroundStyle(Palette.muted)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
+        .padding(10)
+        .background(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous).fill(Palette.surface))
+    }
+}
+
+/// One innings' bowling (the fielding side's bowlers). Compact type.
+struct BowlingTable: View {
+    let innings: InningsCard
+
+    var body: some View {
+        VStack(spacing: 6) {
+            HStack {
+                Text("Bowler").frame(maxWidth: .infinity, alignment: .leading)
+                Text("O").frame(width: 32, alignment: .trailing)
+                Text("R").frame(width: 32, alignment: .trailing)
+                Text("W").frame(width: 24, alignment: .trailing)
+                Text("Econ").frame(width: 42, alignment: .trailing)
+            }
+            .font(.system(size: 11 * TextScale.factor, weight: .bold)).foregroundStyle(Palette.muted)
+            ForEach(innings.bowlers.filter { $0.balls > 0 }) { bw in
+                HStack {
+                    Text(bw.name).font(.system(size: 13 * TextScale.factor, weight: .semibold)).lineLimit(1).frame(maxWidth: .infinity, alignment: .leading)
+                    Text(bw.overs).frame(width: 32, alignment: .trailing)
+                    Text("\(bw.runs)").frame(width: 32, alignment: .trailing)
+                    Text("\(bw.wickets)").fontWeight(.bold).frame(width: 24, alignment: .trailing)
+                    Text(String(format: "%.1f", bw.economy)).frame(width: 42, alignment: .trailing)
+                }
+                .font(.system(size: 13 * TextScale.factor).monospacedDigit())
+                .lineLimit(1).minimumScaleFactor(0.8)
+            }
+        }
+        .padding(10)
+        .background(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous).fill(Palette.surface))
     }
 }
