@@ -205,6 +205,13 @@ extension GameStore {
 
     func careerSetDifficulty(_ d: Difficulty) { mutateCareer { $0.settings.difficulty = d } }
     func careerSetMarketAlwaysOpen(_ on: Bool) { mutateCareer { $0.settings.marketAlwaysOpen = on } }
+    @discardableResult
+    func careerSwapLineup(_ a: String, _ b: String) -> String? {
+        var why: String?
+        mutateCareer { why = $0.swapLineup(a, b) }
+        return why
+    }
+
     // Squad planner
     func careerAutoPlan() { mutateCareer { $0.autoPlan() } }
     func careerPlanAdd(_ slot: PlanSlot, _ id: String) { mutateCareer { $0.planAdd(slot, id) } }

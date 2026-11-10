@@ -500,6 +500,9 @@ extension View {
     public func navigationDestination<D: Hashable, C: View>(for d: D.Type, @ViewBuilder destination: @escaping (D) -> C) -> _Mod { _Mod() }
     public func toolbar<C: View>(@ViewBuilder content: () -> C) -> _Mod { _Mod() }
     public func toolbar(_ v: Visibility, for p: ToolbarPlacement...) -> _Mod { _Mod() }
+    public func draggable<T: Transferable>(_ payload: @autoclosure @escaping () -> T) -> _Mod { _Mod() }
+    public func dropDestination<T: Transferable>(for payloadType: T.Type = T.self, action: @escaping (_ items: [T], _ location: CGPoint) -> Bool,
+                                                 isTargeted: @escaping (_ isTargeted: Bool) -> Void = { _ in }) -> _Mod { _Mod() }
     public func sheet<C: View>(isPresented: Binding<Bool>, onDismiss: (() -> Void)? = nil, @ViewBuilder content: @escaping () -> C) -> _Mod { _Mod() }
     public func fullScreenCover<C: View>(isPresented: Binding<Bool>, onDismiss: (() -> Void)? = nil, @ViewBuilder content: @escaping () -> C) -> _Mod { _Mod() }
     public func confirmationDialog<A: View>(_ title: String, isPresented: Binding<Bool>, titleVisibility: Visibility = .automatic,
@@ -655,3 +658,7 @@ public struct SafeAreaRegions: OptionSet {
 extension View {
     public func ignoresSafeArea(_ regions: SafeAreaRegions = .all, edges: Edge.Set = .all) -> _Mod { _Mod() }
 }
+
+/// CoreTransferable (re-exported by SwiftUI on device).
+public protocol Transferable {}
+extension String: Transferable {}

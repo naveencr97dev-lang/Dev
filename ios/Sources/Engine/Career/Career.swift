@@ -392,6 +392,28 @@ struct Career: Codable {
         if !clubs[i].bowlingOrder.allSatisfy({ ids.contains($0) }) { clubs[i].bowlingOrder = [] }
     }
 
+    /// Squad screen drag or tap: `a` onto `b`. Two XI players swap batting places; a bench player
+    /// onto an XI player (either way round) takes his place in the order. Returns why it was
+    /// refused (e.g. too many overseas), or nil when done. A manual pick: the assistant stops picking.
+    @discardableResult
+    mutating func swapLineup(_ a: String, _ b: String) -> String? {
+        guard a != b, let ci = clubs.firstIndex(where: { $0.id == userClubId }) else { return nil }
+        let club = clubs[ci]
+        guard club.squad.contains(a), club.squad.contains(b) else { return "Only your own players." }
+        var xi = club.xi
+        switch (xi.firstIndex(of: a), xi.firstIndex(of: b)) {
+        case let (i?, j?): xi.swapAt(i, j)
+        case let (i?, nil): xi[i] = b
+        case let (nil, j?): xi[j] = a
+        case (nil, nil): return "Drag a bench player onto someone in the XI."
+        }
+        let issues = TeamSelector.blockingIssues(xi.compactMap { player($0) }, rules: rules)
+        if let first = issues.first { return first }
+        setXI(clubId: userClubId, ids: xi)
+        settings.assistantPicksXI = false
+        return nil
+    }
+
     mutating func setBowlingOrder(clubId: Int, ids: [String]) {
         guard let i = clubs.firstIndex(where: { $0.id == clubId }) else { return }
         clubs[i].bowlingOrder = ids.count == 5 ? ids : []

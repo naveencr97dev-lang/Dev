@@ -53,13 +53,21 @@ extension EnvironmentValues {
 /// one stacked column in portrait, inside the screen's scroll view.
 struct AdaptiveColumns<Left: View, Right: View>: View {
     @Environment(\.compactLandscape) private var landscape
+    /// false: the left column is fixed (e.g. the XI) and only the right one scrolls.
+    var leftScrolls = true
     @ViewBuilder var left: Left
     @ViewBuilder var right: Right
 
     var body: some View {
         if landscape {
             HStack(alignment: .top, spacing: DS.Space.md) {
-                column { left }
+                if leftScrolls {
+                    column { left }
+                } else {
+                    VStack(alignment: .leading, spacing: DS.Space.sm) { left }
+                        .padding(.vertical, DS.Space.sm)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                }
                 column { right }
             }
         } else {

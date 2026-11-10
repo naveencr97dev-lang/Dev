@@ -82,3 +82,33 @@ extension CareerTests {
         XCTAssertTrue(all.contains { $0.roleDescription == "Spin bowler" })
     }
 }
+
+extension CareerTests {
+    /// Squad screen drag / tap swaps.
+    func testSwapLineup() {
+        var c = newCareer(seed: 906)
+        let xi = c.userClub.xi
+        // Two XI players swap batting places.
+        XCTAssertNil(c.swapLineup(xi[0], xi[2]))
+        XCTAssertEqual(c.userClub.xi[0], xi[2]); XCTAssertEqual(c.userClub.xi[2], xi[0])
+        XCTAssertFalse(c.settings.assistantPicksXI, "a manual pick")
+        // A bench player dropped on an XI player takes his place (either way round).
+        let local = c.squad(c.userClubId).first { !c.userClub.xi.contains($0.id) && !$0.overseas }!
+        let target = c.userClub.xi[5]
+        XCTAssertNil(c.swapLineup(local.id, target))
+        XCTAssertEqual(c.userClub.xi[5], local.id)
+        XCTAssertFalse(c.userClub.xi.contains(target))
+        XCTAssertNil(c.swapLineup(c.userClub.xi[5], target), "XI onto bench works too")
+        XCTAssertEqual(c.userClub.xi[5], target)
+        // Bench onto bench is refused, and so is a fifth overseas player.
+        let bench = c.squad(c.userClubId).filter { !c.userClub.xi.contains($0.id) }
+        if bench.count >= 2 { XCTAssertNotNil(c.swapLineup(bench[0].id, bench[1].id)) }
+        let overseasXI = c.userClub.xi.compactMap { c.players[$0] }.filter(\.overseas).count
+        if overseasXI == c.rules.maxOverseasXI, let os = bench.first(where: \.overseas),
+           let localInXI = c.userClub.xi.compactMap({ c.players[$0] }).first(where: { !$0.overseas }) {
+            let before = c.userClub.xi
+            XCTAssertNotNil(c.swapLineup(os.id, localInXI.id))
+            XCTAssertEqual(c.userClub.xi, before, "refused swaps change nothing")
+        }
+    }
+}

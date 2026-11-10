@@ -5,28 +5,51 @@ import SwiftUI
 struct CareerSquadTab: View {
     @EnvironmentObject var store: GameStore
     @Environment(\.compactLandscape) private var compact
+    @State private var selected: String? = nil
+    @State private var message: String? = nil
 
     var body: some View {
         if let c = store.career {
             let club = c.userClub
             let squad = c.squad(club.id)
             let issues = c.xiIssues(club.id)
-            let bench = squad.filter { !club.xi.contains($0.id) }.sorted { $0.rating > $1.rating }
-            AdaptiveColumns {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Squad").font(.display(compact ? 20 : 28, weight: .bold))
-                    Text("\(squad.count) players · \(squad.filter(\.overseas).count)/\(c.tuning.maxOverseasSquad) overseas · wages \(Money.format(c.payroll(club.id))) · strength \(c.strength(club.id))")
-                        .font(.display(14, weight: .regular)).foregroundStyle(Palette.muted)
+            let bench = squad.filter { !club.xi.contains($0.id) }.sorted { $0.rating > $1.rating }.map(\.id)
+            // Device feedback: the XI is a fixed list on the left; tools and the bench on the right.
+            AdaptiveColumns(leftScrolls: false) {
+                HStack(alignment: .firstTextBaseline) {
+                    Text("Squad").font(.display(compact ? 18 : 28, weight: .bold))
+                    Text("\(squad.count) players · \(squad.filter(\.overseas).count)/\(c.tuning.maxOverseasSquad) overseas · strength \(c.strength(club.id))")
+                        .font(.system(size: 12 * TextScale.factor)).foregroundStyle(Palette.muted).lineLimit(1)
                 }
+                EditableLineup(title: "Playing XI · batting order", ids: club.xi, selected: $selected, message: $message)
+                HStack(spacing: 8) {
+                    Text(message ?? (selected == nil ? "Drag a bench player onto someone to swap, or tap one then the other." : "Now tap who to swap with."))
+                        .font(.system(size: 11 * TextScale.factor, weight: message == nil ? .regular : .semibold))
+                        .foregroundStyle(message == nil ? Palette.muted : Color.orange)
+                    if let id = selected {
+                        NavigationLink { CareerPlayerView(playerId: id) } label: {
+                            Text("Open profile ›").font(.system(size: 11 * TextScale.factor, weight: .bold)).foregroundStyle(Palette.accent)
+                        }
+                    }
+                }
+            } right: {
                 if !issues.isEmpty {
                     VStack(alignment: .leading, spacing: 2) {
                         ForEach(issues, id: \.self) { issue in
-                            Label(issue, systemImage: "exclamationmark.triangle.fill").font(.display(14, weight: .semibold)).foregroundStyle(.orange)
+                            Label(issue, systemImage: "exclamationmark.triangle.fill").font(.display(13, weight: .semibold)).foregroundStyle(.orange)
                         }
                         Text("The best XI is picked automatically until this is fixed.")
                             .font(.display(12, weight: .regular)).foregroundStyle(Palette.muted)
                     }
                 }
+                EditableLineup(title: "Bench · \(bench.count)", ids: bench, numbered: false, selected: $selected, message: $message)
+                Button {
+                    store.careerAutoXI()
+                    Haptics.success()
+                } label: {
+                    Label("Auto-pick best XI and order", systemImage: "sparkles")
+                }
+                .buttonStyle(SecondaryButtonStyle())
                 VStack(spacing: 0) {
                     NavigationLink { PickXIView() } label: { DashTile(icon: "checklist", title: "Pick XI") }
                     Hairline(inset: 54)
@@ -62,42 +85,6 @@ struct CareerSquadTab: View {
                 }
                 .gameFrame()
                 .buttonStyle(.plain)
-                Button {
-                    store.careerAutoXI()
-                    Haptics.success()
-                } label: {
-                    Label("Auto-pick best XI and order", systemImage: "sparkles")
-                }
-                .buttonStyle(SecondaryButtonStyle())
-            } right: {
-                SectionLabel(text: "Playing XI · batting order")
-                AppCard(padding: DS.Space.md) {
-                    VStack(spacing: 6) {
-                        ForEach(Array(club.xi.enumerated()), id: \.element) { i, pid in
-                            if let p = store.player(pid) {
-                                NavigationLink { CareerPlayerView(playerId: pid) } label: {
-                                    BattingSlotRow(position: i, player: p)
-                                }
-                                .buttonStyle(.plain)
-                            }
-                        }
-                    }
-                }
-
-                SectionLabel(text: "Bench")
-                AppCard(padding: DS.Space.md) {
-                    VStack(spacing: 8) {
-                        if bench.isEmpty {
-                            Text("Everyone is in the XI.").font(.subheadline).foregroundStyle(.secondary)
-                        }
-                        ForEach(bench) { cp in
-                            NavigationLink { CareerPlayerView(playerId: cp.id) } label: {
-                                CareerPlayerRow(player: cp, year: c.year)
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                }
             }
         }
     }

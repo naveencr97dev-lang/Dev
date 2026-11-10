@@ -31,13 +31,26 @@ struct MatchView: View {
     @State private var changes: [LiveChange] = []
     @State private var pendingCommit = false
     @State private var showCentre = false
+    /// Before the first ball: the Teams board (both XIs, the toss) until Start.
+    @State private var prematch = true
     @Environment(\.dismiss) private var dismiss
     private let clock = Timer.publish(every: MatchView.tick, on: .main, in: .common).autoconnect()
 
     var body: some View {
         Group {
             if let r = result {
-                if !finished && !log.isEmpty {
+                if !finished && !log.isEmpty && prematch {
+                    ScrollView {
+                        TeamsBoard(result: r, occasion: occasion(r), onStart: {
+                            withAnimation(.easeInOut) { prematch = false }
+                            Haptics.tap()
+                        }, onSkip: { finish() })
+                        .padding(.horizontal, DS.Space.md)
+                        .padding(.vertical, DS.Space.sm)
+                        .frame(maxWidth: 960)
+                        .frame(maxWidth: .infinity)
+                    }
+                } else if !finished && !log.isEmpty {
                     live(r)
                 } else if showReel && !(r.highlights ?? []).isEmpty {
                     HighlightsReel(result: r) { withAnimation(.easeInOut) { showReel = false } }
@@ -176,8 +189,16 @@ struct MatchView: View {
         return out
     }
 
+    /// "Round 26 of 36 · 7 Sep" in career, else the stage.
+    private func occasion(_ r: MatchResult) -> String {
+        if store.inCareer, let c = store.career, let f = c.fixtures.first(where: { $0.id == fixtureId }) {
+            return CareerText.fixtureLabel(c, f)
+        }
+        return r.stage == .league ? "League match" : r.stage.label
+    }
+
     private func advance() {
-        guard !finished, !log.isEmpty, !paused else { return }
+        guard !finished, !log.isEmpty, !paused, !prematch else { return }
         if inningsBreak {
             breakClock += MatchView.tick * speed
             if breakClock >= 7 { continueAfterBreak() }
