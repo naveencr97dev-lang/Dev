@@ -270,7 +270,7 @@ struct MatchView: View {
                     if let e = current, !anticipating { BigCall(event: e).id(shown) }
                 }
             if let e = current {
-                CreaseCard(event: e, battingTeam: store.team(r.card(e.innings).teamId))
+                CreaseCard(event: e, battingTeam: store.team(r.card(e.innings).teamId), order: r.card(e.innings).batters.map(\.name))
             }
         }
         let feed = VStack(alignment: .leading, spacing: DS.Space.sm) {
@@ -354,7 +354,8 @@ struct MatchView: View {
                         ScoreBug(result: r, event: current, compact: true)
                         statusLine(current: current, anticipating: anticipating, compact: true)
                         if let e = current {
-                            CreaseCard(event: e, battingTeam: store.team(r.card(e.innings).teamId), compact: true)
+                            CreaseCard(event: e, battingTeam: store.team(r.card(e.innings).teamId), compact: true,
+                                       order: r.card(e.innings).batters.map(\.name))
                         }
                         HStack(spacing: 5) {
                             ForEach(Array(thisOver.enumerated()), id: \.offset) { _, e in
@@ -494,10 +495,18 @@ struct CreaseCard: View {
     let event: BallEvent
     let battingTeam: Franchise?
     var compact = false
+    /// Batting order (names). The pair stays in this order and only the strike marker moves
+    /// (device feedback: rows swapping places on every single was hard to follow).
+    var order: [String] = []
+
+    private var pair: [LiveBatter] {
+        let index = { (b: LiveBatter) in order.firstIndex(of: b.name) ?? Int.max }
+        return event.batters.sorted { index($0) != index($1) ? index($0) < index($1) : $0.name < $1.name }
+    }
 
     var body: some View {
         VStack(spacing: 0) {
-            ForEach(Array(event.batters.enumerated()), id: \.offset) { _, b in
+            ForEach(pair, id: \.name) { b in
                 HStack(spacing: 8) {
                     Rectangle().fill(b.onStrike ? Palette.accent : Color.clear).frame(width: 4, height: compact ? 18 : 22)
                     Text(b.name.uppercased() + (b.onStrike ? " *" : ""))
