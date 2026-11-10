@@ -62,3 +62,23 @@ extension CareerTests {
         }
     }
 }
+
+extension CareerTests {
+    func testRoleDescriptions() {
+        let c = newCareer(seed: 905)
+        let all = c.players.values.filter { !$0.retired }
+        XCTAssertTrue(all.allSatisfy { !$0.roleDescription.isEmpty })
+        for p in all {
+            switch p.role {
+            case .BOWL: XCTAssertTrue(p.roleDescription.hasSuffix("bowler"), p.roleDescription)
+            case .AR: XCTAssertTrue(p.roleDescription.hasPrefix("All-rounder"), p.roleDescription)
+            case .WK: XCTAssertTrue(p.roleDescription.hasPrefix("Keeper"), p.roleDescription)
+            case .BAT: XCTAssertTrue(p.roleDescription.hasSuffix("batter") || p.roleDescription == "Finisher", p.roleDescription)
+            }
+            if p.bowlType == .spin, p.bowl >= 50 { XCTAssertEqual(p.bowlingStyle, "spin") }
+        }
+        XCTAssertTrue(all.contains { $0.roleDescription == "Fast bowler" })
+        XCTAssertTrue(all.contains { $0.roleDescription == "Medium pace bowler" })
+        XCTAssertTrue(all.contains { $0.roleDescription == "Spin bowler" })
+    }
+}

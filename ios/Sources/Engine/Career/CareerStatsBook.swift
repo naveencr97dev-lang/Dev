@@ -65,6 +65,8 @@ enum MarketSort: String, CaseIterable, Identifiable {
         case .age: return "Youngest"
         }
     }
+    /// Sorts by a season/all-time stat (the market shows that stat as a column).
+    var isStat: Bool { [.runs, .wickets, .strikeRate, .economy, .sixes].contains(self) }
 }
 
 extension Career {

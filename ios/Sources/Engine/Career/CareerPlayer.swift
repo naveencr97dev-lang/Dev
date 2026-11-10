@@ -165,3 +165,41 @@ struct CareerPlayer: Codable, Identifiable, Hashable {
                       line: line, bowlType: bowlType, traits: traits, slot: slot, legend: legend)
     }
 }
+
+extension CareerPlayer {
+    /// Bowling style in words: spin, or fast vs medium pace from the pace/turn attribute.
+    var bowlingStyle: String? {
+        guard bowl >= 50 else { return nil }
+        if bowlType == .spin { return "spin" }
+        return attr.potency >= 75 ? "fast" : "medium pace"
+    }
+
+    /// Batting job in words, from the preferred batting slot.
+    var battingJob: String {
+        switch slot {
+        case .open: return "opener"
+        case .top: return "top order"
+        case .middle: return "middle order"
+        case .finish: return "finisher"
+        case .lower: return "lower order"
+        }
+    }
+
+    /// The player's actual role, e.g. "Top-order batter", "Keeper · opener",
+    /// "All-rounder · finisher · spin", "Fast bowler".
+    var roleDescription: String {
+        switch role {
+        case .BAT:
+            switch slot {
+            case .open: return "Opening batter"
+            case .finish: return "Finisher"
+            default: return battingJob.prefix(1).uppercased() + battingJob.dropFirst() + " batter"
+            }
+        case .WK: return "Keeper · \(battingJob)"
+        case .AR: return (["All-rounder", battingJob] + (bowlingStyle.map { [$0] } ?? [])).joined(separator: " · ")
+        case .BOWL:
+            let style = bowlingStyle ?? (bowlType == .spin ? "spin" : "medium pace")
+            return style.prefix(1).uppercased() + style.dropFirst() + " bowler"
+        }
+    }
+}

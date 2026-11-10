@@ -24,7 +24,7 @@ struct CareerHubView: View {
                         HubRail(tab: $tab, career: c)
                         VStack(spacing: 0) {
                             HubTopBar(career: c, menu: { hubMenu }) { perform(c.nextAction) }
-                            if tab.twoColumns {
+                            if tab.ownScroll {
                                 // Each column scrolls on its own (AdaptiveColumns).
                                 tabContent(c)
                                     .padding(.horizontal, DS.Space.md)
@@ -199,6 +199,8 @@ enum HubTab: Int, CaseIterable {
     var label: String { ["Home", "Squad", "Transfers", "League", "Club"][rawValue] }
     /// Tabs laid out as two independently scrolling columns in landscape.
     var twoColumns: Bool { self == .home || self == .squad || self == .club }
+    /// Tabs that manage their own scrolling in landscape (columns, or a pinned header over a list).
+    var ownScroll: Bool { twoColumns || self == .transfers }
     var icon: String { ["house.fill", "person.3.fill", "arrow.left.arrow.right", "trophy.fill", "building.columns.fill"][rawValue] }
 }
 

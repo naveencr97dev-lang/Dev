@@ -297,6 +297,7 @@ struct PurseStrip: View {
 
 struct CareerMarketTab: View {
     @EnvironmentObject var store: GameStore
+    @Environment(\.compactLandscape) private var landscape
     @State private var roleIndex = 0
     @State private var freeOnly = false
     @State private var sort: MarketSort = .rating
@@ -305,131 +306,274 @@ struct CareerMarketTab: View {
     private static let slots: [BatSlot?] = [nil, .open, .top, .middle, .finish, .lower]
     private static let slotLabels = ["Any slot", "Openers", "Top order", "Middle order", "Finishers", "Lower order"]
     private static let bowls: [BowlType?] = [nil, .pace, .spin]
-    private static let bowlLabels = ["Any bowling", "Pace bowlers", "Spinners"]
+    private static let bowlLabels = ["Any bowling", "Pace", "Spin"]
     @State private var scope: StatScope = .season
 
     private static let roles: [Role?] = [nil, .BAT, .WK, .AR, .BOWL]
+    private static let roleLabels = ["All", "BAT", "WK", "AR", "BOWL"]
 
     var body: some View {
         if let c = store.career {
-            VStack(alignment: .leading, spacing: DS.Space.lg) {
-                PurseStrip(career: c)
-                Text((c.windowOpen ? "🟢 " : "🔴 ") + c.windowLabel)
-                    .font(.subheadline.weight(.semibold))
-                NavigationLink { ScoutingView() } label: {
-                    SquadAction(icon: "binoculars", text: "Scouts \(c.scouting.scouts.count)/\(c.scoutCap) · \(c.scouting.reports.count) reports")
+            let season = c.seasonStatLines
+            let list = c.marketPlayers(role: Self.roles[roleIndex], slot: Self.slots[slotIndex], bowlType: Self.bowls[bowlIndex],
+                                       freeAgentsOnly: freeOnly, sort: sort, scope: scope)
+            if landscape {
+                // Device feedback: purse and filters stay put; only the player list scrolls.
+                VStack(alignment: .leading, spacing: 6) {
+                    header(c, count: list.count)
+                    ScrollView { rows(c, list, season).padding(.bottom, DS.Space.sm) }
+                }
+                .padding(.top, 6)
+                .frame(maxHeight: .infinity, alignment: .top)
+            } else {
+                VStack(alignment: .leading, spacing: 6) {
+                    header(c, count: list.count)
+                    rows(c, list, season)
+                }
+            }
+        }
+    }
+
+    /// Purse, market status, scouts, offers, filters and the column titles: compact, pinned.
+    @ViewBuilder private func header(_ c: Career, count: Int) -> some View {
+        PurseLine(career: c)
+        HStack(spacing: 10) {
+            Circle().fill(c.windowOpen ? Palette.accent : Palette.wicket).frame(width: 7, height: 7)
+            Text(c.windowLabel).font(.system(size: 12 * TextScale.factor, weight: .semibold)).foregroundStyle(Palette.muted).lineLimit(1)
+            Spacer(minLength: 6)
+            if !c.market.offers.isEmpty || !c.market.listed.isEmpty {
+                NavigationLink { CareerScreen(title: "Offers and your list") { OffersScreen() } } label: {
+                    chip("tray.full", "\(c.market.offers.count) offer\(c.market.offers.count == 1 ? "" : "s") · \(c.market.listed.count) listed",
+                         highlight: !c.market.offers.isEmpty)
                 }
                 .buttonStyle(.plain)
-
-                if !c.market.offers.isEmpty {
-                    SectionLabel(text: "Offers for your players")
-                    VStack(spacing: DS.Space.sm) {
-                        ForEach(c.market.offers) { o in
-                            OfferRow(career: c, offer: o)
-                        }
-                    }
-                }
-
-                if !c.market.listed.isEmpty {
-                    SectionLabel(text: "Your transfer list")
-                    AppCard(padding: DS.Space.md) {
-                        VStack(spacing: 8) {
-                            ForEach(c.market.listed.keys.sorted(), id: \.self) { id in
-                                HStack {
-                                    Text(c.players[id]?.name ?? id).font(.subheadline)
-                                    Spacer()
-                                    Text(Money.format(c.market.listed[id] ?? 0)).font(.caption.monospacedDigit()).foregroundStyle(Palette.muted)
-                                    Button("Unlist") { store.careerUnlist(id) }.font(.caption.weight(.bold))
-                                }
-                            }
-                        }
-                    }
-                }
-
-                SectionLabel(text: "Find players")
-                Picker("Role", selection: $roleIndex) {
-                    Text("All").tag(0)
-                    Text("BAT").tag(1)
-                    Text("WK").tag(2)
-                    Text("AR").tag(3)
-                    Text("BOWL").tag(4)
-                }
-                .pickerStyle(.segmented)
-                HStack {
-                    Picker("Batting slot", selection: $slotIndex) {
-                        ForEach(0..<Self.slots.count, id: \.self) { i in Text(Self.slotLabels[i]).tag(i) }
-                    }
-                    .pickerStyle(.menu)
-                    Picker("Bowling", selection: $bowlIndex) {
-                        ForEach(0..<Self.bowls.count, id: \.self) { i in Text(Self.bowlLabels[i]).tag(i) }
-                    }
-                    .pickerStyle(.menu)
-                    Spacer()
-                }
-                Toggle("Free agents only (no fee)", isOn: $freeOnly)
-                    .font(.subheadline)
-                HStack {
-                    Picker("Sort by", selection: $sort) {
-                        ForEach(MarketSort.allCases) { s in Text(s.label).tag(s) }
-                    }
-                    .pickerStyle(.menu)
-                    Spacer()
-                    Picker("Stats", selection: $scope) {
-                        Text("Season").tag(StatScope.season)
-                        Text("All-time").tag(StatScope.allTime)
-                    }
-                    .pickerStyle(.segmented)
-                    .frame(maxWidth: 200)
-                }
-                let season = c.seasonStatLines
-                let list = c.marketPlayers(role: Self.roles[roleIndex], slot: Self.slots[slotIndex], bowlType: Self.bowls[bowlIndex],
-                                           freeAgentsOnly: freeOnly, sort: sort, scope: scope)
-                Text("\(list.count) players").font(.caption).foregroundStyle(Palette.muted)
-                LazyVStack(spacing: 0) {
-                    ForEach(list) { p in
-                        NavigationLink { CareerPlayerView(playerId: p.id) } label: {
-                            MarketRow(career: c, player: p, scope: scope, season: season)
-                        }
-                        .buttonStyle(.plain)
-                        Hairline(inset: DS.Space.lg)
-                    }
-                }
-                .gameFrame()
             }
+            NavigationLink { ScoutingView() } label: {
+                chip("binoculars", "Scouts \(c.scouting.scouts.count)/\(c.scoutCap) · \(c.scouting.reports.count) reports", highlight: false)
+            }
+            .buttonStyle(.plain)
+        }
+        HStack(spacing: 6) {
+            ForEach(0..<Self.roleLabels.count, id: \.self) { i in
+                Button { roleIndex = i } label: {
+                    Text(Self.roleLabels[i]).font(.system(size: 12 * TextScale.factor, weight: .semibold))
+                        .foregroundStyle(roleIndex == i ? Palette.ink : .white)
+                        .padding(.horizontal, 10).padding(.vertical, 5)
+                        .background(Capsule().fill(roleIndex == i ? Palette.accent : Palette.surface))
+                }
+                .buttonStyle(.plain)
+            }
+            menu(Self.slotLabels[slotIndex]) {
+                ForEach(0..<Self.slots.count, id: \.self) { i in Button(Self.slotLabels[i]) { slotIndex = i } }
+            }
+            menu(Self.bowlLabels[bowlIndex]) {
+                ForEach(0..<Self.bowls.count, id: \.self) { i in Button(Self.bowlLabels[i]) { bowlIndex = i } }
+            }
+            Button { freeOnly.toggle() } label: {
+                Text("Free agents").font(.system(size: 12 * TextScale.factor, weight: .semibold))
+                    .foregroundStyle(freeOnly ? Palette.ink : .white)
+                    .padding(.horizontal, 10).padding(.vertical, 5)
+                    .background(Capsule().fill(freeOnly ? Palette.accent : Palette.surface))
+            }
+            .buttonStyle(.plain)
+            Spacer(minLength: 4)
+            menu("Sort: \(sort.label)") {
+                ForEach(MarketSort.allCases) { s in Button(s.label) { sort = s } }
+            }
+            menu(scope == .season ? "Season" : "All-time") {
+                Button("Season") { scope = .season }
+                Button("All-time") { scope = .allTime }
+            }
+        }
+        MarketColumns(landscape: landscape, statTitle: sort.isStat ? sort.label : nil, count: count)
+    }
+
+    @ViewBuilder private func rows(_ c: Career, _ list: [CareerPlayer], _ season: [String: StatLine]) -> some View {
+        LazyVStack(spacing: 4) {
+            ForEach(list) { p in
+                NavigationLink { CareerPlayerView(playerId: p.id) } label: {
+                    MarketRow(career: c, player: p, scope: scope, season: season, sort: sort, landscape: landscape)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+    private func chip(_ icon: String, _ text: String, highlight: Bool) -> some View {
+        Label(text, systemImage: icon)
+            .font(.system(size: 12 * TextScale.factor, weight: .semibold))
+            .foregroundStyle(highlight ? Palette.ink : Palette.accent)
+            .padding(.horizontal, 10).padding(.vertical, 5)
+            .background(Capsule().fill(highlight ? Palette.accent : Palette.surface))
+            .lineLimit(1)
+    }
+
+    private func menu<C: View>(_ title: String, @ViewBuilder _ items: () -> C) -> some View {
+        Menu { items() } label: {
+            HStack(spacing: 3) {
+                Text(title).lineLimit(1)
+                Image(systemName: "chevron.up.chevron.down").font(.system(size: 9 * TextScale.factor, weight: .bold))
+            }
+            .font(.system(size: 12 * TextScale.factor, weight: .semibold))
+            .foregroundStyle(Palette.accent)
+            .padding(.horizontal, 10).padding(.vertical, 5)
+            .background(Capsule().fill(Palette.surface))
         }
     }
 }
 
+/// Purse, bank, squad and overseas on one short line (the Transfers header).
+struct PurseLine: View {
+    let career: Career
+
+    var body: some View {
+        let c = career
+        let squad = c.squad(c.userClubId)
+        HStack(spacing: 0) {
+            cell(Money.format(max(0, c.capRoom(c.userClubId))), "cap room")
+            cell(Money.format(c.bank(c.userClubId)), "bank")
+            cell("\(squad.count)/\(c.tuning.maxSquad)", "squad")
+            cell("\(squad.filter(\.overseas).count)/\(c.tuning.maxOverseasSquad)", "overseas")
+        }
+        .padding(.vertical, 6)
+        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Palette.surface))
+    }
+
+    private func cell(_ v: String, _ l: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 5) {
+            Text(v).font(.score(15)).foregroundStyle(.white).lineLimit(1).minimumScaleFactor(0.7)
+            Text(l).font(.system(size: 11 * TextScale.factor, weight: .medium)).foregroundStyle(Palette.muted).lineLimit(1)
+        }
+        .frame(maxWidth: .infinity)
+    }
+}
+
+/// Market column widths, shared by the header and the rows.
+enum MarketCol {
+    static let ovr: CGFloat = 36
+    static let club: CGFloat = 46
+    static let age: CGFloat = 30
+    static let stat: CGFloat = 56
+    static let price: CGFloat = 78
+}
+
+/// Column titles above the market list.
+struct MarketColumns: View {
+    let landscape: Bool
+    let statTitle: String?
+    let count: Int
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Text("OVR").frame(width: MarketCol.ovr, alignment: .center)
+            Text("PLAYER · \(count)").frame(maxWidth: .infinity, alignment: .leading)
+            if landscape {
+                Text("CLUB").frame(width: MarketCol.club, alignment: .leading)
+                Text("AGE").frame(width: MarketCol.age, alignment: .trailing)
+                if let statTitle { Text(statTitle.uppercased()).frame(width: MarketCol.stat, alignment: .trailing).lineLimit(1) }
+            }
+            Text("PRICE").frame(width: MarketCol.price, alignment: .trailing)
+            if landscape { Text("ROLE").frame(maxWidth: .infinity, alignment: .leading) }
+        }
+        .font(.system(size: 10 * TextScale.factor, weight: .heavy))
+        .foregroundStyle(Palette.muted)
+        .padding(.horizontal, 10)
+    }
+}
+
+/// One player in the market: OVR, name, (club, age, stat), price, role. Each row its own card.
 struct MarketRow: View {
     let career: Career
     let player: CareerPlayer
     var scope: StatScope = .season
     var season: [String: StatLine] = [:]
+    var sort: MarketSort = .rating
+    var landscape = false
 
     var body: some View {
         let c = career
-        let club = player.clubId.flatMap { c.club($0) }
-        VStack(alignment: .leading, spacing: 4) {
-            CareerPlayerRow(player: player, year: c.year)
-            Text((scope == .season ? "Season: " : "All-time: ") + StatText.line(c.statLine(player.id, scope: scope, season: season), role: player.role))
-                .font(.caption.weight(.semibold).monospacedDigit())
-                .foregroundStyle(Palette.accent)
-                .lineLimit(1).minimumScaleFactor(0.8)
-            HStack(spacing: 6) {
-                if let club { TeamBadge(team: club, size: 18) }
-                Text(club?.name.uppercased() ?? "FREE AGENT").font(.caption2.weight(.bold)).lineLimit(1)
+        let p = player
+        let club = p.clubId.flatMap { c.club($0) }
+        HStack(spacing: 8) {
+            Text("\(p.rating)").font(.score(15)).foregroundStyle(strengthColor(p.rating))
+                .frame(width: MarketCol.ovr, alignment: .center)
+            VStack(alignment: .leading, spacing: 1) {
+                HStack(spacing: 4) {
+                    Text(p.name).font(.system(size: 14 * TextScale.factor, weight: .semibold)).foregroundStyle(.white).lineLimit(1)
+                    if p.overseas { Image(systemName: "airplane").font(.system(size: 9 * TextScale.factor)).foregroundStyle(Palette.muted) }
+                }
+                if !landscape {
+                    Text("\(p.roleDescription) · \(club?.short ?? "Free") · \(p.age(in: c.year))")
+                        .font(.system(size: 11 * TextScale.factor)).foregroundStyle(Palette.muted).lineLimit(1)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            if landscape {
+                Text(club?.short ?? "Free").font(.system(size: 12 * TextScale.factor, weight: .semibold))
                     .foregroundStyle(club == nil ? Palette.accent : Palette.muted)
-                Spacer()
-                Text(club == nil ? "No fee" : "Fee ~\(Money.format(c.askingPrice(player)))")
-                    .font(.caption2.monospacedDigit()).foregroundStyle(Palette.muted)
-                Text("Wage ~\(Money.format(c.userWageDemand(player)))")
-                    .font(.caption2.monospacedDigit()).foregroundStyle(Palette.muted)
-                Text("POT \(c.potentialLabel(player))")
-                    .font(.caption2.weight(.bold).monospacedDigit()).foregroundStyle(Palette.four)
+                    .frame(width: MarketCol.club, alignment: .leading)
+                Text("\(p.age(in: c.year))").font(.score(13)).foregroundStyle(Palette.muted)
+                    .frame(width: MarketCol.age, alignment: .trailing)
+                if sort.isStat {
+                    Text(statValue(c)).font(.score(13)).foregroundStyle(Palette.accent)
+                        .frame(width: MarketCol.stat, alignment: .trailing)
+                }
+            }
+            Text(club == nil ? "Free" : Money.format(c.askingPrice(p)))
+                .font(.score(13)).foregroundStyle(club == nil ? Palette.accent : .white)
+                .frame(width: MarketCol.price, alignment: .trailing)
+            if landscape {
+                Text(p.roleDescription).font(.system(size: 12 * TextScale.factor)).foregroundStyle(Palette.muted)
+                    .lineLimit(1).frame(maxWidth: .infinity, alignment: .leading)
             }
         }
-        .padding(.horizontal, DS.Space.lg)
-        .padding(.vertical, DS.Space.md)
+        .padding(.horizontal, 10)
+        .padding(.vertical, landscape ? 6 : 7)
+        .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(Palette.surface))
+        .contentShape(Rectangle())
+    }
+
+    private func statValue(_ c: Career) -> String {
+        let s = c.statLine(player.id, scope: scope, season: season)
+        switch sort {
+        case .runs: return "\(s.runs)"
+        case .wickets: return "\(s.wickets)"
+        case .sixes: return "\(s.sixes)"
+        case .strikeRate: return s.balls > 0 ? String(format: "%.1f", s.strikeRate) : "–"
+        case .economy: return s.ballsBowled > 0 ? String(format: "%.2f", s.economy) : "–"
+        default: return ""
+        }
+    }
+}
+
+/// Offers for your players and your own transfer list (moved off the Transfers header).
+struct OffersScreen: View {
+    @EnvironmentObject var store: GameStore
+
+    var body: some View {
+        if let c = store.career {
+            VStack(alignment: .leading, spacing: DS.Space.md) {
+                SectionLabel(text: "Offers for your players")
+                if c.market.offers.isEmpty {
+                    Text("No offers right now.").font(.subheadline).foregroundStyle(Palette.muted)
+                }
+                ForEach(c.market.offers) { o in OfferRow(career: c, offer: o) }
+                SectionLabel(text: "Your transfer list")
+                if c.market.listed.isEmpty {
+                    Text("Nobody listed. List a player from his page.").font(.subheadline).foregroundStyle(Palette.muted)
+                }
+                ForEach(c.market.listed.keys.sorted(), id: \.self) { id in
+                    HStack {
+                        Text(c.players[id]?.name ?? id).font(.subheadline)
+                        Spacer()
+                        Text(Money.format(c.market.listed[id] ?? 0)).font(.caption.monospacedDigit()).foregroundStyle(Palette.muted)
+                        Button("Unlist") { store.careerUnlist(id) }.font(.caption.weight(.bold))
+                    }
+                    .padding(10)
+                    .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(Palette.surface))
+                }
+            }
+        }
     }
 }
 
