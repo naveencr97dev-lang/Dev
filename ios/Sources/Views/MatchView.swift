@@ -73,6 +73,17 @@ struct MatchView: View {
                         Button { pauseForCentre() } label: { Image(systemName: "list.clipboard") }
                         Button("Skip ⏭") { finish() }
                     }
+                } else if result != nil {
+                    // Device feedback: a clear way on after the match (back to the hub's Continue).
+                    Button {
+                        Haptics.tap()
+                        dismiss()
+                    } label: {
+                        HStack(spacing: 4) {
+                            Text("Next").fontWeight(.bold)
+                            Image(systemName: "chevron.right").font(.system(size: 13, weight: .bold))
+                        }
+                    }
                 }
             }
         }
