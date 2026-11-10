@@ -24,10 +24,17 @@ struct CareerHubView: View {
                         HubRail(tab: $tab, career: c)
                         VStack(spacing: 0) {
                             HubTopBar(career: c, menu: { hubMenu }) { perform(c.nextAction) }
-                            ScrollView {
-                                VStack(alignment: .leading, spacing: DS.Space.sm) { tabContent(c) }
+                            if tab.twoColumns {
+                                // Each column scrolls on its own (AdaptiveColumns).
+                                tabContent(c)
                                     .padding(.horizontal, DS.Space.md)
-                                    .padding(.vertical, DS.Space.sm)
+                                    .frame(maxHeight: .infinity, alignment: .top)
+                            } else {
+                                ScrollView {
+                                    VStack(alignment: .leading, spacing: DS.Space.sm) { tabContent(c) }
+                                        .padding(.horizontal, DS.Space.md)
+                                        .padding(.vertical, DS.Space.sm)
+                                }
                             }
                         }
                     }
@@ -190,6 +197,8 @@ enum HubTab: Int, CaseIterable {
     case home, squad, transfers, league, club
 
     var label: String { ["Home", "Squad", "Transfers", "League", "Club"][rawValue] }
+    /// Tabs laid out as two independently scrolling columns in landscape.
+    var twoColumns: Bool { self == .home || self == .squad || self == .club }
     var icon: String { ["house.fill", "person.3.fill", "arrow.left.arrow.right", "trophy.fill", "building.columns.fill"][rawValue] }
 }
 

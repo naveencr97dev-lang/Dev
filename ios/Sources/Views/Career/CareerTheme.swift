@@ -49,7 +49,8 @@ extension EnvironmentValues {
     }
 }
 
-/// Two columns in landscape, one stacked column in portrait.
+/// Two columns in landscape, each scrolling on its own (device feedback: they scrolled together);
+/// one stacked column in portrait, inside the screen's scroll view.
 struct AdaptiveColumns<Left: View, Right: View>: View {
     @Environment(\.compactLandscape) private var landscape
     @ViewBuilder var left: Left
@@ -58,8 +59,8 @@ struct AdaptiveColumns<Left: View, Right: View>: View {
     var body: some View {
         if landscape {
             HStack(alignment: .top, spacing: DS.Space.md) {
-                VStack(alignment: .leading, spacing: DS.Space.md) { left }.frame(maxWidth: .infinity, alignment: .topLeading)
-                VStack(alignment: .leading, spacing: DS.Space.md) { right }.frame(maxWidth: .infinity, alignment: .topLeading)
+                column { left }
+                column { right }
             }
         } else {
             VStack(alignment: .leading, spacing: DS.Space.md) {
@@ -67,6 +68,15 @@ struct AdaptiveColumns<Left: View, Right: View>: View {
                 right
             }
         }
+    }
+
+    private func column<C: View>(@ViewBuilder _ content: () -> C) -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: DS.Space.md) { content() }
+                .padding(.vertical, DS.Space.sm)
+                .frame(maxWidth: .infinity, alignment: .topLeading)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
 }
 
