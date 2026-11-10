@@ -34,3 +34,4 @@ built, and the next steps. Key points:
   - Replies use the "OPTIMIZED PROMPT (CO-STAR) + results" format, in the terse caveman voice.
   - Work in layers (80/20); generic first versions are fine; fix the user's device feedback first.
   - Clean, professional look, never "AI-made".
+- **Next task:** home-pitch squad building for AI and user (HANDOFF.md §7).

@@ -189,6 +189,20 @@ for each version in `CareerSave.migrations`.
 
 ## 7. Next steps and known gaps
 
+### Next task, asked for but not started: home-pitch squad building
+
+Clubs build squads for their home pitch, so home advantage is real.
+- Hyderabad (flat) wants flat-track hitters; Chennai (turner) wants spinners and batters who play spin.
+- AI clubs pick for their pitch in auctions, retentions, transfers, AI trades and their XI.
+- A user who ignores the pitch loses at home more often.
+
+Where: L1 `CareerMarket.aiValuation`, retentions, AI trades, `autoPickXI` (pitch-fit factor from
+`Pitch.favoured(by:)`, `homeBonus`, trait `pitches`, bowl type). L0: check conditions swing results
+enough. Test: a pitch-built squad beats an equal-rated generic one at home. UI: "suits your pitch"
+in market and squad.
+
+Older playtest notes (three personas): `docs/PLAYTEST-PANEL.md`.
+
 Customer-panel reports: `docs/feedback/ROUND1.md` (the SM26 reference) and `docs/feedback/ROUND2-3.md`.
 Open from the panel: youth growth is low for some seeds (check potential headroom, round 6); KOL starts too old (age-balance the opening draft); about 40% blowouts (easy-chase
 pacing); casual players ignore the invest objective.
