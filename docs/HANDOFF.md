@@ -183,7 +183,7 @@ for each version in `CareerSave.migrations`.
 ## 7. Next steps and known gaps
 
 Customer-panel reports: `docs/feedback/ROUND1.md` (the SM26 reference) and `docs/feedback/ROUND2-3.md`.
-Open from the panel: KOL starts too old (age-balance the opening draft); about 40% blowouts (easy-chase
+Open from the panel: youth growth is low for some seeds (check potential headroom, round 6); KOL starts too old (age-balance the opening draft); about 40% blowouts (easy-chase
 pacing); casual players ignore the invest objective.
 
 

@@ -118,3 +118,27 @@ Portrait keeps the bottom tabs and the Continue bar.
 - Easy rookie: 35% → 46%. Auction bidder: 18% → 37%.
 - Planner failures: 66 → 0. Blowouts: 47% → 31%.
 - 20 seasons: CHE won 3 titles; titles went to 7 clubs, and the most any club won was 35%.
+
+## Round 6: pre-build check (two sessions, new seeds)
+
+- Session A: seed 31 · MUM, DEL, RAJ · 4 seasons.
+- Session B: seed 77 · BLR, PUN, GUJ · 4 seasons.
+- 36 careers, about 5,300 user matches. The panel now takes `CUSTOMER_SEED`.
+
+**Green:**
+- No dead ends and no illegal squads.
+- CONTINUE-only managers win 40–57%; rookies (Easy) 50–61%; tinkerers 49–68%; traders 60–74%.
+- Casual managers' longest losing run is at most 12. Longer runs (13–15) only for the Legend veteran
+  and the blind auction bidder.
+- The 20-season harness passes, with titles over 7 clubs.
+
+**Known, not blocking:**
+- *Youngsters don't grow* (5–6 players in session A, at 1.2–1.8 rating a season against 2–5 in other
+  seeds). Lifting the age-band growth didn't move it, so the cap is elsewhere, probably young players
+  sitting near their potential. Investigate potential headroom before changing balance; the trial was
+  reverted.
+- *Planner weaker* (tinkerer at GUJ): the planner's job-fit XI averages about 2 rating points below
+  Auto-pick but won 58%, against 50% for Auto-pick at the same club. The metric favours raw rating.
+  No change.
+- Persona-made: traders selling their own youngsters, so the U23 objective fails; the bidder's blind
+  auction buys decay the squad; casual players ignore the invest objective.

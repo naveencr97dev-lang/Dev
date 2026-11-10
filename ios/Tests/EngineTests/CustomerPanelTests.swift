@@ -82,7 +82,7 @@ final class CustomerPanelTests: XCTestCase {
         print("\n=== CUSTOMER PANEL: \(Persona.allCases.count) personas × clubs \(clubs) × \(seasons) seasons ===")
         for persona in Persona.allCases {
             for club in clubs {
-                let (r, c) = play(persona, seasons: seasons, seed: 900, club: club, pars: &pars)
+                let (r, c) = play(persona, seasons: seasons, seed: UInt64(env["CUSTOMER_SEED"] ?? "") ?? 900, club: club, pars: &pars)
                 let complaints = feedback(persona, r, c)
                 printReport(persona, club: c.userClub.short, r, complaints)
                 for k in complaints { allComplaints[k.key, default: []].append("\(persona.rawValue)@\(c.userClub.short)") }
