@@ -11,6 +11,8 @@ struct LineupRow: View {
     var tag = ""
     var rating: Int? = nil
     var selected = false
+    /// Stretch to share the available height (the Squad tab's XI fills the left column).
+    var fill = false
 
     var body: some View {
         HStack(spacing: 6) {
@@ -39,7 +41,7 @@ struct LineupRow: View {
             }
         }
         .padding(.horizontal, 10)
-        .frame(height: 24 * min(1.25, TextScale.factor))
+        .frame(minHeight: fill ? 20 : 24 * min(1.25, TextScale.factor), maxHeight: fill ? .infinity : 24 * min(1.25, TextScale.factor))
         .background(selected ? Palette.accent.opacity(0.22) : Color.clear)
         .contentShape(Rectangle())
     }
@@ -62,6 +64,7 @@ struct LineupPanel<Rows: View>: View {
                 .padding(.horizontal, 10).padding(.vertical, 5)
                 .background(color)
             VStack(spacing: 0) { rows }
+                .frame(maxHeight: .infinity, alignment: .top)
         }
         .background(Palette.surface)
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
@@ -139,6 +142,7 @@ struct EditableLineup: View {
     let title: String
     let ids: [String]
     var numbered = true
+    var fill = false
     @Binding var selected: String?
     @Binding var message: String?
 
@@ -154,7 +158,7 @@ struct EditableLineup: View {
                         LineupRow(number: numbered ? i + 1 : nil, name: p.name, keeper: p.role == .WK,
                                   captain: c.tactics.captain == id, overseas: p.overseas,
                                   tag: "\(p.role.short) · \(CareerText.form(p.form))", rating: p.rating,
-                                  selected: selected == id)
+                                  selected: selected == id, fill: fill)
                             .onTapGesture { tap(id) }
                             .draggable(id)
                             .dropDestination(for: String.self) { items, _ in

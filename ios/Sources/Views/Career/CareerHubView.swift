@@ -91,6 +91,11 @@ struct CareerHubView: View {
         }
     }
 
+    /// Landscape tabs manage their own scrolling: long lists scroll inside their area.
+    @ViewBuilder private func scrollInLandscape<C: View>(@ViewBuilder _ content: () -> C) -> some View {
+        if landscape { ScrollView { content() }.frame(maxHeight: .infinity) } else { content() }
+    }
+
     /// The ⋯ menu (navigation bar in portrait, top bar in landscape).
     @ViewBuilder private var hubMenu: some View {
         if store.career?.phase == .season {
@@ -115,25 +120,33 @@ struct CareerHubView: View {
         case .transfers:
             CareerMarketTab()
         case .league:
-            Picker("League", selection: $leagueSection) {
-                Text("Fixtures").tag(0)
-                Text("Table").tag(1)
-                Text("Stats").tag(2)
-                Text("World").tag(3)
+            // Device feedback: the table first; leaders and stats tables fit one screen.
+            VStack(alignment: .leading, spacing: DS.Space.sm) {
+                Picker("League", selection: $leagueSection) {
+                    Text("Table").tag(0)
+                    Text("Fixtures").tag(1)
+                    Text("Stats").tag(2)
+                    Text("Leaders").tag(3)
+                    Text("World").tag(4)
+                }
+                .pickerStyle(.segmented)
+                switch leagueSection {
+                case 0: CareerTableTab(path: $path)
+                case 1: scrollInLandscape { CareerFixturesTab(path: $path) }
+                case 2: StatsTable()
+                case 3: LeadersGrid()
+                default: scrollInLandscape { CareerWorldTab(path: $path) }
+                }
             }
-            .pickerStyle(.segmented)
-            switch leagueSection {
-            case 0: CareerFixturesTab(path: $path)
-            case 1: CareerTableTab(path: $path)
-            case 2: StatsBoards()
-            default: CareerWorldTab(path: $path)
-            }
+            .padding(.top, landscape ? DS.Space.sm : 0)
+            .frame(maxHeight: landscape ? .infinity : nil, alignment: .top)
         case .club:
-            // Device feedback: club essentials on the left, the league table on the right.
-            AdaptiveColumns {
+            // Device feedback: club essentials left; squad development and finances right; no scrolling.
+            AdaptiveColumns(leftScrolls: false, rightScrolls: false) {
                 CareerClubTab(path: $path)
             } right: {
-                CareerPointsTable(career: c) { path.append(.team($0)) }
+                ClubDevelopmentTiles(career: c)
+                FinanceGrid(career: c)
             }
         }
     }
@@ -201,7 +214,7 @@ enum HubTab: Int, CaseIterable {
     /// Tabs laid out as two independently scrolling columns in landscape.
     var twoColumns: Bool { self == .home || self == .squad || self == .club }
     /// Tabs that manage their own scrolling in landscape (columns, or a pinned header over a list).
-    var ownScroll: Bool { twoColumns || self == .transfers }
+    var ownScroll: Bool { twoColumns || self == .transfers || self == .league }
     var icon: String { ["house.fill", "person.3.fill", "arrow.left.arrow.right", "trophy.fill", "building.columns.fill"][rawValue] }
 }
 
@@ -372,6 +385,7 @@ enum CareerText {
 
 /// Club tab: the office tiles.
 struct ClubOfficeTiles: View {
+    @Environment(\.compactLandscape) private var compact
     let career: Career
 
     var body: some View {
@@ -406,8 +420,10 @@ struct ClubOfficeTiles: View {
                          subtitle: "\(c.settings.difficulty.label) · market \(c.settings.marketAlwaysOpen ? "open" : "windows")")
             }
         }
+        .frame(maxHeight: compact ? .infinity : nil)
         .gameFrame()
         .buttonStyle(.plain)
+        .environment(\.fillRows, compact)
     }
 }
 
@@ -424,12 +440,14 @@ struct NewsScreen: View {
 
 struct CareerHomeTab: View {
     @EnvironmentObject var store: GameStore
+    @Environment(\.compactLandscape) private var compact
     @Binding var path: [Route]
     @Binding var note: String?
 
     var body: some View {
         if let c = store.career {
-            AdaptiveColumns {
+            // Device feedback: in landscape every box has its place and only News scrolls.
+            AdaptiveColumns(leftScrolls: false, rightScrolls: false) {
                 // The one thing to do now.
                 if c.phase == .seasonEnd {
                     SeasonEndCard(career: c) {
@@ -457,16 +475,21 @@ struct CareerHomeTab: View {
                 if let note {
                     Text(note).font(.display(12, weight: .regular)).foregroundStyle(Palette.muted)
                 }
-                if c.phase == .season { AssistantCard(career: c) }
-                SeasonSummary(career: c, path: $path)
+                if !compact, c.phase == .season { AssistantCard(career: c) }
+                SeasonSummary(career: c, path: $path, fill: compact)
             } right: {
+                if compact, c.phase == .season { AssistantCard(career: c) }
                 BoardObjectivesCard(career: c)
-                NewsFeed(news: Array(c.news.prefix(3)))
-                if c.news.count > 3 {
-                    NavigationLink { NewsScreen() } label: {
-                        Text("All news").font(.display(14, weight: .semibold)).foregroundStyle(Palette.accent)
+                if compact {
+                    NewsPanel(news: c.news)
+                } else {
+                    NewsFeed(news: Array(c.news.prefix(3)))
+                    if c.news.count > 3 {
+                        NavigationLink { NewsScreen() } label: {
+                            Text("All news").font(.display(14, weight: .semibold)).foregroundStyle(Palette.accent)
+                        }
+                        .padding(.leading, 4)
                     }
-                    .padding(.leading, 4)
                 }
             }
         }
@@ -515,6 +538,8 @@ struct NextMatchHero: View {
 struct SeasonSummary: View {
     let career: Career
     @Binding var path: [Route]
+    /// Landscape Home: the list stretches to fill the column (no empty space below it).
+    var fill = false
 
     var body: some View {
         let c = career
@@ -549,15 +574,19 @@ struct SeasonSummary: View {
                     }
                 }
             }
+            .frame(maxHeight: fill ? .infinity : nil)
             .gameFrame()
             .buttonStyle(.plain)
         }
+        .frame(maxHeight: fill ? .infinity : nil, alignment: .top)
+        .environment(\.fillRows, fill)
     }
 }
 
 /// Label on the left, value on the right, optional chevron.
 struct InfoRow: View {
     @Environment(\.compactLandscape) private var compact
+    @Environment(\.fillRows) private var fillRows
     let label: String
     let value: String
     var color: Color = .white
@@ -574,6 +603,7 @@ struct InfoRow: View {
         }
         .padding(.horizontal, compact ? 14 : 16)
         .padding(.vertical, compact ? 8 : 11)
+        .frame(maxHeight: fillRows ? .infinity : nil)
         .contentShape(Rectangle())
     }
 }
@@ -612,6 +642,39 @@ struct SeasonEndCard: View {
                     .font(.caption2).foregroundStyle(Palette.muted)
             }
         }
+    }
+}
+
+/// Landscape Home: news in its own box, filling what's left and scrolling inside.
+struct NewsPanel: View {
+    let news: [NewsItem]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                SectionLabel(text: "News")
+                Spacer()
+                NavigationLink { NewsScreen() } label: {
+                    Text("All").font(.system(size: 12 * TextScale.factor, weight: .semibold)).foregroundStyle(Palette.accent)
+                }
+            }
+            ScrollView {
+                VStack(alignment: .leading, spacing: 8) {
+                    ForEach(news.prefix(20)) { item in
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(NewsFeed.clean(item.text)).font(.system(size: 13 * TextScale.factor)).foregroundStyle(.white)
+                            Text("\(CareerCalendar.label(item.day)) \(String(item.year))")
+                                .font(.system(size: 10 * TextScale.factor)).foregroundStyle(Palette.muted)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+                .padding(10)
+            }
+            .frame(maxHeight: .infinity)
+            .gameFrame()
+        }
+        .frame(maxHeight: .infinity, alignment: .top)
     }
 }
 
@@ -668,13 +731,13 @@ struct CareerFixturesTab: View {
 
     var body: some View {
         if let c = store.career {
-            VStack(alignment: .leading, spacing: DS.Space.sm) {
+            VStack(alignment: .leading, spacing: 4) {
                 Picker("Show", selection: $showAll) {
                     Text("Your matches").tag(false)
                     Text("League results").tag(true)
                 }
                 .pickerStyle(.segmented)
-                .padding(.bottom, DS.Space.sm)
+                .padding(.bottom, 4)
 
                 if showAll {
                     let others = Array(c.results.reversed().prefix(40))
@@ -701,6 +764,7 @@ struct CareerFixturesTab: View {
 }
 
 struct FixtureRow: View {
+    @Environment(\.compactLandscape) private var compact
     let career: Career
     let fixture: Fixture
 
@@ -710,14 +774,14 @@ struct FixtureRow: View {
         let r = c.result(fixture.resultId)
         HStack(spacing: 10) {
             VStack(alignment: .leading, spacing: 1) {
-                Text(CareerCalendar.label(c.day(of: fixture))).font(.score(15))
+                Text(CareerCalendar.label(c.day(of: fixture))).font(.score(compact ? 13 : 15))
                 Text(c.round(of: fixture).map { "R\($0)" } ?? fixture.stage.label)
                     .font(.caption2).foregroundStyle(Palette.muted).lineLimit(1)
             }
             .frame(width: 70, alignment: .leading)
             if let opp = c.club(oppId) {
-                TeamBadge(team: opp, size: 28)
-                Text("\(fixture.home == c.userClubId ? "vs" : "at") \(opp.short)").font(.subheadline.weight(.semibold))
+                TeamBadge(team: opp, size: compact ? 20 : 28)
+                Text("\(fixture.home == c.userClubId ? "vs" : "at") \(opp.short)").font(compact ? .system(size: 13 * TextScale.factor, weight: .semibold) : .subheadline.weight(.semibold))
             }
             Text(fixture.pitch.icon).font(.caption)
             Spacer()
@@ -733,8 +797,8 @@ struct FixtureRow: View {
                 Text("Upcoming").font(.caption).foregroundStyle(Palette.muted)
             }
         }
-        .padding(.vertical, 8)
-        .padding(.horizontal, DS.Space.md)
+        .padding(.vertical, compact ? 4 : 8)
+        .padding(.horizontal, compact ? DS.Space.sm : DS.Space.md)
         .background(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous).fill(Palette.surface))
     }
 
@@ -747,22 +811,31 @@ struct FixtureRow: View {
 
 struct CareerTableTab: View {
     @EnvironmentObject var store: GameStore
+    @Environment(\.compactLandscape) private var compact
     @Binding var path: [Route]
 
     var body: some View {
         if let c = store.career {
-            VStack(alignment: .leading, spacing: DS.Space.lg) {
-                if c.fixtures.contains(where: { $0.stage != .league }) {
-                    CareerPlayoffs(career: c) { path.append(.result($0)) }
+            let playoffs = c.fixtures.contains(where: { $0.stage != .league })
+            if compact {
+                HStack(alignment: .top, spacing: DS.Space.md) {
+                    CareerPointsTable(career: c) { path.append(.team($0)) }
+                    if playoffs {
+                        CareerPlayoffs(career: c) { path.append(.result($0)) }.frame(maxWidth: 300)
+                    }
                 }
-                CareerPointsTable(career: c) { path.append(.team($0)) }
-                CareerLeaders(career: c)
+            } else {
+                VStack(alignment: .leading, spacing: DS.Space.lg) {
+                    if playoffs { CareerPlayoffs(career: c) { path.append(.result($0)) } }
+                    CareerPointsTable(career: c) { path.append(.team($0)) }
+                }
             }
         }
     }
 }
 
 struct CareerPointsTable: View {
+    @Environment(\.compactLandscape) private var compact
     let career: Career
     let onOpen: (Int) -> Void
 
@@ -771,8 +844,8 @@ struct CareerPointsTable: View {
         let table = c.table
         VStack(alignment: .leading, spacing: DS.Space.sm) {
             SectionLabel(text: "Points table")
-            AppCard(padding: DS.Space.md) {
-                VStack(spacing: 10) {
+            AppCard(padding: compact ? DS.Space.sm : DS.Space.md) {
+                VStack(spacing: compact ? 4 : 10) {
                     HStack {
                         Text("#").frame(width: 18, alignment: .leading)
                         Text("Team").frame(maxWidth: .infinity, alignment: .leading)
@@ -789,7 +862,7 @@ struct CareerPointsTable: View {
                                 HStack {
                                     Text("\(i + 1)").frame(width: 18, alignment: .leading).foregroundStyle(.secondary)
                                     HStack(spacing: 8) {
-                                        TeamBadge(team: t, size: 24)
+                                        TeamBadge(team: t, size: compact ? 18 : 24)
                                         Text(t.short).fontWeight(.semibold)
                                         if !t.isCPU { Image(systemName: "person.fill").font(.caption2).foregroundStyle(Palette.accent) }
                                     }
@@ -801,7 +874,7 @@ struct CareerPointsTable: View {
                                     Text(String(format: "%+.2f", row.nrr)).frame(width: 52, alignment: .trailing)
                                         .foregroundStyle(row.nrr >= 0 ? Palette.four : Palette.wicket)
                                 }
-                                .font(.subheadline.monospacedDigit())
+                                .font(compact ? .system(size: 13 * TextScale.factor).monospacedDigit() : .subheadline.monospacedDigit())
                                 .contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
@@ -927,29 +1000,82 @@ struct CareerClubTab: View {
                 }
             }
             ClubOfficeTiles(career: c)
-            SectionLabel(text: "Finances")
-            let net = MoneyCategory.allCases.reduce(0) { $0 + c.seasonTotal($1) }
-            VStack(spacing: 0) {
-                InfoRow(label: "Bank", value: Money.format(c.bank(c.userClubId)), chevron: false)
-                Hairline(inset: 16)
-                InfoRow(label: "Wages", value: "\(Money.format(c.payroll(c.userClubId))) of \(Money.format(c.tuning.salaryCap)) cap", chevron: false)
-                Hairline(inset: 16)
-                NavigationLink { CareerScreen(title: "Money") { SeasonMoneyCard(career: c) } } label: {
-                    InfoRow(label: "This season", value: (net >= 0 ? "+" : "−") + Money.format(abs(net)),
-                            color: net >= 0 ? Palette.accent : Palette.wicket)
-                }
-                Hairline(inset: 16)
-                NavigationLink { CareerScreen(title: "Ledger") { FinanceCard(career: c) } } label: {
-                    InfoRow(label: "Ledger", value: "Every payment")
-                }
-            }
-            .gameFrame()
-            .buttonStyle(.plain)
         }
     }
 }
 
-/// Club › History: seasons gone and every club's titles.
+/// Club tab, right: the squad development tools (moved from the Squad tab).
+struct ClubDevelopmentTiles: View {
+    @Environment(\.compactLandscape) private var compact
+    let career: Career
+
+    var body: some View {
+        let c = career
+        let cold = c.squad(c.userClubId).filter { c.userClub.xi.contains($0.id) && $0.form <= -4 }.count
+        SectionLabel(text: "Squad development")
+        VStack(spacing: 0) {
+            NavigationLink { TrainingView() } label: {
+                DashTile(icon: "dumbbell", title: "Training", subtitle: c.trainingDoneThisWeek ? "Done this week" : "Session ready")
+            }
+            Hairline(inset: 54)
+            NavigationLink { AcademyView() } label: { DashTile(icon: "graduationcap", title: "Academy", subtitle: "\(c.academy.count) prospects") }
+            Hairline(inset: 54)
+            NavigationLink { CareerScreen(title: "Development") { DevelopmentReportView() } } label: {
+                DashTile(icon: "chart.line.uptrend.xyaxis", title: "Development", subtitle: "Young players this season")
+            }
+            Hairline(inset: 54)
+            NavigationLink { CareerScreen(title: "Club stats") { ClubStatsView() } } label: {
+                DashTile(icon: "chart.bar", title: "Club stats", subtitle: "Runs, wickets, match ratings")
+            }
+            Hairline(inset: 54)
+            NavigationLink { CareerScreen(title: "Squad report") { SquadReportView() } } label: {
+                DashTile(icon: "list.bullet.clipboard", title: "Squad report",
+                         subtitle: cold > 0 ? "\(cold) out of form in the XI" : "Strengths and weak spots")
+            }
+        }
+        .frame(maxHeight: compact ? .infinity : nil)
+        .gameFrame()
+        .buttonStyle(.plain)
+        .environment(\.fillRows, compact)
+    }
+}
+
+/// Club tab, right: money at a glance in four cells.
+struct FinanceGrid: View {
+    let career: Career
+
+    var body: some View {
+        let c = career
+        let net = MoneyCategory.allCases.reduce(0) { $0 + c.seasonTotal($1) }
+        VStack(alignment: .leading, spacing: 6) {
+            SectionLabel(text: "Finances")
+            HStack(spacing: 6) {
+                cell("Bank", Money.format(c.bank(c.userClubId)), .white)
+                cell("Wages", "\(Money.format(c.payroll(c.userClubId))) / \(Money.format(c.tuning.salaryCap))", .white)
+            }
+            HStack(spacing: 6) {
+                NavigationLink { CareerScreen(title: "Money") { SeasonMoneyCard(career: c) } } label: {
+                    cell("This season ›", (net >= 0 ? "+" : "−") + Money.format(abs(net)), net >= 0 ? Palette.accent : Palette.wicket)
+                }
+                NavigationLink { CareerScreen(title: "Ledger") { FinanceCard(career: c) } } label: {
+                    cell("Ledger ›", "Every payment", Palette.muted)
+                }
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private func cell(_ label: String, _ value: String, _ color: Color) -> some View {
+        VStack(alignment: .leading, spacing: 1) {
+            Text(label).font(.system(size: 11 * TextScale.factor, weight: .semibold)).foregroundStyle(Palette.muted)
+            Text(value).font(.score(15)).foregroundStyle(color).lineLimit(1).minimumScaleFactor(0.7)
+        }
+        .padding(.horizontal, 10).padding(.vertical, 6)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Palette.surface))
+    }
+}
+
 struct ClubHistoryView: View {
     @EnvironmentObject var store: GameStore
 

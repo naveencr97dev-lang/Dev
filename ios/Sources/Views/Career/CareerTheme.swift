@@ -49,26 +49,33 @@ extension EnvironmentValues {
     }
 }
 
+/// Rows in a grouped list stretch to share a fixed height (landscape screens that must fit).
+struct FillRowsKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+extension EnvironmentValues {
+    var fillRows: Bool {
+        get { self[FillRowsKey.self] }
+        set { self[FillRowsKey.self] = newValue }
+    }
+}
+
 /// Two columns in landscape, each scrolling on its own (device feedback: they scrolled together);
 /// one stacked column in portrait, inside the screen's scroll view.
 struct AdaptiveColumns<Left: View, Right: View>: View {
     @Environment(\.compactLandscape) private var landscape
-    /// false: the left column is fixed (e.g. the XI) and only the right one scrolls.
+    /// false: that column is fixed (fills the height, no scrolling); used when a screen must fit.
     var leftScrolls = true
+    var rightScrolls = true
     @ViewBuilder var left: Left
     @ViewBuilder var right: Right
 
     var body: some View {
         if landscape {
             HStack(alignment: .top, spacing: DS.Space.md) {
-                if leftScrolls {
-                    column { left }
-                } else {
-                    VStack(alignment: .leading, spacing: DS.Space.sm) { left }
-                        .padding(.vertical, DS.Space.sm)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                }
-                column { right }
+                if leftScrolls { column { left } } else { fixed { left } }
+                if rightScrolls { column { right } } else { fixed { right } }
             }
         } else {
             VStack(alignment: .leading, spacing: DS.Space.md) {
@@ -76,6 +83,12 @@ struct AdaptiveColumns<Left: View, Right: View>: View {
                 right
             }
         }
+    }
+
+    private func fixed<C: View>(@ViewBuilder _ content: () -> C) -> some View {
+        VStack(alignment: .leading, spacing: DS.Space.sm) { content() }
+            .padding(.vertical, DS.Space.sm)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
     private func column<C: View>(@ViewBuilder _ content: () -> C) -> some View {
@@ -176,6 +189,7 @@ struct ResourceChip: View {
 /// Navigation row: naked SF Symbol, title, detail, optional count, chevron.
 struct DashTile: View {
     @Environment(\.compactLandscape) private var compact
+    @Environment(\.fillRows) private var fillRows
     let icon: String
     let title: String
     var subtitle: String = ""
@@ -203,6 +217,7 @@ struct DashTile: View {
         }
         .padding(.horizontal, compact ? 12 : 14)
         .padding(.vertical, compact ? 7 : 10)
+        .frame(maxHeight: fillRows ? .infinity : nil)
         .contentShape(Rectangle())
     }
 }

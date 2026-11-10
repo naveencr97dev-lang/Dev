@@ -607,43 +607,59 @@ struct ResultScreen: View {
 }
 
 /// After the match: the broadcast-style summary board, then the full scorecard on demand.
+/// Landscape: no scrolling, the board and its buttons fit the screen (device feedback).
 struct MatchResultContent: View {
     @EnvironmentObject var store: GameStore
+    @Environment(\.verticalSizeClass) private var vSize
     let result: MatchResult
     @State private var showReel = false
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: DS.Space.md) {
-                MatchSummaryBoard(result: result)
-                HStack(spacing: DS.Space.sm) {
-                    NavigationLink {
-                        FullScorecardView(result: result)
-                            .background(AppBackground())
-                            .navigationTitle("Scorecard")
-                            .navigationBarTitleDisplayMode(.inline)
-                    } label: {
-                        Label("Full scorecard", systemImage: "list.bullet.rectangle")
-                    }
-                    .buttonStyle(SecondaryButtonStyle())
-                    if !(result.highlights ?? []).isEmpty {
-                        Button { showReel = true } label: { Label("Highlights", systemImage: "play.fill") }
-                            .buttonStyle(PrimaryButtonStyle())
-                    }
+        Group {
+            if vSize == .compact {
+                content
+                    .padding(.horizontal, DS.Space.md)
+                    .padding(.vertical, 6)
+                    .frame(maxWidth: 900, maxHeight: .infinity, alignment: .top)
+                    .frame(maxWidth: .infinity)
+            } else {
+                ScrollView {
+                    content
+                        .padding(.horizontal, DS.Space.md)
+                        .padding(.vertical, DS.Space.sm)
+                        .frame(maxWidth: 860)
+                        .frame(maxWidth: .infinity)
+                }
+            }
+        }
+        .fullScreenCover(isPresented: $showReel) {
+            HighlightsReel(result: result) { showReel = false }
+                .environmentObject(store)
+        }
+    }
+
+    private var content: some View {
+        VStack(spacing: 8) {
+            MatchSummaryBoard(result: result, compact: vSize == .compact)
+            HStack(spacing: DS.Space.sm) {
+                NavigationLink {
+                    FullScorecardView(result: result)
+                        .background(AppBackground())
+                        .navigationTitle("Scorecard")
+                        .navigationBarTitleDisplayMode(.inline)
+                } label: {
+                    Label("Full scorecard", systemImage: "list.bullet.rectangle")
+                }
+                .buttonStyle(SecondaryButtonStyle())
+                if !(result.highlights ?? []).isEmpty {
+                    Button { showReel = true } label: { Label("Highlights", systemImage: "play.fill") }
+                        .buttonStyle(PrimaryButtonStyle())
                 }
                 if result.stage == .final, !store.inCareer, store.game?.phase == .season, store.game?.championId != nil {
                     Button("🏆 Trophy ceremony") { store.finishSeason() }
                         .buttonStyle(PrimaryButtonStyle())
                 }
             }
-            .padding(.horizontal, DS.Space.md)
-            .padding(.vertical, DS.Space.sm)
-            .frame(maxWidth: 860)
-            .frame(maxWidth: .infinity)
-        }
-        .fullScreenCover(isPresented: $showReel) {
-            HighlightsReel(result: result) { showReel = false }
-                .environmentObject(store)
         }
     }
 }
@@ -654,6 +670,8 @@ struct MatchResultContent: View {
 struct MatchSummaryBoard: View {
     @EnvironmentObject var store: GameStore
     let result: MatchResult
+    /// Landscape: tighter rows so the board and its buttons fit without scrolling.
+    var compact = false
 
     var body: some View {
         let a = result.innings[0], b = result.innings.count > 1 ? result.innings[1] : result.innings[0]
@@ -677,7 +695,7 @@ struct MatchSummaryBoard: View {
                 .lineLimit(1)
             Spacer(minLength: 0)
         }
-        .padding(.horizontal, 14).padding(.vertical, 8)
+        .padding(.horizontal, 14).padding(.vertical, compact ? 5 : 8)
         .background(Palette.surfaceHi)
     }
 
@@ -698,7 +716,7 @@ struct MatchSummaryBoard: View {
                     .frame(minWidth: 70, alignment: .trailing)
             }
             .foregroundStyle(team.map { MatchSummaryBoard.isLight($0.colorHex) } == true ? Palette.ink : .white)
-            .padding(.horizontal, 14).padding(.vertical, 6)
+            .padding(.horizontal, 14).padding(.vertical, compact ? 3 : 6)
             .background(team.map { Color(hex: $0.colorHex) } ?? Palette.surfaceHi)
             ForEach(0..<rows, id: \.self) { i in
                 HStack(spacing: 0) {
@@ -710,7 +728,7 @@ struct MatchSummaryBoard: View {
                          big: i < bowlers.count ? "\(bowlers[i].wickets)-\(bowlers[i].runs)" : "",
                          small: i < bowlers.count ? bowlers[i].overs : "")
                 }
-                .frame(height: 30)
+                .frame(height: compact ? 24 : 30)
                 .background(i % 2 == 0 ? Palette.surface : Palette.surface.opacity(0.75))
             }
         }
@@ -756,7 +774,7 @@ struct MatchSummaryBoard: View {
                 .lineLimit(1)
         }
         .foregroundStyle(Palette.ink)
-        .padding(.horizontal, 14).padding(.vertical, 8)
+        .padding(.horizontal, 14).padding(.vertical, compact ? 5 : 8)
         .background(Palette.accent)
     }
 }

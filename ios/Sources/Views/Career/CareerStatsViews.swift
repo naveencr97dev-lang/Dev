@@ -196,3 +196,163 @@ struct LeaderRow: View {
         }
     }
 }
+
+/// League › Leaders: four boards in a 2×2 grid (orange cap, most sixes, purple cap, best economy).
+struct LeadersGrid: View {
+    @EnvironmentObject var store: GameStore
+
+    var body: some View {
+        if let c = store.career {
+            let season = c.seasonStatLines
+            if season.isEmpty {
+                Text("No matches played this season yet.").foregroundStyle(.secondary)
+            } else {
+                VStack(spacing: DS.Space.sm) {
+                    HStack(alignment: .top, spacing: DS.Space.sm) {
+                        board(c, season, "Orange Cap · most runs", .runs) { "\($0.runs)" }
+                        board(c, season, "Most sixes", .sixes) { "\($0.sixes)" }
+                    }
+                    HStack(alignment: .top, spacing: DS.Space.sm) {
+                        board(c, season, "Purple Cap · most wickets", .wickets) { "\($0.wickets)" }
+                        board(c, season, "Best economy", .economy) { String(format: "%.2f", $0.economy) }
+                    }
+                }
+            }
+        }
+    }
+
+    private func board(_ c: Career, _ season: [String: StatLine], _ title: String, _ sort: MarketSort,
+                       _ value: @escaping (StatLine) -> String) -> some View {
+        let rows = c.leaders(sort, scope: .season, limit: 5)
+        return VStack(alignment: .leading, spacing: 4) {
+            Text(title.uppercased()).font(.system(size: 11 * TextScale.factor, weight: .heavy)).foregroundStyle(Palette.accent)
+            ForEach(Array(rows.enumerated()), id: \.element.id) { i, p in
+                HStack(spacing: 6) {
+                    Text("\(i + 1)").font(.score(11)).foregroundStyle(Palette.muted).frame(width: 12)
+                    if let club = p.clubId.flatMap({ c.club($0) }) { TeamBadge(team: club, size: 16) }
+                    Text(p.name).font(.system(size: 13 * TextScale.factor, weight: i == 0 ? .bold : .regular)).lineLimit(1)
+                    Spacer(minLength: 4)
+                    Text(value(c.statLine(p.id, scope: .season, season: season))).font(.score(14))
+                }
+            }
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .background(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous).fill(Palette.surface))
+    }
+}
+
+/// League › Stats: one top-10 table; pick the category and season or all-time.
+struct StatsTable: View {
+    @EnvironmentObject var store: GameStore
+    @State private var sort: MarketSort = .runs
+    @State private var scope: StatScope = .season
+    private static let sorts: [MarketSort] = [.runs, .wickets, .sixes, .strikeRate, .economy]
+
+    var body: some View {
+        if let c = store.career {
+            let season = c.seasonStatLines
+            let rows = c.leaders(sort, scope: scope, limit: 10)
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 8) {
+                    Menu {
+                        ForEach(Self.sorts) { s in Button(title(s)) { sort = s } }
+                    } label: { pill(title(sort)) }
+                    Menu {
+                        Button("Season \(String(c.year))") { scope = .season }
+                        Button("All-time since \(String(c.startYear))") { scope = .allTime }
+                    } label: { pill(scope == .season ? "Season \(String(c.year))" : "All-time") }
+                    Spacer()
+                    if sort == .strikeRate || sort == .economy {
+                        Text("min \(c.minBalls(scope)) balls").font(.system(size: 11 * TextScale.factor)).foregroundStyle(Palette.muted)
+                    }
+                }
+                VStack(spacing: 0) {
+                    HStack(spacing: 8) {
+                        Text("#").frame(width: 18, alignment: .leading)
+                        Text("PLAYER").frame(maxWidth: .infinity, alignment: .leading)
+                        Text("CLUB").frame(width: 44, alignment: .leading)
+                        Text("M").frame(width: 28, alignment: .trailing)
+                        Text(secondTitle).frame(width: 52, alignment: .trailing)
+                        Text(title(sort).uppercased()).frame(width: 70, alignment: .trailing).lineLimit(1)
+                    }
+                    .font(.system(size: 10 * TextScale.factor, weight: .heavy)).foregroundStyle(Palette.muted)
+                    .padding(.horizontal, 10).padding(.vertical, 5)
+                    if rows.isEmpty {
+                        Text("No matches yet.").font(.subheadline).foregroundStyle(.secondary).padding(10)
+                    }
+                    ForEach(Array(rows.enumerated()), id: \.element.id) { i, p in
+                        let s = c.statLine(p.id, scope: scope, season: season)
+                        Hairline(inset: 10)
+                        NavigationLink { CareerPlayerView(playerId: p.id) } label: {
+                            HStack(spacing: 8) {
+                                Text("\(i + 1)").font(.score(12)).foregroundStyle(Palette.muted).frame(width: 18, alignment: .leading)
+                                Text(p.name).font(.system(size: 13 * TextScale.factor, weight: i == 0 ? .bold : .semibold)).lineLimit(1)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                Text(p.clubId.flatMap { c.club($0)?.short } ?? "–").font(.system(size: 12 * TextScale.factor)).foregroundStyle(Palette.muted)
+                                    .frame(width: 44, alignment: .leading)
+                                Text("\(s.matches)").font(.score(12)).foregroundStyle(Palette.muted).frame(width: 28, alignment: .trailing)
+                                Text(second(s)).font(.score(12)).foregroundStyle(Palette.muted).frame(width: 52, alignment: .trailing)
+                                Text(main(s)).font(.score(15)).foregroundStyle(Palette.accent).frame(width: 70, alignment: .trailing)
+                            }
+                            .padding(.horizontal, 10).padding(.vertical, 4)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .background(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous).fill(Palette.surface))
+            }
+        }
+    }
+
+    private func title(_ s: MarketSort) -> String {
+        switch s {
+        case .runs: return "Most runs"
+        case .wickets: return "Most wickets"
+        case .sixes: return "Most sixes"
+        case .strikeRate: return "Best strike rate"
+        case .economy: return "Best economy"
+        default: return s.label
+        }
+    }
+
+    private var secondTitle: String {
+        switch sort {
+        case .runs, .sixes: return "SR"
+        case .wickets: return "ECON"
+        case .strikeRate: return "RUNS"
+        default: return "WKTS"
+        }
+    }
+
+    private func main(_ s: StatLine) -> String {
+        switch sort {
+        case .runs: return "\(s.runs)"
+        case .wickets: return "\(s.wickets)"
+        case .sixes: return "\(s.sixes)"
+        case .strikeRate: return String(format: "%.1f", s.strikeRate)
+        default: return String(format: "%.2f", s.economy)
+        }
+    }
+
+    private func second(_ s: StatLine) -> String {
+        switch sort {
+        case .runs, .sixes: return s.balls > 0 ? String(format: "%.0f", s.strikeRate) : "–"
+        case .wickets: return s.ballsBowled > 0 ? String(format: "%.1f", s.economy) : "–"
+        case .strikeRate: return "\(s.runs)"
+        default: return "\(s.wickets)"
+        }
+    }
+
+    private func pill(_ text: String) -> some View {
+        HStack(spacing: 3) {
+            Text(text).lineLimit(1)
+            Image(systemName: "chevron.up.chevron.down").font(.system(size: 9 * TextScale.factor, weight: .bold))
+        }
+        .font(.system(size: 12 * TextScale.factor, weight: .semibold))
+        .foregroundStyle(Palette.accent)
+        .padding(.horizontal, 10).padding(.vertical, 5)
+        .background(Capsule().fill(Palette.surface))
+    }
+}

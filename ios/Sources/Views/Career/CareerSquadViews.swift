@@ -15,17 +15,20 @@ struct CareerSquadTab: View {
             let issues = c.xiIssues(club.id)
             let bench = squad.filter { !club.xi.contains($0.id) }.sorted { $0.rating > $1.rating }.map(\.id)
             // Device feedback: the XI is a fixed list on the left; tools and the bench on the right.
-            AdaptiveColumns(leftScrolls: false) {
+            // Device feedback: the XI fills the left; the bench and squad tools on the right.
+            AdaptiveColumns(leftScrolls: false, rightScrolls: false) {
                 HStack(alignment: .firstTextBaseline) {
                     Text("Squad").font(.display(compact ? 18 : 28, weight: .bold))
                     Text("\(squad.count) players · \(squad.filter(\.overseas).count)/\(c.tuning.maxOverseasSquad) overseas · strength \(c.strength(club.id))")
                         .font(.system(size: 12 * TextScale.factor)).foregroundStyle(Palette.muted).lineLimit(1)
                 }
-                EditableLineup(title: "Playing XI · batting order", ids: club.xi, selected: $selected, message: $message)
+                EditableLineup(title: "Playing XI · batting order", ids: club.xi, fill: compact, selected: $selected, message: $message)
+                    .frame(maxHeight: compact ? .infinity : nil)
                 HStack(spacing: 8) {
                     Text(message ?? (selected == nil ? "Drag a bench player onto someone to swap, or tap one then the other." : "Now tap who to swap with."))
                         .font(.system(size: 11 * TextScale.factor, weight: message == nil ? .regular : .semibold))
                         .foregroundStyle(message == nil ? Palette.muted : Color.orange)
+                        .lineLimit(1).minimumScaleFactor(0.8)
                     if let id = selected {
                         NavigationLink { CareerPlayerView(playerId: id) } label: {
                             Text("Open profile ›").font(.system(size: 11 * TextScale.factor, weight: .bold)).foregroundStyle(Palette.accent)
@@ -34,59 +37,56 @@ struct CareerSquadTab: View {
                 }
             } right: {
                 if !issues.isEmpty {
-                    VStack(alignment: .leading, spacing: 2) {
-                        ForEach(issues, id: \.self) { issue in
-                            Label(issue, systemImage: "exclamationmark.triangle.fill").font(.display(13, weight: .semibold)).foregroundStyle(.orange)
-                        }
-                        Text("The best XI is picked automatically until this is fixed.")
-                            .font(.display(12, weight: .regular)).foregroundStyle(Palette.muted)
+                    ForEach(issues, id: \.self) { issue in
+                        Label(issue, systemImage: "exclamationmark.triangle.fill").font(.display(12, weight: .semibold)).foregroundStyle(.orange)
                     }
                 }
-                EditableLineup(title: "Bench · \(bench.count)", ids: bench, numbered: false, selected: $selected, message: $message)
-                Button {
-                    store.careerAutoXI()
-                    Haptics.success()
-                } label: {
-                    Label("Auto-pick best XI and order", systemImage: "sparkles")
-                }
-                .buttonStyle(SecondaryButtonStyle())
-                VStack(spacing: 0) {
-                    NavigationLink { PickXIView() } label: { DashTile(icon: "checklist", title: "Pick XI") }
-                    Hairline(inset: 54)
-                    NavigationLink { BattingOrderView(teamId: club.id) } label: { DashTile(icon: "arrow.up.arrow.down", title: "Batting order") }
-                    Hairline(inset: 54)
-                    NavigationLink { BowlingPlanView(teamId: club.id) } label: { DashTile(icon: "figure.cricket", title: "Bowling plan") }
-                    Hairline(inset: 54)
-                    NavigationLink { TacticsView() } label: { DashTile(icon: "slider.horizontal.3", title: "Tactics") }
-                    Hairline(inset: 54)
-                    NavigationLink { TrainingView() } label: {
-                        DashTile(icon: "dumbbell", title: "Training", subtitle: c.trainingDoneThisWeek ? "Done this week" : "Session ready")
+                if compact {
+                    ScrollView {
+                        EditableLineup(title: "Bench · \(bench.count)", ids: bench, numbered: false, selected: $selected, message: $message)
                     }
-                    Hairline(inset: 54)
-                    NavigationLink { AcademyView() } label: { DashTile(icon: "graduationcap", title: "Academy", subtitle: "\(c.academy.count) prospects") }
-                    Hairline(inset: 54)
+                    .frame(maxHeight: .infinity)
+                } else {
+                    EditableLineup(title: "Bench · \(bench.count)", ids: bench, numbered: false, selected: $selected, message: $message)
+                }
+                // Squad tools only; development, training, stats and reports live in Club.
+                LazyVGrid(columns: [GridItem(.flexible(), spacing: 6), GridItem(.flexible(), spacing: 6)], spacing: 6) {
+                    NavigationLink { PickXIView() } label: { MiniTile(icon: "checklist", title: "Pick XI") }
+                    NavigationLink { BattingOrderView(teamId: club.id) } label: { MiniTile(icon: "arrow.up.arrow.down", title: "Batting order") }
+                    NavigationLink { BowlingPlanView(teamId: club.id) } label: { MiniTile(icon: "figure.cricket", title: "Bowling plan") }
+                    NavigationLink { TacticsView() } label: { MiniTile(icon: "slider.horizontal.3", title: "Tactics") }
                     NavigationLink { CareerScreen(title: "Squad planner") { SquadPlannerView() } } label: {
-                        DashTile(icon: "square.grid.3x3", title: "Squad planner", subtitle: "Depth chart for every job in the XI")
+                        MiniTile(icon: "square.grid.3x3", title: "Squad planner")
                     }
-                    Hairline(inset: 54)
-                    NavigationLink { CareerScreen(title: "Development") { DevelopmentReportView() } } label: {
-                        DashTile(icon: "chart.line.uptrend.xyaxis", title: "Development", subtitle: "Young players this season")
-                    }
-                    Hairline(inset: 54)
-                    NavigationLink { CareerScreen(title: "Club stats") { ClubStatsView() } } label: {
-                        DashTile(icon: "chart.bar", title: "Club stats", subtitle: "Runs, wickets, match ratings")
-                    }
-                    Hairline(inset: 54)
-                    NavigationLink { CareerScreen(title: "Squad report") { SquadReportView() } } label: {
-                        let cold = squad.filter { club.xi.contains($0.id) && $0.form <= -4 }.count
-                        DashTile(icon: "list.bullet.clipboard", title: "Squad report",
-                                 subtitle: cold > 0 ? "\(cold) out of form in the XI" : "Strengths and weak spots")
-                    }
+                    Button {
+                        store.careerAutoXI()
+                        Haptics.success()
+                    } label: { MiniTile(icon: "sparkles", title: "Auto-pick XI", accent: true) }
                 }
-                .gameFrame()
                 .buttonStyle(.plain)
             }
         }
+    }
+}
+
+/// Small grid tile: icon and title (the Squad tab's tools).
+struct MiniTile: View {
+    let icon: String
+    let title: String
+    var accent = false
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: icon).font(.system(size: 14 * TextScale.factor, weight: .medium))
+                .foregroundStyle(accent ? Palette.ink : Palette.accent)
+            Text(title).font(.system(size: 13 * TextScale.factor, weight: .semibold))
+                .foregroundStyle(accent ? Palette.ink : .white).lineLimit(1).minimumScaleFactor(0.8)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 10)
+        .frame(height: 36)
+        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(accent ? Palette.accent : Palette.surface))
+        .contentShape(Rectangle())
     }
 }
 
@@ -233,9 +233,205 @@ struct PickXIView: View {
 
 struct CareerPlayerView: View {
     @EnvironmentObject var store: GameStore
+    @Environment(\.verticalSizeClass) private var vSize
     let playerId: String
+    @State private var showDeal = false
+    @State private var dealMessage: String? = nil
 
     var body: some View {
+        if vSize == .compact, let c = store.career, let p = c.players[playerId] {
+            landscape(c, p)
+        } else {
+            portrait
+        }
+    }
+
+    // MARK: Landscape: everything on one screen (device feedback)
+
+    private func landscape(_ c: Career, _ p: CareerPlayer) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            VStack(alignment: .leading, spacing: 8) {
+                compactHeader(c, p)
+                compactForm(c, p)
+                Spacer(minLength: 0)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            VStack(alignment: .leading, spacing: 4) {
+                group("Batting · \(p.bat)") {
+                    RatingBar(label: "TEC", value: p.attr.technique, color: Palette.four, compact: true)
+                    RatingBar(label: "PWR", value: p.attr.power, color: Palette.four, compact: true)
+                    RatingBar(label: "PACE", value: p.attr.vsPace, color: Palette.four, compact: true)
+                    RatingBar(label: "SPIN", value: p.attr.vsSpin, color: Palette.four, compact: true)
+                    RatingBar(label: "TEMP", value: p.attr.temperament, color: Palette.four, compact: true)
+                }
+                group("Bowling · \(p.bowl) \(p.bowlingStyle ?? (p.bowlType == .spin ? "spin" : "pace"))") {
+                    RatingBar(label: "ACC", value: p.attr.accuracy, color: Palette.wicket, compact: true)
+                    RatingBar(label: p.bowlType == .spin ? "TURN" : "PACE", value: p.attr.potency, color: Palette.wicket, compact: true)
+                    RatingBar(label: "VAR", value: p.attr.variation, color: Palette.wicket, compact: true)
+                    RatingBar(label: "DTH", value: p.attr.death, color: Palette.wicket, compact: true)
+                    RatingBar(label: "NEW", value: p.attr.newBall, color: Palette.wicket, compact: true)
+                }
+                group("Fielding") {
+                    RatingBar(label: "FLD", value: p.attr.fielding, color: Palette.six, compact: true)
+                    if p.role == .WK { RatingBar(label: "KEEP", value: p.attr.keeping, color: Palette.six, compact: true) }
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            VStack(alignment: .leading, spacing: 8) {
+                compactStats(c, p)
+                compactDeal(c, p)
+                Spacer(minLength: 0)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        }
+        .padding(.horizontal, DS.Space.md)
+        .padding(.vertical, DS.Space.sm)
+        .background(AppBackground())
+        .navigationTitle(p.name)
+        .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showDeal) {
+            NavigationStack {
+                ScrollView { TransferActions(playerId: playerId).padding(DS.Space.lg) }
+                    .background(AppBackground())
+                    .navigationTitle("Negotiate")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar { ToolbarItem(placement: .navigationBarTrailing) { Button("Done") { showDeal = false } } }
+            }
+            .environmentObject(store)
+        }
+    }
+
+    private func group<C: View>(_ title: String, @ViewBuilder _ rows: () -> C) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(title.uppercased()).font(.system(size: 10 * TextScale.factor, weight: .heavy)).foregroundStyle(Palette.muted)
+            rows()
+        }
+        .padding(8)
+        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Palette.surface))
+    }
+
+    private func compactHeader(_ c: Career, _ p: CareerPlayer) -> some View {
+        let club = p.clubId.flatMap { c.club($0) }
+        return VStack(alignment: .leading, spacing: 5) {
+            HStack(spacing: 6) {
+                RoleChip(role: p.role)
+                Chip(text: p.country)
+                if p.overseas { Chip(text: "Overseas") }
+                if let club { TeamBadge(team: club, size: 18) }
+            }
+            Text(p.roleDescription).font(.system(size: 12 * TextScale.factor, weight: .semibold)).foregroundStyle(Palette.accent)
+            Text("Age \(p.age(in: c.year)) · \(club?.name ?? "Free agent")").font(.system(size: 12 * TextScale.factor)).foregroundStyle(Palette.muted)
+                .lineLimit(1)
+            HStack(spacing: 0) {
+                number("\(p.rating)", "OVR", strengthColor(p.rating))
+                number("\(p.bat)", "BAT", strengthColor(p.bat))
+                number("\(p.bowl)", "BOWL", strengthColor(p.bowl))
+                number(CareerText.form(p.form), "FORM", CareerText.formColor(p.form))
+            }
+            Text("Value \(Money.format(p.value(in: c.year))) · Potential \(c.potentialLabel(p))\(c.knowledge(of: p.id) < 100 ? " (\(c.knowledge(of: p.id))%)" : "")")
+                .font(.system(size: 12 * TextScale.factor, weight: .semibold)).lineLimit(1).minimumScaleFactor(0.8)
+            if !p.traits.isEmpty { TraitChips(traits: p.traits, inline: true) }
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Palette.surface))
+    }
+
+    private func number(_ v: String, _ l: String, _ color: Color) -> some View {
+        VStack(spacing: 0) {
+            Text(v).font(.display(20)).foregroundStyle(color)
+            Text(l).font(.display(9, weight: .heavy)).foregroundStyle(Palette.muted)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private func compactForm(_ c: Career, _ p: CareerPlayer) -> some View {
+        let recent = c.recentRatings(p.id)
+        let trend = c.formTrend(p.id)
+        return VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                Text("FORM").font(.system(size: 10 * TextScale.factor, weight: .heavy)).foregroundStyle(Palette.muted)
+                Text("\(Career.formLabel(p.form))\(trend > 0 ? " · rising" : (trend < 0 ? " · falling" : ""))")
+                    .font(.system(size: 12 * TextScale.factor, weight: .semibold)).foregroundStyle(CareerText.formColor(p.form))
+                Spacer()
+                if let avg = c.averageRating(p.id) {
+                    Text("avg \(String(format: "%.2f", avg))").font(.system(size: 11 * TextScale.factor)).foregroundStyle(Palette.muted)
+                }
+            }
+            if recent.isEmpty {
+                Text("No matches this season").font(.system(size: 11 * TextScale.factor)).foregroundStyle(Palette.muted)
+            } else {
+                HStack(spacing: 8) {
+                    ForEach(Array(recent.enumerated()), id: \.offset) { _, x in
+                        Text(String(format: "%.1f", x)).font(.score(14)).foregroundStyle(RatingStyle.color(x))
+                    }
+                }
+            }
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Palette.surface))
+    }
+
+    private func compactStats(_ c: Career, _ p: CareerPlayer) -> some View {
+        let season = c.statLine(p.id, scope: .season)
+        let all = c.statLine(p.id, scope: .allTime)
+        return VStack(alignment: .leading, spacing: 4) {
+            Text("SEASON \(String(c.year)) · \(season.matches) M").font(.system(size: 10 * TextScale.factor, weight: .heavy)).foregroundStyle(Palette.muted)
+            Text(StatText.line(season, role: p.role)).font(.system(size: 12 * TextScale.factor).monospacedDigit()).lineLimit(2)
+            Text("ALL-TIME · \(all.matches) M\(p.stats.titles > 0 ? " · \(p.stats.titles) titles" : "")").font(.system(size: 10 * TextScale.factor, weight: .heavy)).foregroundStyle(Palette.muted)
+            Text(StatText.line(all, role: p.role)).font(.system(size: 12 * TextScale.factor).monospacedDigit()).lineLimit(2)
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Palette.surface))
+    }
+
+    @ViewBuilder private func compactDeal(_ c: Career, _ p: CareerPlayer) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            if let k = p.contract {
+                Text("Contract \(Money.format(k.wage))/yr to \(String(k.until))").font(.system(size: 12 * TextScale.factor)).foregroundStyle(Palette.muted)
+            }
+            if p.clubId == c.userClubId {
+                Button { showDeal = true } label: { Label("List or release…", systemImage: "arrow.left.arrow.right") }
+                    .font(.system(size: 13 * TextScale.factor, weight: .semibold))
+            } else if !p.retired {
+                let fee = p.clubId == nil ? 0 : c.askingPrice(p)
+                let wage = c.userWageDemand(p)
+                Text(p.clubId == nil ? "Free agent · wants \(Money.format(wage))/yr" : "Asking \(Money.format(fee)) · wants \(Money.format(wage))/yr")
+                    .font(.system(size: 12 * TextScale.factor, weight: .semibold)).lineLimit(1).minimumScaleFactor(0.8)
+                HStack(spacing: 6) {
+                    Button {
+                        let outcome = store.careerMakeOffer(playerId: p.id, fee: fee, wage: wage)
+                        dealMessage = outcome.message
+                        if case .accepted = outcome { Haptics.success() } else { Haptics.warning() }
+                    } label: {
+                        Text("Pay asking").font(.system(size: 13 * TextScale.factor, weight: .bold)).foregroundStyle(Palette.ink)
+                            .padding(.horizontal, 12).padding(.vertical, 7)
+                            .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(Palette.accent))
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(!c.windowOpen)
+                    Button { showDeal = true } label: {
+                        Text("Negotiate…").font(.system(size: 13 * TextScale.factor, weight: .semibold)).foregroundStyle(Palette.accent)
+                            .padding(.horizontal, 12).padding(.vertical, 7)
+                            .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(Palette.surfaceHi))
+                    }
+                    .buttonStyle(.plain)
+                }
+                if let dealMessage { Text(dealMessage).font(.system(size: 11 * TextScale.factor, weight: .semibold)).foregroundStyle(Palette.accent).lineLimit(3) }
+                if !c.windowOpen { Text(c.windowLabel).font(.system(size: 11 * TextScale.factor)).foregroundStyle(Palette.muted) }
+            }
+            GoldActions(playerId: p.id).font(.system(size: 12 * TextScale.factor, weight: .semibold))
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Palette.surface))
+    }
+
+    // MARK: Portrait
+
+    private var portrait: some View {
         ScrollView {
             if let c = store.career, let p = c.players[playerId] {
                 VStack(alignment: .leading, spacing: DS.Space.lg) {

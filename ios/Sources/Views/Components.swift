@@ -42,19 +42,21 @@ struct RatingBar: View {
     let label: String
     let value: Int
     let color: Color
+    /// Landscape player page: smaller type and a thinner bar.
+    var compact = false
     @State private var fill: CGFloat = 0
 
     var body: some View {
-        HStack(spacing: 8) {
-            Text(label).font(.display(13, weight: .heavy)).foregroundStyle(Palette.muted).frame(width: 36, alignment: .leading)
+        HStack(spacing: compact ? 6 : 8) {
+            Text(label).font(.display(compact ? 10 : 13, weight: .heavy)).foregroundStyle(Palette.muted).frame(width: compact ? 30 : 36, alignment: .leading)
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     Capsule().fill(Color.white.opacity(0.07))
                     Capsule().fill(color).frame(width: geo.size.width * fill)
                 }
             }
-            .frame(height: 6)
-            Text("\(value)").font(.score(15)).frame(width: 28, alignment: .trailing)
+            .frame(height: compact ? 5 : 6)
+            Text("\(value)").font(.score(compact ? 12 : 15)).frame(width: compact ? 22 : 28, alignment: .trailing)
         }
         .onAppear { withAnimation(.spring(response: 0.6, dampingFraction: 0.8).delay(0.1)) { fill = CGFloat(value) / 100 } }
         .onChange(of: value) { v in withAnimation(.spring()) { fill = CGFloat(v) / 100 } }
