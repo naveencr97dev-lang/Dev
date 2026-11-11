@@ -158,7 +158,7 @@ struct CareerPlayer: Codable, Identifiable, Hashable {
         let ageFactor = a <= 23 ? 1.15 : (a <= 32 ? 1.0 : 0.92)
         let potentialBoost = a <= 23 ? 1 + Double(max(0, potential - rating)) * 0.03 : 1
         let v = CareerPlayer.feeCurve(rating) * ageFactor * potentialBoost
-        return max(20, Int((v / 5).rounded()) * 5)
+        return max(20, Career.roundFee(v))
     }
 
     /// Fee by rating, in lakhs (prime age, before the XI/bench mark-up); straight lines between points.

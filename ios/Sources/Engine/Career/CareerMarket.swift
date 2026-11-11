@@ -116,6 +116,8 @@ extension Career {
     }
 
     static func round5(_ v: Double) -> Int { Int((v / 5).rounded()) * 5 }
+    /// Transfer fees: ₹10 Cr and up to the nearest ₹0.1 Cr (₹60.8 Cr, not ₹60.75 Cr), smaller ones to ₹5 L.
+    static func roundFee(_ v: Double) -> Int { v >= 1_000 ? Int((v / 10).rounded()) * 10 : round5(v) }
 
     /// What a player asks to be paid per season.
     func wageDemand(_ p: CareerPlayer) -> Int {
@@ -496,7 +498,7 @@ extension Career {
         guard let cid = p.clubId, let club = club(cid) else { return 0 }
         let mult = club.xi.contains(p.id) ? tuning.askXIMultiplier : tuning.askBenchMultiplier
         let userPrice = club.id == userClubId ? 1 : difficulty.priceMult
-        return Career.round5(Double(p.transferValue(in: year)) * mult * userPrice)
+        return Career.roundFee(Double(p.transferValue(in: year)) * mult * userPrice)
     }
 
 
@@ -674,7 +676,7 @@ extension Career {
     private mutating func bid(for p: CareerPlayer, from buyer: Franchise, range: ClosedRange<Double>) -> Int? {
         let value = Double(p.transferValue(in: year))
         let deal = manager.has(.dealmaker) ? 1.1 : 1.0
-        let fee = min(bank(buyer.id), Career.round5(value * rng.range(range.lowerBound, range.upperBound) * deal))
+        let fee = min(bank(buyer.id), Career.roundFee(value * rng.range(range.lowerBound, range.upperBound) * deal))
         guard fee >= Career.round5(value * 0.5) else { return nil }
         market.offers.append(TransferOffer(id: market.nextOfferId, playerId: p.id, fromClub: buyer.id, fee: fee))
         market.nextOfferId += 1
@@ -714,7 +716,7 @@ extension Career {
             let buyers = clubs.filter { $0.id != userClubId && capRoom($0.id) >= wage && squad($0.id).count < tuning.maxSquad }
             guard let buyer = buyers.randomElement(using: &rng) else { continue }
             let r = Career.offerRange(formScore: formScore(p.id))
-            let fee = min(bank(buyer.id), Career.round5(Double(p.transferValue(in: year)) * rng.range(max(1.05, r.lowerBound), max(1.3, r.upperBound))
+            let fee = min(bank(buyer.id), Career.roundFee(Double(p.transferValue(in: year)) * rng.range(max(1.05, r.lowerBound), max(1.3, r.upperBound))
                                                      * (manager.has(.dealmaker) ? 1.1 : 1)))
             guard fee > 0 else { continue }
             market.offers.append(TransferOffer(id: market.nextOfferId, playerId: p.id, fromClub: buyer.id, fee: fee))
@@ -823,7 +825,7 @@ extension Career {
     func aiFee(_ p: CareerPlayer) -> Int {
         guard let cid = p.clubId, let c = club(cid) else { return 0 }
         let mult = c.xi.contains(p.id) ? tuning.askXIMultiplier : tuning.askBenchMultiplier
-        return Career.round5(Double(p.transferValue(in: year)) * mult)
+        return Career.roundFee(Double(p.transferValue(in: year)) * mult)
     }
 
     /// Called as matches are played: opens the mid-season window and closes offers when it shuts.
