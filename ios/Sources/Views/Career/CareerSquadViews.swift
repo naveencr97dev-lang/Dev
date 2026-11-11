@@ -153,6 +153,7 @@ struct PickXIView: View {
     @State private var loaded = false
     @State private var roleIndex = 0
     @State private var byRating = false
+    @Environment(\.verticalSizeClass) private var vSize
 
     private static let roles: [Role?] = [nil, .WK, .BAT, .AR, .BOWL]
 
@@ -201,18 +202,13 @@ struct PickXIView: View {
                             color: picked.filter(\.isBowlingOption).count >= 5 ? .white : .orange),
                 SummaryCell(value: "\(strength)", label: "strength", color: strengthColor(strength)),
             ])
-            HStack(spacing: 6) {
-                ForEach(0..<Self.roleLabels.count, id: \.self) { i in
-                    FilterChip(title: Self.roleLabels[i], on: roleIndex == i) { roleIndex = i }
+            // Portrait (device tour): the chips were squeezed to "B…"; they scroll sideways there.
+            if vSize == .compact {
+                pickControls(blocking: blocking, spacer: true)
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    pickControls(blocking: blocking, spacer: false).fixedSize()
                 }
-                MenuChip(title: byRating ? "Sort: Rating" : "Sort: Type") {
-                    Button("Type (openers first)") { byRating = false }
-                    Button("Rating") { byRating = true }
-                }
-                Spacer(minLength: 4)
-                ActionChip(icon: "sparkles", title: "Auto-pick") { autoPick() }
-                ActionChip(icon: "xmark", title: "Clear", destructive: true) { selected = []; Haptics.tap() }
-                ActionChip(icon: "checkmark", title: "Save", primary: true, disabled: !blocking.isEmpty) { save() }
             }
             TableNote(text: issues.isEmpty ? "Tap to pick or drop. New picks bat where they bat best; fine-tune in Batting order."
                                            : issues.joined(separator: " · "), warning: !issues.isEmpty)
@@ -237,6 +233,23 @@ struct PickXIView: View {
                 selected = Set(store.career?.userClub.xi ?? [])
                 loaded = true
             }
+        }
+    }
+
+    /// Role filters, sort, Auto-pick, Clear and Save.
+    private func pickControls(blocking: [String], spacer: Bool) -> some View {
+        HStack(spacing: 6) {
+            ForEach(0..<Self.roleLabels.count, id: \.self) { i in
+                FilterChip(title: Self.roleLabels[i], on: roleIndex == i) { roleIndex = i }
+            }
+            MenuChip(title: byRating ? "Sort: Rating" : "Sort: Type") {
+                Button("Type (openers first)") { byRating = false }
+                Button("Rating") { byRating = true }
+            }
+            if spacer { Spacer(minLength: 4) }
+            ActionChip(icon: "sparkles", title: "Auto-pick") { autoPick() }
+            ActionChip(icon: "xmark", title: "Clear", destructive: true) { selected = []; Haptics.tap() }
+            ActionChip(icon: "checkmark", title: "Save", primary: true, disabled: !blocking.isEmpty) { save() }
         }
     }
 
@@ -360,7 +373,7 @@ struct CareerPlayerView: View {
     private func lastFive(_ c: Career, _ p: CareerPlayer) -> some View {
         let lines = c.recentMatches(p.id)
         return VStack(alignment: .leading, spacing: 4) {
-            sectionTitle("Last \(max(lines.count, 1)) matches")
+            sectionTitle(lines.isEmpty ? "Last 5 matches" : "Last \(lines.count) match\(lines.count == 1 ? "" : "es")")
             if lines.isEmpty {
                 Text("No matches this season").font(.system(size: 12 * TextScale.factor)).foregroundStyle(Palette.muted)
             } else {
