@@ -75,50 +75,37 @@ struct RetentionView: View {
         let maxKeep = c?.tuning.maxRetentions ?? 6
         let cap = c?.tuning.salaryCap ?? 12_000
         let total = squad.filter { selected.contains($0.id) }.reduce(0) { $0 + (c?.retentionWage($1) ?? 0) }
-        List {
-            Section {
-                HStack {
-                    Text("\(selected.count)/\(maxKeep) kept").font(.headline)
-                    Spacer()
-                    Text("\(Money.format(total)) of \(Money.format(cap))").font(.subheadline.monospacedDigit())
-                        .foregroundStyle(total > cap * 6 / 10 ? Palette.wicket : Palette.muted)
+        let over = total > cap * 6 / 10
+        TableScreen(title: "Retentions") {
+            SummaryLine(cells: [
+                SummaryCell(value: "\(selected.count)/\(maxKeep)", label: "kept", color: Palette.accent),
+                SummaryCell(value: "\(max(0, maxKeep - selected.count))", label: "RTM cards"),
+                SummaryCell(value: Money.format(total), label: "wages", color: over ? Palette.wicket : .white),
+                SummaryCell(value: Money.format(cap * 6 / 10), label: "limit (60%)"),
+            ])
+            HStack(spacing: 6) {
+                TableNote(text: over ? "Over 60% of the cap: the bottom of your list gets trimmed."
+                                     : "Kept players sign again at their market wage. Everyone else goes into the auction.",
+                          warning: over)
+                Spacer(minLength: 4)
+                ActionChip(icon: "sparkles", title: "Suggested") {
+                    selected = Set(store.career?.suggestedRetentions() ?? [])
+                    Haptics.tap()
                 }
-                if total > cap * 6 / 10 {
-                    Text("Retentions over 60% of the cap get trimmed from the bottom of your list.")
-                        .font(.caption.weight(.bold)).foregroundStyle(.orange)
-                }
-            } footer: {
-                Text("Every contract ends at a mega auction. Kept players sign again for 3 seasons at their market wage; everyone else goes into the auction, where you can try to buy them back.")
-            }
-            .listRowBackground(GameRowBackground())
-
-            Section("Your squad") {
-                ForEach(squad) { p in
-                    Button { toggle(p.id, max: maxKeep) } label: {
-                        HStack(spacing: 10) {
-                            Image(systemName: selected.contains(p.id) ? "checkmark.circle.fill" : "circle")
-                                .font(.title3)
-                                .foregroundStyle(selected.contains(p.id) ? Palette.accent : Palette.muted)
-                            CareerPlayerRow(player: p, year: c?.year ?? 0, pitchFit: c?.suitsUserPitch(p))
-                            Text(Money.format(c?.retentionWage(p) ?? 0)).font(.caption.monospacedDigit()).foregroundStyle(Palette.muted)
-                        }
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .listRowBackground(GameRowBackground())
-        }
-        .darkList()
-        .navigationTitle("Retentions")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button("Confirm") {
+                ActionChip(icon: "checkmark", title: "Confirm", primary: true) {
                     store.careerConfirmRetention(Array(selected))
                     Haptics.success()
                     dismiss()
                 }
+            }
+            SquadTableHead(count: squad.count, check: true, trailing: "WAGE")
+        } rows: {
+            ForEach(squad) { p in
+                Button { toggle(p.id, max: maxKeep) } label: {
+                    SquadTableRow(player: p, year: c?.year ?? 0, check: selected.contains(p.id), pitchFit: c?.suitsUserPitch(p),
+                                  trailing: Money.format(c?.retentionWage(p) ?? 0), selected: selected.contains(p.id))
+                }
+                .buttonStyle(.plain)
             }
         }
         .onAppear {
@@ -150,49 +137,69 @@ struct CareerAuctionView: View {
     @State private var lastSale: SaleLine? = nil
 
     var body: some View {
-        ScrollView {
-            if let c = store.career, let os = c.offseason {
-                VStack(alignment: .leading, spacing: DS.Space.lg) {
-                    PurseStrip(career: c)
-                    if os.stage == .auction, let id = os.auction.currentId, let p = c.players[id] {
-                        lot(c, os.auction, p)
-                    } else {
-                        AppCard {
-                            VStack(alignment: .leading, spacing: DS.Space.md) {
-                                Text("AUCTION COMPLETE").font(.display(20)).foregroundStyle(Palette.accent)
-                                Text("Your squad: \(c.squad(c.userClubId).count) players. The transfer window is open.")
-                                    .font(.subheadline)
-                                Button("Back to the off-season") { dismiss() }.buttonStyle(PrimaryButtonStyle())
-                            }
-                        }
+        let c = store.career
+        let os = c?.offseason
+        PaneScreen(title: "Auction") {
+            if let c, let os {
+                PurseLine(career: c)
+                if os.stage == .auction, let id = os.auction.currentId, let p = c.players[id] {
+                    lotCard(c, os.auction, p)
+                } else {
+                    PaneBox(title: "Auction complete") {
+                        Text("Your squad: \(c.squad(c.userClubId).count) players. The transfer window is open.")
+                            .font(.system(size: 13 * TextScale.factor))
+                        ActionChip(icon: "arrow.left", title: "Back to the off-season", primary: true) { dismiss() }
                     }
-                    if let s = lastSale, let p = c.players[s.playerId] {
-                        Text(saleText(c, s, p.name)).font(.footnote).foregroundStyle(.secondary)
-                    }
-                    let mine = os.auction.sales.filter { $0.clubId == c.userClubId }
-                    if !mine.isEmpty {
-                        SectionLabel(text: "Your buys")
-                        AppCard(padding: DS.Space.md) {
-                            VStack(spacing: 6) {
-                                ForEach(mine, id: \.playerId) { s in
-                                    HStack {
-                                        Text(c.players[s.playerId]?.name ?? s.playerId).font(.subheadline)
-                                        Spacer()
-                                        Text(Money.format(s.price)).font(.subheadline.monospacedDigit())
-                                    }
-                                }
+                }
+            }
+        } right: {
+            if let c, let os {
+                if os.stage == .auction, let id = os.auction.currentId, let p = c.players[id] {
+                    lot(c, os.auction, p)
+                }
+                if let s = lastSale, let p = c.players[s.playerId] {
+                    TableNote(text: saleText(c, s, p.name))
+                }
+                let mine = os.auction.sales.filter { $0.clubId == c.userClubId }
+                if !mine.isEmpty {
+                    PaneBox(title: "Your buys · \(mine.count)") {
+                        ForEach(mine, id: \.playerId) { s in
+                            HStack {
+                                Text(c.players[s.playerId]?.name ?? s.playerId).font(.system(size: 13 * TextScale.factor)).lineLimit(1)
+                                Spacer()
+                                Text(Money.format(s.price)).font(.score(13))
                             }
                         }
                     }
                 }
-                .padding(DS.Space.lg)
-                .frame(maxWidth: 760)
-                .frame(maxWidth: .infinity)
             }
         }
-        .background(AppBackground())
-        .navigationTitle("Auction")
-        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    /// The player under the hammer: who he is and what the staff think.
+    private func lotCard(_ c: Career, _ a: CareerAuctionState, _ p: CareerPlayer) -> some View {
+        PaneBox(title: "Lot \(a.index + 1) of \(a.queue.count)") {
+            CareerPlayerRow(player: p, year: c.year, pitchFit: c.suitsUserPitch(p))
+            if !p.traits.isEmpty { TraitChips(traits: p.traits, inline: true) }
+            if let fit = c.pitchFitLine(p) {
+                Label(fit.text, systemImage: fit.good ? "house.fill" : "house")
+                    .font(.system(size: 12 * TextScale.factor, weight: .semibold)).foregroundStyle(fit.good ? Palette.accent : Color.orange)
+            }
+            Text("Value \(Money.format(p.value(in: c.year))) · base \(Money.format(p.basePrice(in: c.year)))")
+                .font(.system(size: 12 * TextScale.factor)).foregroundStyle(Palette.muted)
+            if c.isRTMLot(p.id) {
+                Text("Your player last season · Right to Match cards: \(c.offseason?.rtmLeft ?? 0)")
+                    .font(.system(size: 12 * TextScale.factor, weight: .semibold)).foregroundStyle(Palette.accent)
+            }
+            let advice = c.scoutAdvice(p)
+            Label(advice.text, systemImage: advice.good ? "checkmark.circle" : "info.circle")
+                .font(.system(size: 12 * TextScale.factor, weight: .semibold))
+                .foregroundStyle(advice.good ? Palette.accent : Palette.muted)
+            if let limit = c.auctionTopRivalLimit {
+                Text("Top rival limit: \(limit > 0 ? Money.format(limit) : "nobody interested")")
+                    .font(.system(size: 12 * TextScale.factor, weight: .bold)).foregroundStyle(Palette.accent)
+            }
+        }
     }
 
     private func lot(_ c: Career, _ a: CareerAuctionState, _ p: CareerPlayer) -> some View {
@@ -200,49 +207,31 @@ struct CareerAuctionView: View {
         let block = c.userBidBlock(p, amount: next)
         let leading = a.leader == c.userClubId
         let leader = a.leader.flatMap { c.club($0) }
-        return VStack(alignment: .leading, spacing: DS.Space.md) {
-            Text("LOT \(a.index + 1) OF \(a.queue.count)").font(.display(14, weight: .heavy)).foregroundStyle(Palette.muted)
-            AppCard {
-                VStack(alignment: .leading, spacing: DS.Space.sm) {
-                    CareerPlayerRow(player: p, year: c.year, pitchFit: c.suitsUserPitch(p))
-                    if !p.traits.isEmpty { TraitChips(traits: p.traits, inline: true) }
-                    if let fit = c.pitchFitLine(p) {
-                        Label(fit.text, systemImage: fit.good ? "house.fill" : "house")
-                            .font(.caption.weight(.semibold)).foregroundStyle(fit.good ? Palette.accent : Color.orange)
-                    }
-                    Text("Value \(Money.format(p.value(in: c.year))) · base \(Money.format(p.basePrice(in: c.year)))")
-                        .font(.caption).foregroundStyle(Palette.muted)
-                    if c.isRTMLot(p.id) {
-                        Text("Your player last season · Right to Match cards: \(c.offseason?.rtmLeft ?? 0)")
-                            .font(.caption.weight(.semibold)).foregroundStyle(Palette.accent)
-                    }
-                    let advice = c.scoutAdvice(p)
-                    Label(advice.text, systemImage: advice.good ? "checkmark.circle" : "info.circle")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(advice.good ? Palette.accent : Palette.muted)
-                    if let limit = c.auctionTopRivalLimit {
-                        Text("Top rival limit: \(limit > 0 ? Money.format(limit) : "nobody interested")")
-                            .font(.caption.weight(.bold)).foregroundStyle(Palette.accent)
-                    }
-                }
-            }
+        return VStack(alignment: .leading, spacing: DS.Space.sm) {
             AppCard(tint: leader.map { Color(hex: $0.colorHex) }) {
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(a.bid.map { Money.format($0) } ?? "No bids").font(.display(34))
+                        Text(a.bid.map { Money.format($0) } ?? "No bids").font(.display(28))
                         Text(leader.map { leading ? "YOU LEAD" : "\($0.short) LEADS" } ?? "Opening at \(Money.format(next))")
                             .font(.display(14, weight: .heavy)).foregroundStyle(leading ? Palette.accent : Palette.muted)
                     }
                     Spacer()
-                    if let leader { TeamBadge(team: leader, size: 48) }
+                    if let leader { TeamBadge(team: leader, size: 40) }
                 }
             }
-            Button(leading ? "You lead · waiting" : "Bid \(Money.format(next))") {
-                if store.careerUserBid() { Haptics.tap() } else { Haptics.warning() }
+            HStack(spacing: DS.Space.sm) {
+                Button(leading ? "You lead" : "Bid \(Money.format(next))") {
+                    if store.careerUserBid() { Haptics.tap() } else { Haptics.warning() }
+                }
+                .buttonStyle(PrimaryButtonStyle())
+                .disabled(block != nil || leading)
+                .opacity(block != nil || leading ? 0.5 : 1)
+                Button(leading ? "Hammer ▶︎" : "Pass ▶︎") {
+                    lastSale = store.careerPassLot()
+                    Haptics.heavy()
+                }
+                .buttonStyle(SecondaryButtonStyle())
             }
-            .buttonStyle(PrimaryButtonStyle())
-            .disabled(block != nil || leading)
-            .opacity(block != nil || leading ? 0.5 : 1)
             if let block { Text(block).font(.caption.weight(.bold)).foregroundStyle(.orange) }
             if c.canUseRTM, let price = c.rtmPrice {
                 Button("Right to Match: keep him at \(Money.format(price))") {
@@ -251,11 +240,6 @@ struct CareerAuctionView: View {
                 }
                 .buttonStyle(SecondaryButtonStyle())
             }
-            Button(leading ? "Hammer ▶︎ (no one beat you)" : "Pass ▶︎") {
-                lastSale = store.careerPassLot()
-                Haptics.heavy()
-            }
-            .buttonStyle(SecondaryButtonStyle())
             HStack(spacing: DS.Space.sm) {
                 Button("Sim rest · staff bid") { store.careerSimAuction(autoBid: true) }
                 Spacer()
@@ -346,7 +330,7 @@ struct CareerMarketTab: View {
             Text(c.windowLabel).font(.system(size: 12 * TextScale.factor, weight: .semibold)).foregroundStyle(Palette.muted).lineLimit(1)
             Spacer(minLength: 6)
             if !c.market.offers.isEmpty || !c.market.listed.isEmpty {
-                NavigationLink { CareerScreen(title: "Offers and your list") { OffersScreen() } } label: {
+                NavigationLink { OffersScreen() } label: {
                     chip("tray.full", "\(c.market.offers.count) offer\(c.market.offers.count == 1 ? "" : "s") · \(c.market.listed.count) listed",
                          highlight: !c.market.offers.isEmpty)
                 }
@@ -554,28 +538,58 @@ struct MarketRow: View {
 /// Offers for your players and your own transfer list (moved off the Transfers header).
 struct OffersScreen: View {
     @EnvironmentObject var store: GameStore
+    @Environment(\.verticalSizeClass) private var vSize
 
     var body: some View {
-        if let c = store.career {
-            VStack(alignment: .leading, spacing: DS.Space.md) {
-                SectionLabel(text: "Offers for your players")
+        let c = store.career
+        TableScreen(title: "Offers and your list") {
+            if let c {
+                PurseLine(career: c)
+                TableNote(text: c.windowOpen ? "Accept a bid to sell at once. Listed players draw bids while the window is open."
+                                             : c.windowLabel, warning: !c.windowOpen)
+                TableHead {
+                    Text("CLUB").frame(width: 46, alignment: .leading)
+                    Text("PLAYER").frame(maxWidth: .infinity, alignment: .leading)
+                    if vSize == .compact { Text("VALUE").frame(width: TCol.money, alignment: .trailing) }
+                    Text("BID / ASKING").frame(width: 90, alignment: .trailing)
+                    Text("").frame(width: vSize == .compact ? 170 : 76)
+                }
+            }
+        } rows: {
+            if let c {
+                Text("OFFERS FOR YOUR PLAYERS · \(c.market.offers.count)")
+                    .font(.system(size: 10 * TextScale.factor, weight: .heavy)).foregroundStyle(Palette.muted)
+                    .frame(maxWidth: .infinity, alignment: .leading).padding(.top, 2)
                 if c.market.offers.isEmpty {
-                    Text("No offers right now.").font(.subheadline).foregroundStyle(Palette.muted)
+                    Text("No offers right now.").font(.system(size: 13 * TextScale.factor)).foregroundStyle(Palette.muted)
+                        .frame(maxWidth: .infinity, alignment: .leading).tableRow()
                 }
                 ForEach(c.market.offers) { o in OfferRow(career: c, offer: o) }
-                SectionLabel(text: "Your transfer list")
+                Text("YOUR TRANSFER LIST · \(c.market.listed.count)")
+                    .font(.system(size: 10 * TextScale.factor, weight: .heavy)).foregroundStyle(Palette.muted)
+                    .frame(maxWidth: .infinity, alignment: .leading).padding(.top, 6)
                 if c.market.listed.isEmpty {
-                    Text("Nobody listed. List a player from his page.").font(.subheadline).foregroundStyle(Palette.muted)
+                    Text("Nobody listed. List a player from his page.").font(.system(size: 13 * TextScale.factor)).foregroundStyle(Palette.muted)
+                        .frame(maxWidth: .infinity, alignment: .leading).tableRow()
                 }
                 ForEach(c.market.listed.keys.sorted(), id: \.self) { id in
-                    HStack {
-                        Text(c.players[id]?.name ?? id).font(.subheadline)
-                        Spacer()
-                        Text(Money.format(c.market.listed[id] ?? 0)).font(.caption.monospacedDigit()).foregroundStyle(Palette.muted)
-                        Button("Unlist") { store.careerUnlist(id) }.font(.caption.weight(.bold))
+                    HStack(spacing: 8) {
+                        Text("–").font(.system(size: 12 * TextScale.factor)).foregroundStyle(Palette.muted).frame(width: 46, alignment: .leading)
+                        NavigationLink { CareerPlayerView(playerId: id) } label: {
+                            TName(text: c.players[id]?.name ?? id, overseas: c.players[id]?.overseas ?? false)
+                        }
+                        .buttonStyle(.plain)
+                        if vSize == .compact {
+                            TNum(text: c.players[id].map { Money.format($0.value(in: c.year)) } ?? "–", width: TCol.money, color: Palette.muted)
+                        }
+                        TNum(text: Money.format(c.market.listed[id] ?? 0), width: 90)
+                        HStack {
+                            Spacer(minLength: 0)
+                            ActionChip(icon: "xmark", title: "Unlist", destructive: true, iconOnly: vSize != .compact) { store.careerUnlist(id) }
+                        }
+                        .frame(width: vSize == .compact ? 170 : 76)
                     }
-                    .padding(10)
-                    .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(Palette.surface))
+                    .tableRow()
                 }
             }
         }
@@ -584,33 +598,36 @@ struct OffersScreen: View {
 
 struct OfferRow: View {
     @EnvironmentObject var store: GameStore
+    @Environment(\.verticalSizeClass) private var vSize
     let career: Career
     let offer: TransferOffer
 
     var body: some View {
         let c = career
-        AppCard(padding: DS.Space.md) {
-            VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    if let buyer = c.club(offer.fromClub) { TeamBadge(team: buyer, size: 28) }
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text(c.players[offer.playerId]?.name ?? offer.playerId).font(.subheadline.weight(.bold))
-                        Text("\(c.club(offer.fromClub)?.name ?? "") bid \(Money.format(offer.fee))")
-                            .font(.caption).foregroundStyle(Palette.muted)
-                    }
-                    Spacer()
-                }
-                HStack(spacing: DS.Space.sm) {
-                    Button("Accept") {
-                        if store.careerAcceptOffer(offer.id) { Haptics.success() } else { Haptics.warning() }
-                    }
-                    .buttonStyle(PrimaryButtonStyle())
-                    .disabled(!c.windowOpen)
-                    Button("Reject") { store.careerRejectOffer(offer.id) }
-                        .buttonStyle(SecondaryButtonStyle())
-                }
+        let p = c.players[offer.playerId]
+        HStack(spacing: 8) {
+            Group {
+                if let buyer = c.club(offer.fromClub) { TeamBadge(team: buyer, size: 24) } else { Text("–") }
             }
+            .frame(width: 46, alignment: .leading)
+            NavigationLink { CareerPlayerView(playerId: offer.playerId) } label: {
+                TName(text: p?.name ?? offer.playerId, overseas: p?.overseas ?? false)
+            }
+            .buttonStyle(.plain)
+            if vSize == .compact {
+                TNum(text: p.map { Money.format($0.value(in: c.year)) } ?? "–", width: TCol.money, color: Palette.muted)
+            }
+            TNum(text: Money.format(offer.fee), width: 90, color: Palette.accent)
+            HStack(spacing: 6) {
+                Spacer(minLength: 0)
+                ActionChip(icon: "checkmark", title: "Accept", primary: true, disabled: !c.windowOpen, iconOnly: vSize != .compact) {
+                    if store.careerAcceptOffer(offer.id) { Haptics.success() } else { Haptics.warning() }
+                }
+                ActionChip(icon: "xmark", title: "Reject", destructive: true, iconOnly: vSize != .compact) { store.careerRejectOffer(offer.id) }
+            }
+            .frame(width: vSize == .compact ? 170 : 76)
         }
+        .tableRow()
     }
 }
 

@@ -1,49 +1,50 @@
 import SwiftUI
 
-/// Career › Squad › Squad planner: one card per job in the XI (starters, then depth), auto-fill, and
+/// Career › Squad › Squad planner: one row per job in the XI (starters, then depth), auto-fill, and
 /// "Use as my XI".
 struct SquadPlannerView: View {
     @EnvironmentObject var store: GameStore
     @State private var message: String? = nil
 
     var body: some View {
-        if let c = store.career {
-            VStack(alignment: .leading, spacing: DS.Space.lg) {
-                Text("Plan who does each job, and who steps in behind them. The plan doesn't change your XI until you use it.")
-                    .font(.display(13, weight: .regular)).foregroundStyle(Palette.muted)
-                HStack(spacing: DS.Space.sm) {
-                    Button {
+        let c = store.career
+        TableScreen(title: "Squad planner") {
+            if let c {
+                HStack(spacing: 6) {
+                    TableNote(text: message ?? "Plan who does each job and who steps in behind them. Your XI changes only when you use the plan.")
+                    Spacer(minLength: 4)
+                    ActionChip(icon: "wand.and.stars", title: c.plan == nil ? "Auto-fill" : "Auto-fill again") {
                         store.careerAutoPlan()
                         message = "Planned from your best players."
                         Haptics.success()
-                    } label: { Label(c.plan == nil ? "Auto-fill" : "Auto-fill again", systemImage: "wand.and.stars") }
-                    .buttonStyle(SecondaryButtonStyle())
-                    Button {
+                    }
+                    ActionChip(icon: "checkmark", title: "Use as my XI", primary: true, disabled: c.plan == nil) {
                         let issues = store.careerApplyPlan()
                         message = issues.isEmpty ? "Your XI now follows the plan. The assistant stops picking the team." : issues.joined(separator: " ")
                         if issues.isEmpty { Haptics.success() } else { Haptics.warning() }
-                    } label: { Label("Use as my XI", systemImage: "checkmark.circle") }
-                    .buttonStyle(PrimaryButtonStyle())
-                    .disabled(c.plan == nil)
-                }
-                if let message {
-                    Text(message).font(.display(13, weight: .semibold)).foregroundStyle(Palette.accent)
-                }
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 250), spacing: DS.Space.md)], spacing: DS.Space.md) {
-                    ForEach(PlanSlot.allCases) { slot in
-                        NavigationLink { CareerScreen(title: slot.label) { PlanSlotView(slot: slot) } } label: {
-                            PlanSlotCard(career: c, slot: slot)
-                        }
-                        .buttonStyle(.plain)
                     }
+                }
+                TableHead {
+                    Text("JOB").frame(width: 120, alignment: .leading)
+                    Text("IN THE XI").frame(maxWidth: .infinity, alignment: .leading)
+                    Text("BACKUPS").frame(maxWidth: .infinity, alignment: .leading)
+                    Text("AVG").frame(width: TCol.stat, alignment: .trailing)
+                    Text("").frame(width: 14)
+                }
+            }
+        } rows: {
+            if let c {
+                ForEach(PlanSlot.allCases) { slot in
+                    NavigationLink { PlanSlotView(slot: slot) } label: { PlanSlotRow(career: c, slot: slot) }
+                        .buttonStyle(.plain)
                 }
             }
         }
     }
 }
 
-/// One job on the planner: starters and depth with ratings, the job's average, and a warning.
-struct PlanSlotCard: View {
+/// One job on the planner, on one line: starters, backups, the job's average and any warning.
+struct PlanSlotRow: View {
     let career: Career
     let slot: PlanSlot
 
@@ -51,33 +52,26 @@ struct PlanSlotCard: View {
         let c = career
         let list = c.planned(slot)
         let summary = c.planSummary(slot)
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text(slot.label.uppercased()).font(.display(12, weight: .heavy)).foregroundStyle(Palette.muted)
-                Spacer()
-                Text(list.isEmpty ? "–" : "\(summary.rating)").font(.score(16)).foregroundStyle(strengthColor(summary.rating))
-            }
-            if list.isEmpty {
-                Text("Nobody planned. Tap to add.").font(.display(14, weight: .regular)).foregroundStyle(Palette.muted)
-            }
-            ForEach(Array(list.prefix(SquadPlan.depth).enumerated()), id: \.element.id) { i, p in
-                HStack(spacing: 8) {
-                    Text("\(slot.score(p))").font(.score(14)).foregroundStyle(strengthColor(slot.score(p))).frame(width: 26, alignment: .leading)
-                    Text(p.name).font(.display(14, weight: i < slot.starters ? .semibold : .regular))
-                        .foregroundStyle(i < slot.starters ? .white : Palette.muted).lineLimit(1)
-                    Spacer(minLength: 4)
-                    Text("\(p.age(in: c.year))").font(.score(13)).foregroundStyle(Palette.muted)
+        let starters = list.prefix(slot.starters).map(\.name).joined(separator: ", ")
+        let backups = list.dropFirst(slot.starters).prefix(SquadPlan.depth).map(\.name).joined(separator: ", ")
+        HStack(spacing: 8) {
+            VStack(alignment: .leading, spacing: 1) {
+                Text(slot.label).font(.system(size: 13 * TextScale.factor, weight: .semibold)).lineLimit(1).minimumScaleFactor(0.8)
+                if let warning = summary.successionWarning {
+                    Text(warning).font(.system(size: 10 * TextScale.factor, weight: .semibold)).foregroundStyle(.orange).lineLimit(1)
                 }
             }
-            if let warning = summary.successionWarning {
-                Label(warning, systemImage: "exclamationmark.triangle").font(.display(11, weight: .semibold)).foregroundStyle(.orange)
-                    .lineLimit(2)
-            }
+            .frame(width: 120, alignment: .leading)
+            Text(starters.isEmpty ? "Nobody planned" : starters).font(.system(size: 12 * TextScale.factor, weight: .semibold))
+                .foregroundStyle(starters.isEmpty ? Palette.muted : .white).lineLimit(2)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Text(backups.isEmpty ? "–" : backups).font(.system(size: 12 * TextScale.factor)).foregroundStyle(Palette.muted).lineLimit(2)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            TNum(text: list.isEmpty ? "–" : "\(summary.rating)", width: TCol.stat, color: strengthColor(summary.rating))
+            Image(systemName: "chevron.right").font(.system(size: 11 * TextScale.factor, weight: .semibold)).foregroundStyle(Palette.stroke)
+                .frame(width: 14)
         }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .topLeading)
-        .gameFrame()
-        .contentShape(Rectangle())
+        .tableRow()
     }
 }
 
@@ -87,115 +81,89 @@ struct PlanSlotView: View {
     let slot: PlanSlot
 
     var body: some View {
-        if let c = store.career {
-            let list = c.planned(slot)
-            let summary = c.planSummary(slot)
-            VStack(alignment: .leading, spacing: DS.Space.lg) {
-                HStack(spacing: 0) {
-                    stat(list.isEmpty ? "–" : "\(summary.rating)", "RATING")
-                    stat(list.isEmpty ? "–" : String(format: "%.1f", summary.age), "AGE")
-                    stat("\(slot.starters)", "IN THE XI")
-                    stat("\(max(0, list.count - slot.starters))", "BACKUPS")
-                }
-                .padding(.vertical, DS.Space.sm)
-                .background(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous).fill(Palette.surface))
-                if let warning = summary.successionWarning {
-                    Label(warning, systemImage: "exclamationmark.triangle").font(.display(13, weight: .semibold)).foregroundStyle(.orange)
-                }
-
-                SectionLabel(text: "Depth chart")
-                VStack(spacing: 0) {
-                    if list.isEmpty {
-                        Text("Nobody planned for this job yet.").font(.subheadline).foregroundStyle(.secondary).padding(16)
-                    }
-                    ForEach(Array(list.enumerated()), id: \.element.id) { i, p in
-                        if i > 0 { Hairline(inset: 16) }
-                        HStack(spacing: 10) {
-                            Text(i < slot.starters ? "XI" : "\(i - slot.starters + 1)")
-                                .font(.display(11, weight: .heavy)).foregroundStyle(i < slot.starters ? Palette.accent : Palette.muted)
-                                .frame(width: 22)
-                            NavigationLink { CareerPlayerView(playerId: p.id) } label: {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(p.name).font(.display(15, weight: .semibold)).lineLimit(1)
-                                    Text("\(p.age(in: c.year)) · \(p.role.short) · form \(CareerText.form(p.form))")
-                                        .font(.caption).foregroundStyle(Palette.muted)
-                                }
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                            }
-                            .buttonStyle(.plain)
-                            Text("\(slot.score(p))").font(.score(16)).foregroundStyle(strengthColor(slot.score(p)))
-                            iconButton("chevron.up", disabled: i == 0) { store.careerPlanMove(slot, p.id, by: -1) }
-                            iconButton("chevron.down", disabled: i == list.count - 1) { store.careerPlanMove(slot, p.id, by: 1) }
-                            iconButton("trash", disabled: false) { store.careerPlanRemove(slot, p.id) }
-                        }
-                        .padding(.horizontal, 12).padding(.vertical, 10)
-                    }
-                }
-                .gameFrame()
+        let c = store.career
+        let list = c?.planned(slot) ?? []
+        let summary = c?.planSummary(slot)
+        let year = c?.year ?? 0
+        PaneScreen(title: slot.label) {
+            SummaryLine(cells: [
+                SummaryCell(value: list.isEmpty ? "–" : "\(summary?.rating ?? 0)", label: "rating", color: strengthColor(summary?.rating ?? 0)),
+                SummaryCell(value: list.isEmpty ? "–" : String(format: "%.1f", summary?.age ?? 0), label: "age"),
+                SummaryCell(value: "\(slot.starters)", label: "in the XI"),
+                SummaryCell(value: "\(max(0, list.count - slot.starters))", label: "backups"),
+            ])
+            if let warning = summary?.successionWarning { TableNote(text: warning, warning: true) }
+            HStack {
+                Text("DEPTH CHART").font(.system(size: 10 * TextScale.factor, weight: .heavy)).foregroundStyle(Palette.muted)
+                Spacer()
                 if !list.isEmpty {
-                    Button("Clear this job") { store.careerPlanClear(slot) }
-                        .font(.display(14, weight: .semibold)).foregroundStyle(Palette.wicket)
+                    ActionChip(icon: "trash", title: "Clear this job", destructive: true) { store.careerPlanClear(slot) }
                 }
-
-                let candidates = c.planCandidates(slot)
-                if !candidates.isEmpty {
-                    SectionLabel(text: "Add players")
-                    VStack(spacing: 0) {
-                        ForEach(Array(candidates.prefix(8).enumerated()), id: \.element.id) { i, p in
-                            if i > 0 { Hairline(inset: 16) }
-                            Button { store.careerPlanAdd(slot, p.id); Haptics.tap() } label: {
-                                HStack {
-                                    Image(systemName: "plus.circle").foregroundStyle(Palette.accent)
-                                    Text(p.name).font(.display(15, weight: .regular)).lineLimit(1)
-                                    Spacer()
-                                    Text("\(p.age(in: c.year))").font(.score(14)).foregroundStyle(Palette.muted)
-                                    Text("\(slot.score(p))").font(.score(16)).foregroundStyle(strengthColor(slot.score(p))).frame(width: 34, alignment: .trailing)
-                                }
-                                .padding(.horizontal, 16).padding(.vertical, 10)
-                                .contentShape(Rectangle())
-                            }
-                            .buttonStyle(.plain)
-                        }
+            }
+            if list.isEmpty {
+                Text("Nobody planned for this job yet.").font(.system(size: 13 * TextScale.factor)).foregroundStyle(Palette.muted).tableRow()
+            }
+            ForEach(Array(list.enumerated()), id: \.element.id) { i, p in
+                HStack(spacing: 8) {
+                    Text(i < slot.starters ? "XI" : "\(i - slot.starters + 1)")
+                        .font(.system(size: 11 * TextScale.factor, weight: .heavy))
+                        .foregroundStyle(i < slot.starters ? Palette.accent : Palette.muted).frame(width: TCol.num)
+                    NavigationLink { CareerPlayerView(playerId: p.id) } label: {
+                        TName(text: p.name, overseas: p.overseas)
                     }
-                    .gameFrame()
+                    .buttonStyle(.plain)
+                    TRole(role: p.role)
+                    TNum(text: "\(p.age(in: year))", width: TCol.age, color: Palette.muted)
+                    TNum(text: "\(slot.score(p))", width: TCol.stat, color: strengthColor(slot.score(p)))
+                    iconButton("chevron.up", disabled: i == 0) { store.careerPlanMove(slot, p.id, by: -1) }
+                    iconButton("chevron.down", disabled: i == list.count - 1) { store.careerPlanMove(slot, p.id, by: 1) }
+                    iconButton("trash", disabled: false) { store.careerPlanRemove(slot, p.id) }
                 }
-
-                SectionLabel(text: "Scout's target")
+                .tableRow(selected: i < slot.starters)
+            }
+        } right: {
+            if let c {
+                let candidates = c.planCandidates(slot)
+                Text("SCOUT'S TARGET").font(.system(size: 10 * TextScale.factor, weight: .heavy)).foregroundStyle(Palette.muted)
                 if let t = c.planTarget(slot) {
                     NavigationLink { CareerPlayerView(playerId: t.id) } label: {
-                        HStack {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(t.name).font(.display(16, weight: .semibold)).lineLimit(1)
-                                Text("\(t.clubId.flatMap { c.club($0)?.short } ?? "Free agent") · \(t.age(in: c.year)) · \(t.clubId == nil ? "free" : Money.format(c.askingPrice(t)))")
-                                    .font(.caption).foregroundStyle(Palette.muted)
-                            }
-                            Spacer()
-                            Text("\(slot.score(t))").font(.score(20)).foregroundStyle(strengthColor(slot.score(t)))
-                            Image(systemName: "chevron.right").foregroundStyle(Palette.stroke)
+                        HStack(spacing: 8) {
+                            TName(text: t.name, overseas: t.overseas, pitchFit: c.suitsUserPitch(t))
+                            Text("\(t.clubId.flatMap { c.club($0)?.short } ?? "Free") · \(t.age(in: year)) · \(t.clubId == nil ? "free" : Money.format(c.askingPrice(t)))")
+                                .font(.system(size: 11 * TextScale.factor)).foregroundStyle(Palette.muted).lineLimit(1)
+                            TNum(text: "\(slot.score(t))", width: TCol.stat, color: strengthColor(slot.score(t)))
                         }
-                        .padding(14)
-                        .gameFrame()
+                        .tableRow()
                     }
                     .buttonStyle(.plain)
                 } else {
-                    Text("Nobody affordable would start ahead of your plan.").font(.subheadline).foregroundStyle(Palette.muted)
+                    Text("Nobody affordable would start ahead of your plan.").font(.system(size: 12 * TextScale.factor))
+                        .foregroundStyle(Palette.muted).tableRow()
+                }
+                if !candidates.isEmpty {
+                    Text("ADD PLAYERS").font(.system(size: 10 * TextScale.factor, weight: .heavy)).foregroundStyle(Palette.muted)
+                    ForEach(candidates.prefix(10)) { p in
+                        Button { store.careerPlanAdd(slot, p.id); Haptics.tap() } label: {
+                            HStack(spacing: 8) {
+                                Image(systemName: "plus.circle").foregroundStyle(Palette.accent).frame(width: TCol.mark)
+                                TName(text: p.name, overseas: p.overseas, bold: false)
+                                TRole(role: p.role)
+                                TNum(text: "\(p.age(in: year))", width: TCol.age, color: Palette.muted)
+                                TNum(text: "\(slot.score(p))", width: TCol.stat, color: strengthColor(slot.score(p)))
+                            }
+                            .tableRow()
+                        }
+                        .buttonStyle(.plain)
+                    }
                 }
             }
         }
     }
 
-    private func stat(_ v: String, _ l: String) -> some View {
-        VStack(spacing: 2) {
-            Text(v).font(.display(18)).lineLimit(1).minimumScaleFactor(0.6)
-            Text(l).font(.display(9, weight: .heavy)).foregroundStyle(Palette.muted)
-        }
-        .frame(maxWidth: .infinity)
-    }
-
     private func iconButton(_ name: String, disabled: Bool, _ action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Image(systemName: name).font(.system(size: 14 * TextScale.factor, weight: .semibold))
-                .frame(width: 30, height: 30)
+            Image(systemName: name).font(.system(size: 13 * TextScale.factor, weight: .semibold))
+                .frame(width: 26, height: 26)
         }
         .buttonStyle(.plain)
         .foregroundStyle(disabled ? Palette.stroke : Palette.muted)

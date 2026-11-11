@@ -9,18 +9,17 @@ struct TacticsView: View {
     @State private var loaded = false
 
     var body: some View {
-        List {
+        PaneScreen(title: "Tactics") {
             if let c = store.career {
                 plans(c)
+                tossAndCaptain(c)
+            }
+        } right: {
+            if let c = store.career {
                 phases
-                toss
-                captain(c)
                 roles(c)
             }
         }
-        .darkList()
-        .navigationTitle("Tactics")
-        .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             if !loaded, let c = store.career {
                 t = c.tactics
@@ -37,98 +36,99 @@ struct TacticsView: View {
     @ViewBuilder private func plans(_ c: Career) -> some View {
         let pitch = c.nextUserFixture?.pitch
         let suggested = pitch.map { GamePlan.suggested(for: $0) }
-        Section {
-            ForEach(GamePlan.allCases) { plan in
+        PaneBox(title: "Game plan",
+                note: t.matchingPlan == nil ? "Custom: your own phase settings." : "Sets batting and field for all three phases.") {
+            ForEach(Array(GamePlan.allCases.enumerated()), id: \.element.id) { i, plan in
+                if i > 0 { Hairline() }
                 Button { t = plan.apply(to: t); Haptics.tap() } label: {
-                    VStack(alignment: .leading, spacing: 6) {
+                    VStack(alignment: .leading, spacing: 4) {
                         HStack(spacing: 8) {
-                            Text(plan.label).font(.display(16, weight: .semibold)).foregroundStyle(.white)
+                            Image(systemName: t.matchingPlan == plan ? "checkmark.circle.fill" : "circle")
+                                .font(.system(size: 15 * TextScale.factor))
+                                .foregroundStyle(t.matchingPlan == plan ? Palette.accent : Palette.muted)
+                            Text(plan.label).font(.system(size: 14 * TextScale.factor, weight: .semibold)).foregroundStyle(.white).lineLimit(1)
                             if plan == suggested {
                                 Text("SUITS \(pitch?.label.uppercased() ?? "")")
-                                    .font(.display(10, weight: .heavy)).foregroundStyle(Palette.accent)
-                                    .padding(.horizontal, 6).padding(.vertical, 2)
+                                    .font(.system(size: 9 * TextScale.factor, weight: .heavy)).foregroundStyle(Palette.accent)
+                                    .padding(.horizontal, 5).padding(.vertical, 2)
                                     .background(Capsule().stroke(Palette.accent, lineWidth: 1))
+                                    .lineLimit(1)
                             }
-                            Spacer()
-                            if t.matchingPlan == plan {
-                                Image(systemName: "checkmark").font(.system(size: 14 * TextScale.factor, weight: .bold)).foregroundStyle(Palette.accent)
-                            }
+                            Spacer(minLength: 4)
+                            AggressionBar(value: plan.aggression, compact: true).frame(width: 90)
                         }
-                        Text(plan.blurb).font(.caption).foregroundStyle(Palette.muted)
-                        AggressionBar(value: plan.aggression)
+                        Text(plan.blurb).font(.system(size: 11 * TextScale.factor)).foregroundStyle(Palette.muted).lineLimit(1)
+                            .padding(.leading, 23)
                     }
-                    .padding(.vertical, 4)
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
             }
-        } header: {
-            Text("Game plan")
-        } footer: {
-            Text(t.matchingPlan == nil ? "Custom: your own phase settings below." : "Sets batting and field for all three phases. Fine-tune them below.")
         }
-        .listRowBackground(GameRowBackground())
     }
 
     // MARK: Phases
 
-    @ViewBuilder private var phases: some View {
-        ForEach(0..<3, id: \.self) { i in
-            Section(Tactics.phases[i]) {
-                Picker("Field", selection: Binding(get: { t.field[i] }, set: { t.field[i] = $0 })) {
-                    ForEach(FieldSetting.allCases, id: \.self) { f in Text(f.label).tag(f) }
-                }
-                .pickerStyle(.segmented)
-                Text(t.field[i].blurb).font(.caption).foregroundStyle(Palette.muted)
-                Picker("Batting", selection: Binding(get: { t.intent[i] }, set: { t.intent[i] = $0 })) {
-                    ForEach(BatIntent.allCases, id: \.self) { b in Text(b.label).tag(b) }
-                }
-                .pickerStyle(.segmented)
-                Text(t.intent[i].blurb).font(.caption).foregroundStyle(Palette.muted)
+    private var phases: some View {
+        PaneBox(title: "Phases", note: "Field: where the fielders stand. Batting: how hard your batters go.") {
+            HStack(spacing: 8) {
+                Text("").frame(width: 76)
+                Text("FIELD").frame(maxWidth: .infinity)
+                Text("BATTING").frame(maxWidth: .infinity)
             }
-            .listRowBackground(GameRowBackground())
+            .font(.system(size: 10 * TextScale.factor, weight: .heavy)).foregroundStyle(Palette.muted)
+            ForEach(0..<3, id: \.self) { i in
+                HStack(spacing: 8) {
+                    Text(Tactics.phases[i]).font(.system(size: 12 * TextScale.factor, weight: .semibold)).foregroundStyle(.white)
+                        .lineLimit(1).minimumScaleFactor(0.7).frame(width: 76, alignment: .leading)
+                    Picker("Field", selection: Binding(get: { t.field[i] }, set: { t.field[i] = $0 })) {
+                        ForEach(FieldSetting.allCases, id: \.self) { f in Text(f.label).tag(f) }
+                    }
+                    .pickerStyle(.segmented)
+                    Picker("Batting", selection: Binding(get: { t.intent[i] }, set: { t.intent[i] = $0 })) {
+                        ForEach(BatIntent.allCases, id: \.self) { b in Text(b.label).tag(b) }
+                    }
+                    .pickerStyle(.segmented)
+                }
+            }
         }
     }
 
     // MARK: Toss, captain, roles
 
-    @ViewBuilder private var toss: some View {
-        Section {
-            Picker("Toss", selection: Binding(get: { t.toss?.rawValue ?? "auto" }, set: { t.toss = TossCall(rawValue: $0) })) {
-                Text("Captain's call").tag("auto")
-                ForEach(TossCall.allCases, id: \.self) { call in Text(call.label).tag(call.rawValue) }
-            }
-            .pickerStyle(.segmented)
-        } header: {
-            Text("If you win the toss")
-        } footer: {
-            Text("Captain's call reads the pitch: seamers and flat tracks usually mean bowling first.")
-        }
-        .listRowBackground(GameRowBackground())
-    }
-
-    @ViewBuilder private func captain(_ c: Career) -> some View {
+    @ViewBuilder private func tossAndCaptain(_ c: Career) -> some View {
         let xi = c.userClub.xi.compactMap { c.players[$0] }
-        Section {
-            Picker("Captain", selection: Binding(get: { t.captain ?? "" }, set: { t.captain = $0.isEmpty ? nil : $0 })) {
-                Text("None").tag("")
-                ForEach(xi) { p in Text(p.name).tag(p.id) }
+        PaneBox(title: "Toss and captain", note: "Captain's call reads the pitch. The captain gets +1 batting and bowling while he plays.") {
+            HStack(spacing: 8) {
+                Text("If you win the toss").font(.system(size: 13 * TextScale.factor)).foregroundStyle(Palette.muted).lineLimit(1)
+                Spacer(minLength: 4)
+                Picker("Toss", selection: Binding(get: { t.toss?.rawValue ?? "auto" }, set: { t.toss = TossCall(rawValue: $0) })) {
+                    Text("Captain's call").tag("auto")
+                    ForEach(TossCall.allCases, id: \.self) { call in Text(call.label).tag(call.rawValue) }
+                }
+                .pickerStyle(.segmented)
+                .frame(maxWidth: 260)
             }
-            .pickerStyle(.menu)
-        } header: {
-            Text("Captain")
-        } footer: {
-            Text("The captain leads by example: +1 batting and bowling while he plays.")
+            HStack(spacing: 8) {
+                Text("Captain").font(.system(size: 13 * TextScale.factor)).foregroundStyle(Palette.muted)
+                Spacer(minLength: 4)
+                MenuChip(title: xi.first { $0.id == t.captain }?.name ?? "None") {
+                    Button("None") { t.captain = nil }
+                    ForEach(xi) { p in Button(p.name) { t.captain = p.id } }
+                }
+            }
         }
-        .listRowBackground(GameRowBackground())
     }
 
     @ViewBuilder private func roles(_ c: Career) -> some View {
         let xi = c.userClub.xi.compactMap { c.players[$0] }
-        Section {
+        PaneBox(title: "Batting roles",
+                note: "\(BatRole.anchor.label): \(BatRole.anchor.blurb.lowercased()). \(BatRole.hitter.label): \(BatRole.hitter.blurb.lowercased()).") {
             ForEach(Array(xi.prefix(8).enumerated()), id: \.element.id) { i, p in
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("\(i + 1). \(p.name)").font(.display(15, weight: .semibold))
+                HStack(spacing: 8) {
+                    Text("\(i + 1)").font(.score(13)).foregroundStyle(Palette.muted).frame(width: 18, alignment: .trailing)
+                    Text(p.name).font(.system(size: 13 * TextScale.factor, weight: .semibold)).lineLimit(1).minimumScaleFactor(0.8)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     Picker(p.name, selection: Binding(get: { t.roles?[p.id] ?? .normal }, set: { r in
                         var all = t.roles ?? [:]
                         all[p.id] = r == .normal ? nil : r
@@ -137,25 +137,22 @@ struct TacticsView: View {
                         ForEach(BatRole.allCases, id: \.self) { r in Text(r.label).tag(r) }
                     }
                     .pickerStyle(.segmented)
+                    .frame(width: 210)
                 }
-                .padding(.vertical, 2)
             }
-        } header: {
-            Text("Batting roles")
-        } footer: {
-            Text("\(BatRole.anchor.label): \(BatRole.anchor.blurb.lowercased()). \(BatRole.hitter.label): \(BatRole.hitter.blurb.lowercased()).")
         }
-        .listRowBackground(GameRowBackground())
     }
 }
 
 /// Defence ↔ Attack bar for a game plan.
 struct AggressionBar: View {
     let value: Int
+    /// Bar only, no "Defence"/"Attack" words (a narrow column).
+    var compact = false
 
     var body: some View {
         HStack(spacing: 8) {
-            Text("Defence").font(.display(10, weight: .semibold)).foregroundStyle(Palette.muted)
+            if !compact { Text("Defence").font(.display(10, weight: .semibold)).foregroundStyle(Palette.muted) }
             GeometryReader { g in
                 ZStack(alignment: .leading) {
                     Capsule().fill(Palette.stroke)
@@ -163,7 +160,7 @@ struct AggressionBar: View {
                 }
             }
             .frame(height: 5)
-            Text("Attack").font(.display(10, weight: .semibold)).foregroundStyle(Palette.muted)
+            if !compact { Text("Attack").font(.display(10, weight: .semibold)).foregroundStyle(Palette.muted) }
         }
     }
 }

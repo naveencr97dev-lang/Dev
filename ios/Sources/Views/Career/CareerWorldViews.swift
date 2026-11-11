@@ -199,46 +199,34 @@ struct NationalSquadView: View {
         let c = store.career
         let job = c?.intl.job ?? ""
         let pool = c?.nationPlayers(job) ?? []
-        List {
-            Section {
-                Text("\(selected.count)/15 selected").font(.headline)
-                if selected.count < 11 {
-                    Text("Pick at least 11, or the best 15 are used.").font(.caption).foregroundStyle(.orange)
-                }
-            } footer: {
-                Text("The best XI is chosen from your 15 for each match.")
-            }
-            .listRowBackground(GameRowBackground())
-            Section("Eligible players") {
-                ForEach(pool) { p in
-                    Button {
-                        if selected.contains(p.id) { selected.remove(p.id) } else if selected.count < 15 { selected.insert(p.id) }
-                        Haptics.tap()
-                    } label: {
-                        HStack(spacing: 10) {
-                            Image(systemName: selected.contains(p.id) ? "checkmark.circle.fill" : "circle")
-                                .font(.title3)
-                                .foregroundStyle(selected.contains(p.id) ? Palette.accent : Palette.muted)
-                            CareerPlayerRow(player: p, year: c?.year ?? 0)
-                            Text("\(c?.intl.caps[p.id] ?? 0) caps").font(.caption2).foregroundStyle(Palette.muted)
-                        }
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .listRowBackground(GameRowBackground())
-        }
-        .darkList()
-        .navigationTitle("National squad")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button("Save") {
+        TableScreen(title: "National squad") {
+            SummaryLine(cells: [
+                SummaryCell(value: "\(selected.count)/15", label: "selected", color: selected.count >= 11 ? Palette.accent : .orange),
+                SummaryCell(value: "\(pool.count)", label: "eligible"),
+                SummaryCell(value: job, label: "nation"),
+            ])
+            HStack(spacing: 6) {
+                TableNote(text: selected.count < 11 ? "Pick at least 11, or the best 15 are used." : "The best XI is chosen from your 15 for each match.",
+                          warning: selected.count < 11)
+                Spacer(minLength: 4)
+                ActionChip(icon: "xmark", title: "Clear", destructive: true) { selected = [] }
+                ActionChip(icon: "checkmark", title: "Save", primary: true) {
                     store.careerSetNationalSquad(Array(selected))
                     Haptics.success()
                     dismiss()
                 }
+            }
+            SquadTableHead(count: pool.count, check: true, trailing: "CAPS")
+        } rows: {
+            ForEach(pool) { p in
+                Button {
+                    if selected.contains(p.id) { selected.remove(p.id) } else if selected.count < 15 { selected.insert(p.id) }
+                    Haptics.tap()
+                } label: {
+                    SquadTableRow(player: p, year: c?.year ?? 0, check: selected.contains(p.id),
+                                  trailing: "\(c?.intl.caps[p.id] ?? 0)", trailingColor: Palette.muted, selected: selected.contains(p.id))
+                }
+                .buttonStyle(.plain)
             }
         }
         .onAppear {

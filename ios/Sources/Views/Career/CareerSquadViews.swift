@@ -55,7 +55,7 @@ struct CareerSquadTab: View {
                     NavigationLink { BattingOrderView(teamId: club.id) } label: { MiniTile(icon: "arrow.up.arrow.down", title: "Batting order") }
                     NavigationLink { BowlingPlanView(teamId: club.id) } label: { MiniTile(icon: "figure.cricket", title: "Bowling plan") }
                     NavigationLink { TacticsView() } label: { MiniTile(icon: "slider.horizontal.3", title: "Tactics") }
-                    NavigationLink { CareerScreen(title: "Squad planner") { SquadPlannerView() } } label: {
+                    NavigationLink { SquadPlannerView() } label: {
                         MiniTile(icon: "square.grid.3x3", title: "Squad planner")
                     }
                     Button {
@@ -150,60 +150,54 @@ struct PickXIView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var selected: Set<String> = []
     @State private var loaded = false
+    @State private var roleIndex = 0
+
+    private static let roles: [Role?] = [nil, .WK, .BAT, .AR, .BOWL]
+    private static let roleLabels = ["All", "WK", "BAT", "AR", "BOWL"]
+    private static let roleOrder: [Role] = [.WK, .BAT, .AR, .BOWL]
 
     var body: some View {
-        let squad = (store.career?.userClub.squad ?? []).compactMap { store.player($0) }
-        let picked = squad.filter { selected.contains($0.id) }
-        let rules = store.career?.rules ?? Rules()
-        let issues = TeamSelector.blockingIssues(picked, rules: rules) + TeamSelector.warnings(picked)
-        List {
-            Section {
-                HStack {
-                    Text("\(picked.count)/11 picked").font(.headline)
-                    Spacer()
-                    Text("\(picked.filter(\.overseas).count)/\(rules.maxOverseasXI) overseas")
-                        .font(.subheadline).foregroundStyle(Palette.muted)
-                }
-                ForEach(issues, id: \.self) { issue in
-                    Text(issue).font(.caption.weight(.bold)).foregroundStyle(.orange)
-                }
-            } footer: {
-                Text("Tap to pick or drop. New picks slot into the batting order where they bat best; adjust it later in Order.")
+        let c = store.career
+        let year = c?.year ?? 0
+        let all = c.map { $0.squad($0.userClubId) } ?? []
+        let squad = all
+            .filter { p in Self.roles[roleIndex].map { p.role == $0 } ?? true }
+            .sorted { a, b in
+                let (ra, rb) = (Self.roleOrder.firstIndex(of: a.role) ?? 0, Self.roleOrder.firstIndex(of: b.role) ?? 0)
+                return ra != rb ? ra < rb : (a.rating != b.rating ? a.rating > b.rating : a.id < b.id)
             }
-            .listRowBackground(GameRowBackground())
-
-            ForEach(Role.allCases, id: \.self) { role in
-                let group = squad.filter { $0.role == role }.sorted { max($0.bat, $0.bowl) > max($1.bat, $1.bowl) }
-                if !group.isEmpty {
-                    Section(role.label + "s") {
-                        ForEach(group) { p in
-                            Button { toggle(p.id) } label: {
-                                HStack(spacing: 10) {
-                                    Image(systemName: selected.contains(p.id) ? "checkmark.circle.fill" : "circle")
-                                        .font(.title3)
-                                        .foregroundStyle(selected.contains(p.id) ? Palette.accent : Palette.muted)
-                                    PlayerRow(player: p, trailing: formText(p.id))
-                                }
-                                .contentShape(Rectangle())
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                    .listRowBackground(GameRowBackground())
+        let picked = all.filter { selected.contains($0.id) }.compactMap { store.player($0.id) }
+        let rules = c?.rules ?? Rules()
+        let blocking = TeamSelector.blockingIssues(picked, rules: rules)
+        let issues = blocking + TeamSelector.warnings(picked)
+        let strength = picked.isEmpty ? 0 : picked.map { max($0.bat, $0.bowl) }.reduce(0, +) / picked.count
+        TableScreen(title: "Pick XI") {
+            SummaryLine(cells: [
+                SummaryCell(value: "\(picked.count)/11", label: "picked", color: picked.count == 11 ? Palette.accent : .orange),
+                SummaryCell(value: "\(picked.filter(\.overseas).count)/\(rules.maxOverseasXI)", label: "overseas"),
+                SummaryCell(value: "\(picked.filter(\.isBowlingOption).count)", label: "bowlers",
+                            color: picked.filter(\.isBowlingOption).count >= 5 ? .white : .orange),
+                SummaryCell(value: "\(strength)", label: "strength", color: strengthColor(strength)),
+            ])
+            HStack(spacing: 6) {
+                ForEach(0..<Self.roleLabels.count, id: \.self) { i in
+                    FilterChip(title: Self.roleLabels[i], on: roleIndex == i) { roleIndex = i }
                 }
+                Spacer(minLength: 4)
+                ActionChip(icon: "sparkles", title: "Auto-pick") { autoPick() }
+                ActionChip(icon: "xmark", title: "Clear", destructive: true) { selected = []; Haptics.tap() }
+                ActionChip(icon: "checkmark", title: "Save", primary: true, disabled: !blocking.isEmpty) { save() }
             }
-        }
-        .darkList()
-        .navigationTitle("Pick XI")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button("Save") {
-                    store.careerPickXI(selected)
-                    Haptics.success()
-                    dismiss()
+            TableNote(text: issues.isEmpty ? "Tap to pick or drop. New picks bat where they bat best; fine-tune in Batting order."
+                                           : issues.joined(separator: " · "), warning: !issues.isEmpty)
+            SquadTableHead(count: squad.count, check: true)
+        } rows: {
+            ForEach(squad) { p in
+                Button { toggle(p.id) } label: {
+                    SquadTableRow(player: p, year: year, check: selected.contains(p.id),
+                                  pitchFit: c?.suitsUserPitch(p), selected: selected.contains(p.id))
                 }
-                .disabled(!TeamSelector.blockingIssues(picked, rules: rules).isEmpty)
+                .buttonStyle(.plain)
             }
         }
         .onAppear {
@@ -212,6 +206,20 @@ struct PickXIView: View {
                 loaded = true
             }
         }
+    }
+
+    private func save() {
+        store.careerPickXI(selected)
+        Haptics.success()
+        dismiss()
+    }
+
+    /// The assistant's XI for the next match's pitch (not saved until Save).
+    private func autoPick() {
+        guard var c = store.career else { return }
+        c.autoPickXI(clubIndex: c.userClubIndex, pitch: c.nextUserFixture?.pitch)
+        selected = Set(c.userClub.xi)
+        Haptics.success()
     }
 
     private func toggle(_ id: String) {
@@ -224,11 +232,6 @@ struct PickXIView: View {
             return
         }
         Haptics.tap()
-    }
-
-    private func formText(_ id: String) -> String {
-        guard let p = store.careerPlayer(id) else { return "" }
-        return "form \(CareerText.form(p.form))"
     }
 }
 
@@ -539,43 +542,32 @@ struct CareerClubView: View {
     let clubId: Int
 
     var body: some View {
-        ScrollView {
-            if let c = store.career, let club = c.club(clubId) {
-                let squad = c.squad(clubId).sorted { $0.rating > $1.rating }
-                let info = c.info(clubId)
-                VStack(alignment: .leading, spacing: DS.Space.lg) {
-                    AppCard(tint: Color(hex: club.colorHex)) {
-                        HStack(spacing: 12) {
-                            TeamBadge(team: club, size: 52)
-                            VStack(alignment: .leading, spacing: 3) {
-                                Text(club.name.uppercased()).font(.display(22))
-                                if let info {
-                                    Text("\(info.homePitch.icon) \(info.homePitch.label) · 🏆 \(info.titles)")
-                                        .font(.caption).foregroundStyle(Palette.muted)
-                                }
-                                Text("\(Career.ordinal(c.position(of: clubId))) · strength \(c.strength(clubId))")
-                                    .font(.caption).foregroundStyle(Palette.muted)
-                            }
-                        }
-                    }
-                    SectionLabel(text: "Squad")
-                    AppCard(padding: DS.Space.md) {
-                        VStack(spacing: 8) {
-                            ForEach(squad) { cp in
-                                NavigationLink { CareerPlayerView(playerId: cp.id) } label: {
-                                    CareerPlayerRow(player: cp, year: c.year)
-                                }
-                                .buttonStyle(.plain)
-                            }
-                        }
-                    }
+        let c = store.career
+        let squad = c.map { $0.squad(clubId).sorted { $0.rating != $1.rating ? $0.rating > $1.rating : $0.id < $1.id } } ?? []
+        let xi = Set(c?.club(clubId)?.xi ?? [])
+        TableScreen(title: c?.club(clubId)?.name ?? "") {
+            if let c, let club = c.club(clubId) {
+                HStack(spacing: 10) {
+                    TeamBadge(team: club, size: 34)
+                    SummaryLine(cells: [
+                        SummaryCell(value: Career.ordinal(c.position(of: clubId)), label: "in the league"),
+                        SummaryCell(value: "\(c.strength(clubId))", label: "XI strength", color: strengthColor(c.strength(clubId))),
+                        SummaryCell(value: c.homePitch(clubId).label, label: "home"),
+                        SummaryCell(value: "\(c.info(clubId)?.titles ?? 0)", label: "titles"),
+                    ])
                 }
-                .padding(DS.Space.lg)
+                TableNote(text: "Highlighted: their current XI. Tap a player for his page.")
+                SquadTableHead(count: squad.count, trailing: "WAGE")
+            }
+        } rows: {
+            ForEach(squad) { p in
+                NavigationLink { CareerPlayerView(playerId: p.id) } label: {
+                    SquadTableRow(player: p, year: c?.year ?? 0, trailing: p.contract.map { Money.format($0.wage) } ?? "–",
+                                  trailingColor: Palette.muted, selected: xi.contains(p.id))
+                }
+                .buttonStyle(.plain)
             }
         }
-        .background(AppBackground())
-        .navigationTitle(store.career?.club(clubId)?.short ?? "")
-        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
@@ -623,56 +615,42 @@ struct SquadReportView: View {
     @EnvironmentObject var store: GameStore
 
     var body: some View {
-        if let c = store.career {
-            let r = c.squadReport()
-            VStack(alignment: .leading, spacing: DS.Space.lg) {
-                HStack(spacing: 0) {
-                    stat("\(r.averageRating)", "AVG RATING")
-                    stat("\(c.squad(c.userClubId).count)", "SQUAD")
-                    stat(String(format: "%.1f", r.averageAge), "AVG AGE")
-                    stat(Money.format(r.totalValue), "VALUE")
+        let c = store.career
+        let r = c?.squadReport() ?? SquadReport()
+        PaneScreen(title: "Squad report") {
+            SummaryLine(cells: [
+                SummaryCell(value: "\(r.averageRating)", label: "avg rating", color: strengthColor(r.averageRating)),
+                SummaryCell(value: "\(c.map { $0.squad($0.userClubId).count } ?? 0)", label: "squad"),
+                SummaryCell(value: String(format: "%.1f", r.averageAge), label: "avg age"),
+                SummaryCell(value: Money.format(r.totalValue), label: "value"),
+            ])
+            Text("BEST PLAYERS").font(.system(size: 10 * TextScale.factor, weight: .heavy)).foregroundStyle(Palette.muted)
+            SquadTableHead(count: r.stars.count, form: true)
+            ForEach(r.stars) { p in
+                NavigationLink { CareerPlayerView(playerId: p.id) } label: {
+                    SquadTableRow(player: p, year: c?.year ?? 0, pitchFit: c?.suitsUserPitch(p))
                 }
-                .padding(.vertical, DS.Space.sm)
-                .background(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous).fill(Palette.surface))
-                SectionLabel(text: "Best players")
-                VStack(spacing: 8) {
-                    ForEach(r.stars) { p in
-                        NavigationLink { CareerPlayerView(playerId: p.id) } label: { CareerPlayerRow(player: p, year: c.year, pitchFit: c.suitsUserPitch(p)) }
-                            .buttonStyle(.plain)
-                    }
-                }
-                .padding(DS.Space.md)
-                .gameFrame()
-                SectionLabel(text: "Strengths")
-                lines(r.strengths, icon: "checkmark", color: Palette.accent)
-                SectionLabel(text: "Weak spots")
-                lines(r.weaknesses.isEmpty ? ["Nothing stands out."] : r.weaknesses, icon: "xmark", color: Palette.wicket)
+                .buttonStyle(.plain)
             }
+        } right: {
+            lines("Strengths", r.strengths, icon: "checkmark", color: Palette.accent)
+            lines("Weak spots", r.weaknesses.isEmpty ? ["Nothing stands out."] : r.weaknesses, icon: "xmark", color: Palette.wicket)
         }
     }
 
-    private func stat(_ v: String, _ l: String) -> some View {
-        VStack(spacing: 2) {
-            Text(v).font(.display(18)).lineLimit(1).minimumScaleFactor(0.6)
-            Text(l).font(.display(9, weight: .heavy)).foregroundStyle(Palette.muted)
-        }
-        .frame(maxWidth: .infinity)
-    }
-
-    private func lines(_ items: [String], icon: String, color: Color) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
+    private func lines(_ title: String, _ items: [String], icon: String, color: Color) -> some View {
+        PaneBox(title: title) {
             ForEach(Array(items.enumerated()), id: \.offset) { i, line in
-                if i > 0 { Hairline(inset: 44) }
-                HStack(alignment: .top, spacing: 12) {
-                    Image(systemName: icon).font(.system(size: 14 * TextScale.factor, weight: .bold)).foregroundStyle(color)
-                        .frame(width: 16)
-                    Text(line).font(.display(15, weight: .regular)).foregroundStyle(.white)
+                if i > 0 { Hairline() }
+                HStack(alignment: .top, spacing: 8) {
+                    Image(systemName: icon).font(.system(size: 12 * TextScale.factor, weight: .bold)).foregroundStyle(color)
+                        .frame(width: 14)
+                    Text(line).font(.system(size: 13 * TextScale.factor)).foregroundStyle(.white)
+                        .fixedSize(horizontal: false, vertical: true)
                     Spacer(minLength: 0)
                 }
-                .padding(.horizontal, 16).padding(.vertical, 11)
             }
         }
-        .gameFrame()
     }
 }
 
@@ -704,50 +682,44 @@ struct ClubStatsView: View {
     }
 
     var body: some View {
-        if let c = store.career {
-            let season = c.seasonStatLines
-            let rows = ranked(c, season)
-            VStack(alignment: .leading, spacing: DS.Space.md) {
-                HStack {
-                    Text("Season \(String(c.year))").font(.display(14, weight: .semibold)).foregroundStyle(Palette.muted)
-                    Spacer()
-                    Picker("Category", selection: $category) {
-                        ForEach(Category.allCases) { Text($0.rawValue).tag($0) }
-                    }
-                    .pickerStyle(.menu)
+        let c = store.career
+        let rows = c.map { ranked($0, $0.seasonStatLines) } ?? []
+        TableScreen(title: "Club stats") {
+            HStack(spacing: 6) {
+                ForEach([Category.runs, .wickets, .rating], id: \.self) { cat in
+                    FilterChip(title: cat.rawValue, on: category == cat) { category = cat }
                 }
-                HStack {
-                    Text("Player").frame(maxWidth: .infinity, alignment: .leading)
-                    Text("Apps").frame(width: 44)
-                    Text(category.rateLabel).frame(width: 60)
-                    Text(category == .rating ? "Avg" : "Total").frame(width: 56, alignment: .trailing)
+                MenuChip(title: [Category.runs, .wickets, .rating].contains(category) ? "More" : category.rawValue) {
+                    ForEach(Category.allCases) { cat in Button(cat.rawValue) { category = cat } }
                 }
-                .font(.caption.weight(.semibold)).foregroundStyle(Palette.muted)
-                .padding(.horizontal, 16)
-                VStack(spacing: 0) {
-                    if rows.isEmpty {
-                        Text("No matches played this season yet.").font(.subheadline).foregroundStyle(.secondary)
-                            .padding(16)
+                Spacer(minLength: 4)
+                Text("Season \(String(c?.year ?? 0))").font(.system(size: 12 * TextScale.factor, weight: .semibold)).foregroundStyle(Palette.muted)
+            }
+            TableNote(text: "Match ratings run 3 to 10. Strike rate needs 30 balls faced, economy 24 bowled.")
+            TableHead {
+                Text("#").frame(width: TCol.num, alignment: .center)
+                Text("PLAYER · \(rows.count)").frame(maxWidth: .infinity, alignment: .leading)
+                Text("APPS").frame(width: TCol.stat + 6, alignment: .trailing)
+                Text(category.rateLabel.uppercased()).frame(width: TCol.wide, alignment: .trailing)
+                Text(category == .rating ? "AVG" : "TOTAL").frame(width: TCol.wide, alignment: .trailing)
+            }
+        } rows: {
+            if rows.isEmpty {
+                Text("No matches played this season yet.").font(.system(size: 13 * TextScale.factor)).foregroundStyle(Palette.muted)
+                    .frame(maxWidth: .infinity, alignment: .leading).tableRow()
+            }
+            ForEach(Array(rows.enumerated()), id: \.element.0.id) { i, row in
+                NavigationLink { CareerPlayerView(playerId: row.0.id) } label: {
+                    HStack(spacing: 8) {
+                        TNum(text: "\(i + 1)", width: TCol.num, color: Palette.muted, align: .center)
+                        TName(text: row.0.name, overseas: row.0.overseas, bold: i < 3)
+                        TNum(text: "\(row.1)", width: TCol.stat + 6, color: Palette.muted)
+                        TNum(text: row.2, width: TCol.wide, color: Palette.muted)
+                        TNum(text: row.3, width: TCol.wide, color: Palette.accent)
                     }
-                    ForEach(Array(rows.enumerated()), id: \.element.0.id) { i, row in
-                        if i > 0 { Hairline(inset: 16) }
-                        NavigationLink { CareerPlayerView(playerId: row.0.id) } label: {
-                            HStack {
-                                Text(row.0.name).font(.display(15, weight: i == 0 ? .semibold : .regular)).lineLimit(1)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                Text("\(row.1)").font(.score(15)).foregroundStyle(Palette.muted).frame(width: 44)
-                                Text(row.2).font(.score(15)).foregroundStyle(Palette.muted).frame(width: 60)
-                                Text(row.3).font(.score(16)).foregroundStyle(Palette.accent).frame(width: 56, alignment: .trailing)
-                            }
-                            .padding(.horizontal, 16).padding(.vertical, 11)
-                            .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                    }
+                    .tableRow()
                 }
-                .gameFrame()
-                Text("Match ratings run from 3 to 10: runs and strike rate, wickets and economy, the result and player of the match. Strike rate needs 30 balls faced, economy 24 bowled.")
-                    .font(.caption).foregroundStyle(Palette.muted)
+                .buttonStyle(.plain)
             }
         }
     }
@@ -791,53 +763,60 @@ struct ClubStatsView: View {
 /// now, the trend and the potential range.
 struct DevelopmentReportView: View {
     @EnvironmentObject var store: GameStore
+    @Environment(\.verticalSizeClass) private var vSize
 
     var body: some View {
-        if let c = store.career {
-            let list = c.developmentWatch
-            VStack(alignment: .leading, spacing: DS.Space.md) {
-                HStack {
-                    Text("Player").frame(maxWidth: .infinity, alignment: .leading)
-                    Text("Start").frame(width: 46)
-                    Text("Now").frame(width: 46)
-                    Text("").frame(width: 24)
-                    Text("Potential").frame(width: 76, alignment: .trailing)
-                }
-                .font(.caption.weight(.semibold)).foregroundStyle(Palette.muted)
-                .padding(.horizontal, 16)
-                VStack(spacing: 0) {
-                    if list.isEmpty {
-                        Text("No players aged 23 or under. Sign some, or promote from the academy.")
-                            .font(.subheadline).foregroundStyle(.secondary).padding(16)
-                    }
-                    ForEach(Array(list.enumerated()), id: \.element.id) { i, p in
-                        if i > 0 { Hairline(inset: 16) }
-                        let delta = c.seasonProgress(p) ?? 0
-                        NavigationLink { CareerPlayerView(playerId: p.id) } label: {
-                            HStack {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(p.name).font(.display(15, weight: .semibold)).lineLimit(1)
-                                    Text("\(p.age(in: c.year)) · \(p.role.short)\(p.academyOf != nil ? " · academy" : "")")
-                                        .font(.caption).foregroundStyle(Palette.muted)
+        let c = store.career
+        let list = c?.developmentWatch ?? []
+        let rising = list.filter { (c?.seasonProgress($0) ?? 0) > 0 }.count
+        TableScreen(title: "Development") {
+            SummaryLine(cells: [
+                SummaryCell(value: "\(list.count)", label: "aged 23 or under"),
+                SummaryCell(value: "\(rising)", label: "improved this season", color: Palette.accent),
+                SummaryCell(value: "\(list.filter { $0.academyOf != nil }.count)", label: "in the academy"),
+            ])
+            TableNote(text: "Young players grow most with training focus and match time. Scouting narrows the potential range.")
+            TableHead {
+                Text("PLAYER · \(list.count)").frame(maxWidth: .infinity, alignment: .leading)
+                if vSize == .compact { Text("ROLE").frame(width: TCol.role, alignment: .leading) }
+                Text("AGE").frame(width: TCol.age, alignment: .trailing)
+                Text("START").frame(width: TCol.wide - 10, alignment: .trailing)
+                Text("NOW").frame(width: TCol.stat, alignment: .trailing)
+                Text("").frame(width: 18)
+                Text("POTENTIAL").frame(width: 76, alignment: .trailing)
+            }
+        } rows: {
+            if list.isEmpty {
+                Text("No players aged 23 or under. Sign some, or promote from the academy.")
+                    .font(.system(size: 13 * TextScale.factor)).foregroundStyle(Palette.muted)
+                    .frame(maxWidth: .infinity, alignment: .leading).tableRow()
+            }
+            if let c {
+                ForEach(list) { p in
+                    let delta = c.seasonProgress(p) ?? 0
+                    NavigationLink { CareerPlayerView(playerId: p.id) } label: {
+                        HStack(spacing: 8) {
+                            HStack(spacing: 6) {
+                                TName(text: p.name, overseas: p.overseas)
+                                if p.academyOf != nil {
+                                    Text("ACADEMY").font(.system(size: 9 * TextScale.factor, weight: .heavy)).foregroundStyle(Palette.four)
                                 }
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                Text(p.seasonStartRating.map { "\($0)" } ?? "–").font(.score(15)).foregroundStyle(Palette.muted).frame(width: 46)
-                                Text("\(p.rating)").font(.score(16)).frame(width: 46)
-                                Image(systemName: delta > 0 ? "arrow.up" : (delta < 0 ? "arrow.down" : "minus"))
-                                    .font(.system(size: 13 * TextScale.factor, weight: .bold))
-                                    .foregroundStyle(delta > 0 ? Palette.accent : (delta < 0 ? Palette.wicket : Palette.muted))
-                                    .frame(width: 24)
-                                Text(c.potentialLabel(p)).font(.score(15)).foregroundStyle(Palette.accent).frame(width: 76, alignment: .trailing)
                             }
-                            .padding(.horizontal, 16).padding(.vertical, 10)
-                            .contentShape(Rectangle())
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            if vSize == .compact { TRole(role: p.role) }
+                            TNum(text: "\(p.age(in: c.year))", width: TCol.age, color: Palette.muted)
+                            TNum(text: p.seasonStartRating.map { "\($0)" } ?? "–", width: TCol.wide - 10, color: Palette.muted)
+                            TNum(text: "\(p.rating)", width: TCol.stat, color: strengthColor(p.rating))
+                            Image(systemName: delta > 0 ? "arrow.up" : (delta < 0 ? "arrow.down" : "minus"))
+                                .font(.system(size: 11 * TextScale.factor, weight: .bold))
+                                .foregroundStyle(delta > 0 ? Palette.accent : (delta < 0 ? Palette.wicket : Palette.muted))
+                                .frame(width: 18)
+                            TNum(text: c.potentialLabel(p), width: 76, color: Palette.four)
                         }
-                        .buttonStyle(.plain)
+                        .tableRow()
                     }
+                    .buttonStyle(.plain)
                 }
-                .gameFrame()
-                Text("Young players grow most with training focus and match time. Scouting narrows the potential range.")
-                    .font(.caption).foregroundStyle(Palette.muted)
             }
         }
     }

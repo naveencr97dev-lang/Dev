@@ -59,3 +59,16 @@ struct SeasonMoneyCard: View {
         .padding(.horizontal, 14).padding(.vertical, 10)
     }
 }
+
+/// Club › Money: this season's money (left) and the ledger (right).
+struct MoneyScreen: View {
+    @EnvironmentObject var store: GameStore
+
+    var body: some View {
+        PaneScreen(title: "Money") {
+            if let c = store.career { SeasonMoneyCard(career: c) }
+        } right: {
+            if let c = store.career { FinanceCard(career: c) }
+        }
+    }
+}

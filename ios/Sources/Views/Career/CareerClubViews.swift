@@ -42,35 +42,33 @@ struct ManagerView: View {
 
     var body: some View {
         let c = store.career
-        List {
-            Section {
-                if let c {
-                    Text("Level \(c.manager.level) · \(c.manager.points) point\(c.manager.points == 1 ? "" : "s") to spend")
-                        .font(.headline)
-                }
-                if let message {
-                    Text(message).font(.caption.weight(.bold)).foregroundStyle(.orange)
-                }
-            } footer: {
-                Text("Earn XP by winning matches, reaching the playoffs, titles, finishing a season in profit and upgrading facilities. Each level gives a point. Tier 2 perks cost 2 and need 2 perks from the same tree; tier 3 cost 3 and need 4. Perks apply to this career only.")
+        let trees = PerkTree.allCases
+        PaneScreen(title: "Manager traits") {
+            if let c {
+                SummaryLine(cells: [
+                    SummaryCell(value: "\(c.manager.level)", label: "level", color: Palette.accent),
+                    SummaryCell(value: "\(c.manager.points)", label: "points", color: c.manager.points > 0 ? Palette.accent : .white),
+                    SummaryCell(value: "\(c.manager.perks.count)", label: "perks"),
+                ])
             }
-            .listRowBackground(GameRowBackground())
+            TableNote(text: message ?? "Win matches, titles and a profit to level up. Each level is a point. Tier 2 needs 2 perks in its tree, tier 3 needs 4.",
+                      warning: message != nil)
+            ForEach(trees.prefix(1), id: \.self) { tree in perks(tree, c) }
+        } right: {
+            ForEach(trees.dropFirst(), id: \.self) { tree in perks(tree, c) }
+        }
+    }
 
-            ForEach(PerkTree.allCases, id: \.self) { tree in
-                Section(tree.label) {
-                    ForEach(Perk.allCases.filter { $0.tree == tree }) { perk in
-                        PerkRow(perk: perk, owned: c?.manager.has(perk) ?? false, block: c?.canLearn(perk)) {
-                            message = store.careerLearn(perk)
-                            if message == nil { Haptics.success() }
-                        }
-                    }
+    private func perks(_ tree: PerkTree, _ c: Career?) -> some View {
+        PaneBox(title: tree.label) {
+            ForEach(Array(Perk.allCases.filter { $0.tree == tree }.enumerated()), id: \.element.id) { i, perk in
+                if i > 0 { Hairline() }
+                PerkRow(perk: perk, owned: c?.manager.has(perk) ?? false, block: c?.canLearn(perk)) {
+                    message = store.careerLearn(perk)
+                    if message == nil { Haptics.success() }
                 }
-                .listRowBackground(GameRowBackground())
             }
         }
-        .darkList()
-        .navigationTitle("Manager traits")
-        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
@@ -81,20 +79,20 @@ struct PerkRow: View {
     let learn: () -> Void
 
     var body: some View {
-        HStack(spacing: 10) {
-            Text(String(repeating: "●", count: perk.tier)).font(.caption2).foregroundStyle(Palette.accent).frame(width: 26)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(perk.label).font(.subheadline.weight(.semibold)).foregroundStyle(owned ? Palette.accent : .white)
-                Text(perk.blurb).font(.caption).foregroundStyle(Palette.muted)
+        HStack(spacing: 8) {
+            Text(String(repeating: "●", count: perk.tier)).font(.system(size: 9 * TextScale.factor)).foregroundStyle(Palette.accent)
+                .frame(width: 22, alignment: .leading)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(perk.label).font(.system(size: 13 * TextScale.factor, weight: .semibold)).foregroundStyle(owned ? Palette.accent : .white)
+                    .lineLimit(1)
+                Text(perk.blurb).font(.system(size: 11 * TextScale.factor)).foregroundStyle(Palette.muted).lineLimit(2)
             }
-            Spacer()
+            .frame(maxWidth: .infinity, alignment: .leading)
             if owned {
-                Image(systemName: "checkmark.seal.fill").foregroundStyle(Palette.accent)
+                Image(systemName: "checkmark.seal.fill").foregroundStyle(Palette.accent).frame(width: 74, alignment: .trailing)
             } else {
-                Button("Learn (\(perk.cost))", action: learn)
-                    .font(.caption.weight(.bold))
-                    .buttonStyle(.borderless)
-                    .disabled(block != nil)
+                ActionChip(icon: "plus", title: "Learn \(perk.cost)", disabled: block != nil, action: learn)
+                    .frame(width: 74, alignment: .trailing)
             }
         }
     }
@@ -104,48 +102,53 @@ struct PerkRow: View {
 
 struct FacilitiesView: View {
     @EnvironmentObject var store: GameStore
+    @Environment(\.verticalSizeClass) private var vSize
     @State private var message: String? = nil
 
     var body: some View {
         let c = store.career
-        List {
-            Section {
-                if let c {
+        TableScreen(title: "Facilities") {
+            if let c {
+                SummaryLine(cells: [
+                    SummaryCell(value: Money.format(c.bank(c.userClubId)), label: "bank"),
+                    SummaryCell(value: Money.format(c.facilityMaintenance), label: "upkeep / season"),
+                    SummaryCell(value: c.facilities.building == nil ? "None" : "\(c.facilities.weeksLeft) wk", label: "building",
+                                color: c.facilities.building == nil ? Palette.muted : Palette.accent),
+                ])
+                HStack(spacing: 6) {
                     if let b = c.facilities.building, let k = FacilityKind(rawValue: b) {
-                        Text("Building \(k.label) level \(c.facility(k) + 1): \(c.facilities.weeksLeft) weeks left")
-                            .font(.subheadline.weight(.semibold))
-                        Button("Finish now (\(c.goldCost(.finishBuild)) gold)") {
+                        TableNote(text: message ?? "Building \(k.label) level \(c.facility(k) + 1): \(c.facilities.weeksLeft) weeks left.", warning: message != nil)
+                        Spacer(minLength: 4)
+                        ActionChip(icon: "bolt.fill", title: "Finish now · \(c.goldCost(.finishBuild)) gold") {
                             message = store.careerSpendGold(.finishBuild)
                         }
                     } else {
-                        Text("No building work. Pick an upgrade below.").font(.subheadline).foregroundStyle(.secondary)
+                        TableNote(text: message ?? "One project at a time. Building time counts in your matches; each level adds upkeep.",
+                                  warning: message != nil)
                     }
-                    Text("Bank \(Money.format(c.bank(c.userClubId))) · upkeep \(Money.format(c.facilityMaintenance)) a season")
-                        .font(.caption).foregroundStyle(Palette.muted)
                 }
-                if let message {
-                    Text(message).font(.caption.weight(.bold)).foregroundStyle(.orange)
+                TableHead {
+                    if vSize == .compact {
+                        Text("FACILITY").frame(width: 150, alignment: .leading)
+                        Text("LEVEL").frame(width: 110, alignment: .leading)
+                        Text("EFFECT").frame(maxWidth: .infinity, alignment: .leading)
+                    } else {
+                        Text("FACILITY").frame(maxWidth: .infinity, alignment: .leading)
+                        Text("LV").frame(width: TCol.stat, alignment: .trailing)
+                    }
+                    Text("UPGRADE").frame(width: vSize == .compact ? 190 : 150, alignment: .trailing)
                 }
-            } footer: {
-                Text("One project at a time. Building time is counted in your matches (4 weeks pass in each off-season). Each level adds yearly upkeep.")
             }
-            .listRowBackground(GameRowBackground())
-
-            Section("Facilities") {
+        } rows: {
+            if let c {
                 ForEach(FacilityKind.allCases) { k in
-                    if let c {
-                        FacilityRow(career: c, kind: k) {
-                            message = store.careerUpgrade(k)
-                            if message == nil { Haptics.success() }
-                        }
+                    FacilityRow(career: c, kind: k) {
+                        message = store.careerUpgrade(k)
+                        if message == nil { Haptics.success() }
                     }
                 }
             }
-            .listRowBackground(GameRowBackground())
         }
-        .darkList()
-        .navigationTitle("Facilities")
-        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
@@ -153,29 +156,50 @@ struct FacilityRow: View {
     let career: Career
     let kind: FacilityKind
     let upgrade: () -> Void
+    @Environment(\.verticalSizeClass) private var vSize
 
     var body: some View {
         let level = career.facility(kind)
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Text("\(kind.icon) \(kind.label)").font(.subheadline.weight(.semibold))
-                Spacer()
-                Text("LV \(level)").font(.display(18)).foregroundStyle(Palette.accent)
+        let wide = vSize == .compact
+        HStack(spacing: 8) {
+            if wide {
+                Text("\(kind.icon) \(kind.label)").font(.system(size: 13 * TextScale.factor, weight: .semibold)).lineLimit(1)
+                    .minimumScaleFactor(0.8).frame(width: 150, alignment: .leading)
+                pips(level)
+                Text(kind.effect).font(.system(size: 11 * TextScale.factor)).foregroundStyle(Palette.muted).lineLimit(2)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            } else {
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("\(kind.icon) \(kind.label)").font(.system(size: 13 * TextScale.factor, weight: .semibold)).lineLimit(1)
+                    Text(kind.effect).font(.system(size: 11 * TextScale.factor)).foregroundStyle(Palette.muted).lineLimit(2)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                TNum(text: "\(level)", width: TCol.stat, color: Palette.accent)
             }
-            HStack(spacing: 3) {
-                ForEach(0..<10, id: \.self) { i in
-                    RoundedRectangle(cornerRadius: 2).fill(i < level ? Palette.accent : Color.white.opacity(0.1)).frame(height: 5)
+            Group {
+                if level < 10 {
+                    ActionChip(icon: "arrow.up", title: "\(Money.format(career.upgradeCost(kind))) · \(career.upgradeWeeks(kind)) wk",
+                               disabled: career.facilities.building != nil, action: upgrade)
+                } else {
+                    Text("Max").font(.system(size: 12 * TextScale.factor, weight: .bold)).foregroundStyle(Palette.muted)
                 }
             }
-            Text(kind.effect).font(.caption).foregroundStyle(Palette.muted)
-            if level < 10 {
-                Button("Upgrade to \(level + 1) · \(Money.format(career.upgradeCost(kind))) · \(career.upgradeWeeks(kind)) weeks", action: upgrade)
-                    .font(.caption.weight(.bold))
-                    .buttonStyle(.borderless)
-                    .disabled(career.facilities.building != nil)
-            }
+            .frame(width: wide ? 190 : 150, alignment: .trailing)
         }
-        .padding(.vertical, 2)
+        .tableRow()
+    }
+
+    /// Ten level pips and the number (landscape).
+    private func pips(_ level: Int) -> some View {
+        HStack(spacing: 6) {
+            HStack(spacing: 2) {
+                ForEach(0..<10, id: \.self) { i in
+                    RoundedRectangle(cornerRadius: 1).fill(i < level ? Palette.accent : Color.white.opacity(0.1)).frame(width: 5, height: 10)
+                }
+            }
+            Text("\(level)").font(.score(13)).foregroundStyle(Palette.accent)
+        }
+        .frame(width: 110, alignment: .leading)
     }
 }
 
@@ -186,63 +210,45 @@ struct StoreView: View {
 
     var body: some View {
         let gold = store.career?.gold ?? 0
-        List {
-            Section {
-                Text("\(gold) gold").font(.display(30)).foregroundStyle(Palette.accent)
-                Text("Earn gold from manager levels, titles and every match. Spend it to finish builds, boost training, scout instantly or freshen a player's form.")
-                    .font(.caption).foregroundStyle(Palette.muted)
-            }
-            .listRowBackground(GameRowBackground())
-
-            Section {
-                ForEach([100, 1_000, 10_000, 100_000], id: \.self) { amount in
+        PaneScreen(title: "Store") {
+            SummaryLine(cells: [
+                SummaryCell(value: "\(gold)", label: "gold", color: CareerPalette.gold),
+                SummaryCell(value: Money.format(store.career.map { $0.bank($0.userClubId) } ?? 0), label: "bank"),
+            ])
+            PaneBox(title: "Gold → club bank", note: "1 gold = ₹1 lakh. Gold also finishes builds, boosts training, scouts instantly and freshens form.") {
+                ForEach(Array([100, 1_000, 10_000, 100_000].enumerated()), id: \.offset) { i, amount in
+                    if i > 0 { Hairline() }
                     HStack {
-                        Text("\(amount.formatted()) gold → \(Money.format(amount))").font(.subheadline)
+                        Text("\(amount.formatted()) gold → \(Money.format(amount))").font(.system(size: 13 * TextScale.factor))
                         Spacer()
-                        Button("Exchange") {
+                        ActionChip(icon: "arrow.right", title: "Exchange", disabled: gold < amount) {
                             if store.careerExchangeGold(amount) == nil { Haptics.success() } else { Haptics.warning() }
                         }
-                        .font(.caption.weight(.bold))
-                        .buttonStyle(.borderless)
-                        .disabled(gold < amount)
                     }
                 }
-            } header: {
-                Text("Gold → club bank")
-            } footer: {
-                Text("1 gold = ₹1 lakh. Handy for testing transfers with the Tester Pack.")
             }
-            .listRowBackground(GameRowBackground())
-
-            Section {
-                ForEach(StorePack.allCases) { pack in
+        } right: {
+            PaneBox(title: "Gold packs",
+                    note: StoreConfig.testerStore
+                        ? "TEST MODE: no real purchases. Every pack is free; the Tester Pack can be bought any number of times."
+                        : "Purchases are charged to your Apple account.") {
+                ForEach(Array(StorePack.allCases.enumerated()), id: \.element.id) { i, pack in
+                    if i > 0 { Hairline() }
                     HStack {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(pack.title).font(.subheadline.weight(.bold))
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(pack.title).font(.system(size: 13 * TextScale.factor, weight: .bold))
                                 .foregroundStyle(pack == .tester ? Palette.accent : .white)
-                            Text("+\(pack.gold) gold").font(.caption).foregroundStyle(Palette.muted)
+                            Text("+\(pack.gold) gold").font(.system(size: 11 * TextScale.factor)).foregroundStyle(Palette.muted)
                         }
                         Spacer()
-                        Button(pack.priceLabel) {
+                        ActionChip(icon: "cart", title: pack.priceLabel, primary: pack == .tester) {
                             store.careerBuy(pack)
                             Haptics.success()
                         }
-                        .font(.caption.weight(.bold))
-                        .buttonStyle(.borderless)
                     }
                 }
-            } header: {
-                Text("Gold packs")
-            } footer: {
-                Text(StoreConfig.testerStore
-                     ? "TEST MODE: no real purchases. Every pack is free, and the Tester Pack can be bought any number of times. Real in-app purchases need an App Store or TestFlight build."
-                     : "Purchases are charged to your Apple account.")
             }
-            .listRowBackground(GameRowBackground())
         }
-        .darkList()
-        .navigationTitle("Store")
-        .navigationBarTitleDisplayMode(.inline)
     }
 }
 

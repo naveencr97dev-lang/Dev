@@ -428,6 +428,9 @@ public struct BorderlessButtonStyle: PrimitiveButtonStyle { public init() {} }
 extension PrimitiveButtonStyle where Self == PlainButtonStyle { public static var plain: PlainButtonStyle { .init() } }
 extension PrimitiveButtonStyle where Self == BorderlessButtonStyle { public static var borderless: BorderlessButtonStyle { .init() } }
 
+public protocol ListStyle {}
+public struct PlainListStyle: ListStyle { public init() {} }
+extension ListStyle where Self == PlainListStyle { public static var plain: PlainListStyle { .init() } }
 public protocol PickerStyle {}
 public struct SegmentedPickerStyle: PickerStyle { public init() {} }
 public struct MenuPickerStyle: PickerStyle { public init() {} }
@@ -485,6 +488,7 @@ extension View {
     public func buttonStyle<S: ButtonStyle>(_ s: S) -> _Mod { _Mod() }
     public func buttonStyle<S: PrimitiveButtonStyle>(_ s: S) -> _Mod { _Mod() }
     public func pickerStyle<S: PickerStyle>(_ s: S) -> _Mod { _Mod() }
+    public func listStyle<S: ListStyle>(_ s: S) -> _Mod { _Mod() }
     public func disabled(_ d: Bool) -> _Mod { _Mod() }
     public func tag<V: Hashable>(_ v: V) -> _Mod { _Mod() }
     public func id<V: Hashable>(_ v: V) -> _Mod { _Mod() }

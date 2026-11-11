@@ -410,7 +410,7 @@ struct ClubOfficeTiles: View {
                 DashTile(icon: "newspaper", title: "News", subtitle: "\(c.news.count) items")
             }
             Hairline(inset: 54)
-            NavigationLink { CareerScreen(title: "History") { ClubHistoryView() } } label: {
+            NavigationLink { ClubHistoryView() } label: {
                 DashTile(icon: "clock.arrow.circlepath", title: "History",
                          subtitle: "\(c.history.count) season\(c.history.count == 1 ? "" : "s") · roll of honour")
             }
@@ -563,7 +563,7 @@ struct SeasonSummary: View {
                     }
                 }
                 Hairline(inset: 16)
-                NavigationLink { CareerScreen(title: "Money") { SeasonMoneyCard(career: c) } } label: {
+                NavigationLink { MoneyScreen() } label: {
                     InfoRow(label: "Money this season", value: (net >= 0 ? "+" : "−") + Money.format(abs(net)),
                             color: net >= 0 ? Palette.accent : Palette.wicket)
                 }
@@ -1020,15 +1020,15 @@ struct ClubDevelopmentTiles: View {
             Hairline(inset: 54)
             NavigationLink { AcademyView() } label: { DashTile(icon: "graduationcap", title: "Academy", subtitle: "\(c.academy.count) prospects") }
             Hairline(inset: 54)
-            NavigationLink { CareerScreen(title: "Development") { DevelopmentReportView() } } label: {
+            NavigationLink { DevelopmentReportView() } label: {
                 DashTile(icon: "chart.line.uptrend.xyaxis", title: "Development", subtitle: "Young players this season")
             }
             Hairline(inset: 54)
-            NavigationLink { CareerScreen(title: "Club stats") { ClubStatsView() } } label: {
+            NavigationLink { ClubStatsView() } label: {
                 DashTile(icon: "chart.bar", title: "Club stats", subtitle: "Runs, wickets, match ratings")
             }
             Hairline(inset: 54)
-            NavigationLink { CareerScreen(title: "Squad report") { SquadReportView() } } label: {
+            NavigationLink { SquadReportView() } label: {
                 DashTile(icon: "list.bullet.clipboard", title: "Squad report",
                          subtitle: cold > 0 ? "\(cold) out of form in the XI" : "Strengths and weak spots")
             }
@@ -1054,10 +1054,10 @@ struct FinanceGrid: View {
                 cell("Wages", "\(Money.format(c.payroll(c.userClubId))) / \(Money.format(c.tuning.salaryCap))", .white)
             }
             HStack(spacing: 6) {
-                NavigationLink { CareerScreen(title: "Money") { SeasonMoneyCard(career: c) } } label: {
+                NavigationLink { MoneyScreen() } label: {
                     cell("This season ›", (net >= 0 ? "+" : "−") + Money.format(abs(net)), net >= 0 ? Palette.accent : Palette.wicket)
                 }
-                NavigationLink { CareerScreen(title: "Ledger") { FinanceCard(career: c) } } label: {
+                NavigationLink { MoneyScreen() } label: {
                     cell("Ledger ›", "Every payment", Palette.muted)
                 }
             }
@@ -1080,32 +1080,36 @@ struct ClubHistoryView: View {
     @EnvironmentObject var store: GameStore
 
     var body: some View {
-        if let c = store.career {
-            VStack(alignment: .leading, spacing: DS.Space.md) {
-                SectionLabel(text: "History")
+        let c = store.career
+        PaneScreen(title: "History") {
+            Text("SEASONS").font(.system(size: 10 * TextScale.factor, weight: .heavy)).foregroundStyle(Palette.muted)
+            TableHead {
+                Text("YEAR").frame(width: 40, alignment: .leading)
+                Text("YOU").frame(maxWidth: .infinity, alignment: .leading)
+                Text("POS").frame(width: TCol.stat, alignment: .trailing)
+                Text("CHAMPION").frame(width: 66, alignment: .trailing)
+            }
+            if let c {
                 if c.history.isEmpty {
-                    Text("Your first season is under way.").font(.subheadline).foregroundStyle(.secondary)
-                } else {
-                    VStack(spacing: DS.Space.sm) {
-                        ForEach(c.history.reversed()) { h in HistoryRow(career: c, record: h) }
-                    }
+                    Text("Your first season is under way.").font(.system(size: 13 * TextScale.factor)).foregroundStyle(Palette.muted)
+                        .frame(maxWidth: .infinity, alignment: .leading).tableRow()
                 }
-                SectionLabel(text: "Roll of honour")
-                VStack(spacing: 8) {
-                    ForEach(c.clubInfo.sorted { $0.titles != $1.titles ? $0.titles > $1.titles : $0.id < $1.id }) { i in
-                        if let t = c.club(i.id) {
-                            HStack(spacing: 10) {
-                                TeamBadge(team: t, size: 26)
-                                Text(t.name).font(.subheadline)
-                                Spacer()
-                                Text(i.titles > 0 ? String(repeating: "🏆", count: min(i.titles, 6)) + (i.titles > 6 ? " ×\(i.titles)" : "") : "–")
-                                    .font(.caption)
-                            }
+                ForEach(c.history.reversed()) { h in HistoryRow(career: c, record: h) }
+            }
+        } right: {
+            Text("ROLL OF HONOUR").font(.system(size: 10 * TextScale.factor, weight: .heavy)).foregroundStyle(Palette.muted)
+            if let c {
+                ForEach(c.clubInfo.sorted { $0.titles != $1.titles ? $0.titles > $1.titles : $0.id < $1.id }) { i in
+                    if let t = c.club(i.id) {
+                        HStack(spacing: 8) {
+                            TeamBadge(team: t, size: 22)
+                            TName(text: t.name, bold: t.id == c.userClubId)
+                            Text(c.homePitch(t.id).label).font(.system(size: 11 * TextScale.factor)).foregroundStyle(Palette.muted).lineLimit(1)
+                            TNum(text: "\(i.titles)", width: TCol.stat, color: i.titles > 0 ? CareerPalette.gold : Palette.muted)
                         }
+                        .tableRow(selected: t.id == c.userClubId)
                     }
                 }
-                .padding(DS.Space.md)
-                .gameFrame()
             }
         }
     }
@@ -1116,19 +1120,20 @@ struct HistoryRow: View {
     let record: SeasonRecord
 
     var body: some View {
-        AppCard(padding: DS.Space.md) {
-            VStack(alignment: .leading, spacing: 4) {
-                HStack {
-                    Text(String(record.year)).font(.display(22)).foregroundStyle(Palette.accent)
-                    Spacer()
-                    if let champ = career.club(record.championId) {
-                        Text("\(champ.short)").font(.subheadline.weight(.bold))
-                    }
+        HStack(spacing: 8) {
+            Text(String(record.year)).font(.score(13)).foregroundStyle(Palette.accent).frame(width: 40, alignment: .leading)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(record.userFinish).font(.system(size: 13 * TextScale.factor, weight: .semibold)).lineLimit(1)
+                let caps = [record.orangeCap, record.purpleCap].compactMap { $0 }.map { "\($0.name) \($0.value)" }
+                if !caps.isEmpty {
+                    Text(caps.joined(separator: " · ")).font(.system(size: 11 * TextScale.factor)).foregroundStyle(Palette.muted).lineLimit(1)
                 }
-                Text("You: \(record.userFinish) · \(Career.ordinal(record.userPosition)) in the league").font(.subheadline)
-                if let a = record.orangeCap { Text("\(a.name) \(a.value)").font(.caption).foregroundStyle(Palette.muted) }
-                if let a = record.purpleCap { Text("\(a.name) \(a.value)").font(.caption).foregroundStyle(Palette.muted) }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            TNum(text: Career.ordinal(record.userPosition), width: TCol.stat)
+            Text(career.club(record.championId)?.short ?? "–").font(.system(size: 12 * TextScale.factor, weight: .bold))
+                .frame(width: 66, alignment: .trailing)
         }
+        .tableRow()
     }
 }

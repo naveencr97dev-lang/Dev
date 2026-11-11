@@ -252,12 +252,16 @@ struct CareerTopBar: View {
 struct CareerScreen<Content: View>: View {
     let title: String
     @ViewBuilder var content: Content
+    @Environment(\.verticalSizeClass) private var vSize
 
     var body: some View {
+        // Landscape: the full width with the hub's side margins (a 760 pt column left wide gutters).
+        let landscape = vSize == .compact
         ScrollView {
             content
-                .padding(DS.Space.lg)
-                .frame(maxWidth: 760)
+                .padding(.horizontal, landscape ? DS.Space.md : DS.Space.lg)
+                .padding(.vertical, landscape ? DS.Space.sm : DS.Space.lg)
+                .frame(maxWidth: landscape ? .infinity : 760)
                 .frame(maxWidth: .infinity)
         }
         .background(Palette.ink)
