@@ -75,7 +75,6 @@ struct MatchView: View {
         .background(AppBackground())
         .navigationTitle(result?.stage == .league ? "Match" : (result?.stage.label ?? "Match"))
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar(vSize == .compact && !finished && !log.isEmpty ? .hidden : .visible, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 if !finished && !log.isEmpty {
@@ -363,14 +362,10 @@ struct MatchView: View {
             let col = max(0, (geo.size.width - gap) / 2)
             HStack(spacing: gap) {
                 ScrollView(showsIndicators: false) {
+                    // Device tour: with the navigation bar hidden, the landscape match screens sat ~20 pt
+                    // too high (the line-ups title and this Back button were cut off). The standard
+                    // bar (Back, Match, the centre and Skip) stays now, like every other screen.
                     VStack(spacing: 6) {
-                        HStack {
-                            Button { dismiss() } label: { Label("Back", systemImage: "chevron.left") }
-                            Spacer()
-                            Button { finish() } label: { Label("Skip", systemImage: "forward.end.fill") }
-                        }
-                        .font(.display(15, weight: .heavy))
-                        .foregroundStyle(Palette.accent)
                         ScoreBug(result: r, event: current, compact: true)
                         statusLine(current: current, anticipating: anticipating, compact: true)
                         if let e = current {

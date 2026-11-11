@@ -255,7 +255,7 @@ struct MatchCentreView: View {
         return ScrollView {
             layout {
                 ForEach(Array(sides.enumerated()), id: \.offset) { i, inn in
-                    ratingsColumn(inn)
+                    PanelBox(fill: false) { ratingsColumn(inn) }
                         .frame(maxWidth: .infinity, alignment: .top)
                 }
             }
@@ -300,7 +300,7 @@ struct MatchCentreView: View {
 
     private var leagueTab: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 4) {
+            PanelBox(fill: false) {
                 TableNote(text: "The round's other matches: results so far, and those still to play.")
                     .padding(.bottom, 2)
                 ForEach(round) { r in
@@ -415,7 +415,7 @@ struct MatchCentreView: View {
 
     private var battingTab: some View {
         let done = battedSoFar
-        return VStack(alignment: .leading, spacing: 6) {
+        return PanelBox {
             HStack(spacing: 6) {
                 TableNote(text: "Drag ≡ to move the batters still to come. Batters already in or out stay put.")
                 Spacer(minLength: 4)
@@ -454,7 +454,7 @@ struct MatchCentreView: View {
         let figures = bowlInnings.flatMap { i in cards.first { $0.teamId == result.card(i).teamId } }
         let bowlingNow = current.flatMap { e in bowlInnings == e.innings && e.ballInOver < 6 ? e.bowlerId : nil }
         let options = plan.filter { id in id != bowlingNow && overs(id, figures) < 4 }
-        return VStack(alignment: .leading, spacing: 6) {
+        return PanelBox {
             HStack(spacing: 6) {
                 Text("Next over").font(.system(size: 12 * TextScale.factor, weight: .semibold)).foregroundStyle(Palette.muted)
                 MenuChip(title: nextBowler.isEmpty ? "Keep the plan" : name(nextBowler)) {

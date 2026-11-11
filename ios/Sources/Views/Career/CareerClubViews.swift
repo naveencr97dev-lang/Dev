@@ -293,8 +293,10 @@ struct BoardObjectivesCard: View {
                     }
                     if let a = c.board.awards.last, a.year == c.year {
                         Hairline(inset: 16)
-                        InfoRow(label: "Player of the Month · \(a.monthName)",
-                                value: "\(a.playerName) (\(c.club(a.playerClub)?.short ?? ""))", chevron: false)
+                        // Device tour: "Player of the Month · J… Bhuvneshwar Kumar (…" was cut off.
+                        InfoRow(label: "Player of the month",
+                                value: "\(a.playerName.split(separator: " ").last.map(String.init) ?? a.playerName) · \(c.club(a.playerClub)?.short ?? "")",
+                                chevron: false)
                     }
                 }
                 .gameFrame()
