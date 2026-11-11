@@ -178,6 +178,24 @@ extension GameStore {
 
     func careerFireScout(_ id: Int) { mutateCareer { $0.fireScout(id) } }
 
+    func careerSetScoutMission(_ id: Int, _ mission: ScoutMission, target: String? = nil) {
+        mutateCareer { $0.setScoutMission(id, mission: mission, targetId: target) }
+    }
+
+    @discardableResult
+    func careerScoutBowlingPlan() -> String? {
+        var err: String?
+        mutateCareer { err = $0.scoutBowlingPlan() }
+        return err
+    }
+
+    @discardableResult
+    func careerScoutUpgrade(_ playerId: String) -> String? {
+        var err: String?
+        mutateCareer { err = $0.scoutUpgrade(for: playerId) }
+        return err
+    }
+
     func careerAssignScout(_ id: Int, region: String, role: Role?, youthOnly: Bool) {
         mutateCareer { $0.assignScout(id, region: region, role: role, youthOnly: youthOnly) }
     }

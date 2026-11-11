@@ -81,6 +81,10 @@ struct Scout: Codable, Hashable, Identifiable {
     var region: String = "ANY"
     var role: Role? = nil
     var youthOnly = false
+    /// His job (owner's request: scouts that help build the squad). nil = young talent (old saves).
+    var mission: ScoutMission? = nil
+    /// Upgrade job: the user's player to find an upgrade for.
+    var targetId: String? = nil
 }
 
 struct ScoutReport: Codable, Hashable, Identifiable {
@@ -89,6 +93,8 @@ struct ScoutReport: Codable, Hashable, Identifiable {
     let scoutName: String
     let year: Int
     let day: Int
+    /// What he found, in a line (mission saves; nil in old saves).
+    var note: String? = nil
 }
 
 struct ScoutingState: Codable, Hashable {
@@ -257,36 +263,6 @@ extension Career {
     /// Nations a scout can be sent to.
     var scoutRegions: [String] {
         ["ANY"] + Set(players.values.map(\.country)).sorted()
-    }
-
-    /// Each scout studies a few players matching his brief. Called with training each week.
-    mutating func scoutTick() {
-        for s in scouting.scouts {
-            let pool = players.values.filter { p in
-                !p.retired && p.clubId != userClubId && !academy.contains(p.id)
-                    && (s.region == "ANY" || p.country == s.region)
-                    && (s.role == nil || p.role == s.role)
-                    && (!s.youthOnly || p.age(in: year) <= 21)
-                    && (scouting.knowledge[p.id] ?? 0) < 100
-            }.sorted { $0.id < $1.id }
-            guard !pool.isEmpty else { continue }
-            var studied: [CareerPlayer] = []
-            for _ in 0..<(1 + s.stars / 2) {
-                guard let p = pool.randomElement(using: &rng) else { break }
-                let before = scouting.knowledge[p.id] ?? 0
-                let after = min(100, before + 15 + s.stars * 10 + 2 * (facility(.scoutingNetwork) - 1))
-                scouting.knowledge[p.id] = after
-                studied.append(p)
-            }
-            // Every visit ends with a report on the most promising player he watched.
-            if let best = studied.max(by: { $0.potential < $1.potential }) {
-                scouting.reports.insert(ScoutReport(id: scouting.nextId, playerId: best.id, scoutName: s.name,
-                                                    year: year, day: currentDay), at: 0)
-                scouting.nextId += 1
-                addNews(.squad, "📋 \(s.name): \(best.name) (\(best.role.short), \(best.country), age \(best.age(in: year))) — potential \(potentialLabel(best)).")
-            }
-        }
-        if scouting.reports.count > 30 { scouting.reports.removeLast(scouting.reports.count - 30) }
     }
 
     /// Season's scout wages, charged at the start of each off-season.

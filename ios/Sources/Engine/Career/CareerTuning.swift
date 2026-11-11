@@ -100,7 +100,7 @@ struct CareerTuning: Codable, Hashable {
     var unknownPotentialWidth = 20
     var scoutCap = 2
     /// Scouts file a report this often (in weeks = your matches).
-    var scoutReportEveryWeeks = 2
+    var scoutReportEveryWeeks = 1
     var scoutWage = 25
 
     // Club and manager (M4)

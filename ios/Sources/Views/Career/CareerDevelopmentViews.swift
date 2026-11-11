@@ -192,7 +192,7 @@ struct ScoutingView: View {
         let s = c?.scouting ?? ScoutingState()
         PaneScreen(title: "Scouting") {
             PaneBox(title: "Your scouts · \(s.scouts.count)/\(c?.scoutCap ?? 2)",
-                    note: "After each of your matches, every scout studies players that fit his brief. More stars: more players, more detail.") {
+                    note: "Give each scout a job. After every match he watches the best candidates for it; his shortlist is on the right.") {
                 if s.scouts.isEmpty {
                     Text("No scouts. Hire one below.").font(.system(size: 13 * TextScale.factor)).foregroundStyle(Palette.muted)
                 }
@@ -216,37 +216,99 @@ struct ScoutingView: View {
                 if let message { TableNote(text: message) }
             }
         } right: {
-            VStack(alignment: .leading, spacing: 5) {
-                Text("LATEST REPORTS · \(s.reports.count)").font(.system(size: 10 * TextScale.factor, weight: .heavy)).foregroundStyle(Palette.muted)
-                TableHead {
-                    Text("OVR").frame(width: TCol.ovr, alignment: .center)
-                    Text("PLAYER").frame(maxWidth: .infinity, alignment: .leading)
-                    Text("ROLE").frame(width: TCol.role, alignment: .leading)
-                    Text("AGE").frame(width: TCol.age, alignment: .trailing)
-                    Text("POTENTIAL").frame(width: 70, alignment: .trailing)
-                }
-                if s.reports.isEmpty {
-                    Text("No reports yet.").font(.system(size: 13 * TextScale.factor)).foregroundStyle(Palette.muted).tableRow()
-                }
-                LazyVStack(spacing: 4) {
-                    ForEach(s.reports) { r in
-                        if let car = c, let p = car.players[r.playerId] {
-                            NavigationLink { CareerPlayerView(playerId: p.id) } label: {
-                                HStack(spacing: 8) {
-                                    TNum(text: "\(p.rating)", width: TCol.ovr, color: strengthColor(p.rating), align: .center)
-                                    TName(text: p.name, overseas: p.overseas, pitchFit: car.suitsUserPitch(p))
-                                    TRole(role: p.role)
-                                    TNum(text: "\(p.age(in: car.year))", width: TCol.age, color: Palette.muted)
-                                    TNum(text: car.potentialLabel(p), width: 70, color: Palette.four)
-                                }
-                                .tableRow()
-                            }
-                            .buttonStyle(.plain)
-                        }
+            VStack(alignment: .leading, spacing: 8) {
+                if let c {
+                    ForEach(s.scouts) { scout in
+                        ScoutShortlist(career: c, scout: scout)
                     }
                 }
             }
         }
+    }
+}
+
+/// One scout's shortlist: title with his job, then up to five players.
+struct ScoutShortlist: View {
+    let career: Career
+    let scout: Scout
+
+    var body: some View {
+        let c = career
+        let job = c.mission(of: scout)
+        let picks = c.scoutPicks(scout)
+        let target = c.scoutTarget(scout)
+        VStack(alignment: .leading, spacing: 4) {
+            Text("\(scout.name.uppercased()) · \(target.map { "UPGRADE ON \($0.name.uppercased()) (\($0.rating))" } ?? job.label.uppercased())")
+                .font(.system(size: 10 * TextScale.factor, weight: .heavy)).foregroundStyle(Palette.muted).lineLimit(1)
+            ScoutPickTable(career: c, picks: picks, showGain: target != nil,
+                           empty: "Watching… the first names come after your next match.")
+        }
+    }
+}
+
+/// OVR, player, gain or potential, price (red when you can't afford it yet).
+struct ScoutPickTable: View {
+    let career: Career
+    let picks: [ScoutPick]
+    let showGain: Bool
+    let empty: String
+
+    var body: some View {
+        let c = career
+        VStack(spacing: 0) {
+            TableHead {
+                Text("OVR").frame(width: TCol.ovr, alignment: .center)
+                Text("PLAYER").frame(maxWidth: .infinity, alignment: .leading)
+                Text("AGE").frame(width: TCol.age, alignment: .trailing)
+                Text(showGain ? "GAIN" : "POT").frame(width: 46, alignment: .trailing)
+                Text("PRICE").frame(width: 76, alignment: .trailing)
+            }
+            if picks.isEmpty {
+                Text(empty).font(.system(size: 12 * TextScale.factor)).foregroundStyle(Palette.muted)
+                    .frame(maxWidth: .infinity, alignment: .leading).tableRow()
+            }
+            ForEach(picks) { pick in
+                let p = pick.player
+                NavigationLink { CareerPlayerView(playerId: p.id) } label: {
+                    HStack(spacing: 8) {
+                        TNum(text: "\(p.rating)", width: TCol.ovr, color: strengthColor(p.rating), align: .center)
+                        TName(text: p.name, overseas: p.overseas, pitchFit: c.suitsUserPitch(p))
+                        TNum(text: "\(p.age(in: c.year))", width: TCol.age, color: Palette.muted)
+                        TNum(text: pick.gain.map { "+\($0)" } ?? c.potentialLabel(p), width: 46, color: Palette.four)
+                        TNum(text: pick.fee > 0 ? Money.format(pick.fee) : "Free", width: 76,
+                             color: pick.affordable ? Palette.accent : Palette.wicket)
+                    }
+                    .tableRow()
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+}
+
+/// Player card › Find an upgrade: puts a scout on this player and shows his shortlist.
+struct ScoutUpgradeScreen: View {
+    @EnvironmentObject var store: GameStore
+    let playerId: String
+    @State private var problem: String? = nil
+
+    var body: some View {
+        let c = store.career
+        let p = c?.players[playerId]
+        TableScreen(title: "Upgrades for \(p?.name ?? "player")") {
+            if let c, let p {
+                SummaryLine(cells: [SummaryCell(value: "\(p.rating)", label: "OVR"),
+                                    SummaryCell(value: p.role.short, label: "role"),
+                                    SummaryCell(value: c.upgradeScout(for: playerId)?.name ?? "No scout", label: "scout")])
+                TableNote(text: problem ?? "Better \(p.role.label.lowercased())s, best value first. Red price: not affordable yet (bank or salary cap). The list grows after each match.")
+            }
+        } rows: {
+            if let c, let scout = c.upgradeScout(for: playerId) {
+                ScoutPickTable(career: c, picks: c.scoutPicks(scout, limit: 8), showGain: true,
+                               empty: "No better \(p?.role.label.lowercased() ?? "player")s found yet.")
+            }
+        }
+        .onAppear { problem = store.careerScoutUpgrade(playerId) }
     }
 }
 
@@ -258,6 +320,8 @@ struct ScoutRow: View {
     private static let roles: [Role?] = [nil, .BAT, .WK, .AR, .BOWL]
 
     var body: some View {
+        let c = store.career
+        let job = c?.mission(of: scout) ?? .talent
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 8) {
                 Text(scout.name).font(.system(size: 14 * TextScale.factor, weight: .semibold)).lineLimit(1)
@@ -266,6 +330,16 @@ struct ScoutRow: View {
                 ActionChip(icon: "xmark", title: "Fire", destructive: true) { store.careerFireScout(scout.id) }
             }
             HStack(spacing: 6) {
+                MenuChip(title: c?.scoutTarget(scout).map { "Upgrade \($0.name)" } ?? job.label) {
+                    Menu("Upgrade a player") {
+                        ForEach(c.map { car in car.squad(car.userClubId).sorted { $0.rating > $1.rating } } ?? []) { p in
+                            Button("\(p.name) · \(p.role.short) \(p.rating)") { store.careerSetScoutMission(scout.id, .upgrade, target: p.id) }
+                        }
+                    }
+                    ForEach(ScoutMission.allCases.filter { $0 != .upgrade }) { m in
+                        Button(m.label) { store.careerSetScoutMission(scout.id, m) }
+                    }
+                }
                 MenuChip(title: scout.region == "ANY" ? "Anywhere" : scout.region) {
                     ForEach(regions, id: \.self) { r in
                         Button(r == "ANY" ? "Anywhere" : r) {
@@ -273,18 +347,23 @@ struct ScoutRow: View {
                         }
                     }
                 }
-                MenuChip(title: scout.role?.short ?? "Any role") {
-                    ForEach(0..<Self.roles.count, id: \.self) { i in
-                        Button(Self.roles[i]?.label ?? "Any role") {
-                            store.careerAssignScout(scout.id, region: scout.region, role: Self.roles[i], youthOnly: scout.youthOnly)
+                if job != .upgrade {
+                    MenuChip(title: scout.role?.short ?? "Any role") {
+                        ForEach(0..<Self.roles.count, id: \.self) { i in
+                            Button(Self.roles[i]?.label ?? "Any role") {
+                                store.careerAssignScout(scout.id, region: scout.region, role: Self.roles[i], youthOnly: scout.youthOnly)
+                            }
                         }
                     }
                 }
-                FilterChip(title: "U21 only", on: scout.youthOnly) {
-                    store.careerAssignScout(scout.id, region: scout.region, role: scout.role, youthOnly: !scout.youthOnly)
+                if job == .talent {
+                    FilterChip(title: "U21", on: scout.youthOnly) {
+                        store.careerAssignScout(scout.id, region: scout.region, role: scout.role, youthOnly: !scout.youthOnly)
+                    }
                 }
                 Spacer(minLength: 0)
             }
+            Text(job.blurb).font(.system(size: 11 * TextScale.factor)).foregroundStyle(Palette.muted).lineLimit(1)
         }
     }
 }

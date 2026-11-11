@@ -58,11 +58,14 @@ struct CareerSquadTab: View {
                     NavigationLink { SquadPlannerView() } label: {
                         MiniTile(icon: "square.grid.3x3", title: "Squad planner")
                     }
-                    Button {
-                        store.careerAutoXI()
-                        Haptics.success()
-                    } label: { MiniTile(icon: "sparkles", title: "Auto-pick XI", accent: true) }
+                    // Owner's request: scouting where the squad is built, not only under Transfers.
+                    NavigationLink { ScoutingView() } label: { MiniTile(icon: "binoculars", title: "Scouts") }
                 }
+                .buttonStyle(.plain)
+                Button {
+                    store.careerAutoXI()
+                    Haptics.success()
+                } label: { MiniTile(icon: "sparkles", title: "Auto-pick XI", accent: true) }
                 .buttonStyle(.plain)
             }
         }
@@ -533,7 +536,14 @@ struct CareerPlayerView: View {
                 } else {
                     dealRow("Status", inXI ? "In the XI" : "On the bench", inXI ? Palette.accent : .white)
                 }
-                ActionChip(icon: "arrow.left.arrow.right", title: "List or release…") { showDeal = true }
+                HStack(spacing: 6) {
+                    ActionChip(icon: "arrow.left.arrow.right", title: "List or release…") { showDeal = true }
+                    // Owner's request: scouts that help improve a specific player's position.
+                    NavigationLink { ScoutUpgradeScreen(playerId: p.id) } label: {
+                        LinkChipLabel(icon: "binoculars", title: "Find an upgrade")
+                    }
+                    .buttonStyle(.plain)
+                }
             } else if !p.retired {
                 let fee = p.clubId == nil ? 0 : c.askingPrice(p)
                 let wage = c.userWageDemand(p)

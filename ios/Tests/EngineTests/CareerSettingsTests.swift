@@ -18,8 +18,9 @@ extension CareerTests {
         XCTAssertEqual(ledger.filter { $0.text == "Merchandise sales" }.count, 4, "merchandise every week")
         XCTAssertEqual(ledger.filter { $0.text.hasPrefix("Tickets:") }.count, homeMatches, "tickets at home")
         XCTAssertGreaterThan(c.bank(c.userClubId), bank)
-        // A report from each scout every 2 weeks.
-        XCTAssertEqual(c.scouting.reports.count, 2 * c.scouting.scouts.count)
+        // Scouts visit after every match and report when someone new makes the shortlist.
+        XCTAssertGreaterThan(c.scouting.reports.count, 0)
+        XCTAssertLessThanOrEqual(c.scouting.reports.count, 4 * c.scouting.scouts.count)
         XCTAssertTrue(c.news.contains { $0.text.hasPrefix("📋") })
     }
 

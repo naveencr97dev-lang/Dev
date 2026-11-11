@@ -355,6 +355,9 @@ public struct Menu<C: View, L: View>: View {
     public init(@ViewBuilder content: () -> C, @ViewBuilder label: () -> L) {}
     public var body: Never { fatalError() }
 }
+extension Menu where L == Text {
+    public init(_ title: String, @ViewBuilder content: () -> C) {}
+}
 public struct ViewThatFits<C: View>: View {
     public init(in axes: Axis.Set = [.horizontal, .vertical], @ViewBuilder content: () -> C) {}
     public var body: Never { fatalError() }

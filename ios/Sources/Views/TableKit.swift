@@ -248,6 +248,22 @@ struct MenuChip<Items: View>: View {
     }
 }
 
+/// The look of an ActionChip for a NavigationLink label (opens a screen instead of acting).
+struct LinkChipLabel: View {
+    let icon: String
+    let title: String
+    @Environment(\.inPanel) private var inPanel
+
+    var body: some View {
+        Label(title, systemImage: icon)
+            .font(.system(size: 12 * TextScale.factor, weight: .semibold))
+            .foregroundStyle(Palette.accent)
+            .padding(.horizontal, 10).padding(.vertical, 5)
+            .background(Capsule().fill(chipFill(inPanel)))
+            .lineLimit(1)
+    }
+}
+
 /// A one-tap action in a header (Auto-pick, Best order, Accept). `primary` fills it green.
 struct ActionChip: View {
     let icon: String

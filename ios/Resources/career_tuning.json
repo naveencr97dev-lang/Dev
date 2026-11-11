@@ -123,7 +123,7 @@
   "roundGap" : 6,
   "salaryCap" : 12000,
   "scoutCap" : 2,
-  "scoutReportEveryWeeks" : 2,
+  "scoutReportEveryWeeks" : 1,
   "scoutWage" : 25,
   "seasonRevenue" : 6500,
   "secondTraitChance" : 0.25,

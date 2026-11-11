@@ -29,7 +29,9 @@ extension CareerTests {
         var c = newCareer(seed: 32)
         let mine = c.squad(c.userClubId)[0]
         XCTAssertEqual(c.potentialRange(mine).count, 1, "own players are fully known")
-        let stranger = c.freeAgents.first { c.knowledge(of: $0.id) == 0 }!
+        // A young prospect, so the default job (young talent) covers him.
+        let stranger = c.freeAgents.filter { c.knowledge(of: $0.id) == 0 && $0.age(in: c.year) <= 23 && $0.potential >= 75 }
+            .max { $0.potential < $1.potential }!
         let wide = c.potentialRange(stranger)
         XCTAssertGreaterThan(wide.count, 10)
         XCTAssertTrue(wide.contains(stranger.potential) || wide.lowerBound == max(stranger.bat, stranger.bowl))

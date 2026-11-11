@@ -343,6 +343,10 @@ struct BowlingPlanView: View {
     var body: some View {
         let players = order.compactMap { store.player($0) }
         let five = Array(players.prefix(5))
+        // Career, your own club: show home-pitch fit and offer a scout for slots that only read ok.
+        let career = store.inCareer ? store.career : nil
+        let mine = career.map { $0.userClubId == teamId } ?? false
+        let weak = five.enumerated().filter { MatchEngine.slotFit($0.element, slot: $0.offset) <= MatchEngine.slotSuits }.count
         TableScreen(title: "Bowling plan", scrolls: false) {
             SummaryLine(cells: [
                 SummaryCell(value: "\(attackStrength(players))", label: "attack", color: strengthColor(attackStrength(players))),
@@ -352,8 +356,18 @@ struct BowlingPlanView: View {
                             color: five.contains { !$0.isBowlingOption } ? .orange : Palette.muted),
             ])
             HStack(spacing: 6) {
-                TableNote(text: "Top 5 bowl. Drag ≡ to set the plan. 1–2: new ball and death · 3–5: middle overs")
+                TableNote(text: mine
+                          ? "Drag ≡ to set the plan. JOB FIT: traits for the overs (new ball, death, middle). HOME: suits your pitch."
+                          : "Top 5 bowl. Drag ≡ to set the plan. 1–2: new ball and death · 3–5: middle overs")
                 Spacer(minLength: 4)
+                if mine && weak > 0 {
+                    NavigationLink {
+                        ScoutingView().onAppear { store.careerScoutBowlingPlan() }
+                    } label: {
+                        LinkChipLabel(icon: "binoculars", title: "Scout bowlers")
+                    }
+                    .buttonStyle(.plain)
+                }
                 ActionChip(icon: "sparkles", title: "Auto per pitch") {
                     store.setBowlingOrder(teamId: teamId, ids: [])
                     Haptics.success()
@@ -370,7 +384,8 @@ struct BowlingPlanView: View {
                 if vSize == .compact { Text("JOB").frame(width: 104, alignment: .leading) }
                 Text("PLAYER").frame(maxWidth: .infinity, alignment: .leading)
                 Text("TYPE").frame(width: TCol.role, alignment: .leading)
-                Text("FIT").frame(width: 70, alignment: .leading)
+                Text("JOB FIT").frame(width: 70, alignment: .leading)
+                if mine { Text("HOME").frame(width: 60, alignment: .leading) }
                 if vSize == .compact { Text("OVERS").frame(width: 80, alignment: .leading) }
                 Text("BOWL").frame(width: TCol.stat, alignment: .trailing)
             }
@@ -379,7 +394,9 @@ struct BowlingPlanView: View {
             ReorderList {
                 ForEach(Array(order.enumerated()), id: \.element) { i, pid in
                     if let p = store.player(pid) {
-                        BowlingSlotRow(index: i, player: p).reorderRow()
+                        BowlingSlotRow(index: i, player: p, showHome: mine,
+                                       homeFit: career?.players[pid].flatMap { career?.suitsUserPitch($0) })
+                            .reorderRow()
                     }
                 }
                 .onMove { order.move(fromOffsets: $0, toOffset: $1) }
@@ -411,13 +428,14 @@ struct BowlingPlanView: View {
     struct BowlingSlotRow: View {
         let index: Int
         let player: Player
+        /// Career, your club: the HOME column (true suits your pitch, false struggles, nil neither).
+        var showHome = false
+        var homeFit: Bool? = nil
         @Environment(\.verticalSizeClass) private var vSize
 
         var body: some View {
             let bowling = index < 5
-            let fit = index < 2
-                ? MatchEngine.phaseFit(player, .powerplay, pitch: nil) + MatchEngine.phaseFit(player, .death, pitch: nil)
-                : MatchEngine.phaseFit(player, .middle, pitch: nil)
+            let fit = MatchEngine.slotFit(player, slot: min(index, 4))
             let overs = bowling ? MatchEngine.overs(forSlot: index).map(String.init).joined(separator: ", ") : ""
             HStack(spacing: 8) {
                 TNum(text: bowling ? "\(index + 1)" : "–", width: TCol.num, color: bowling ? .white : Palette.muted, align: .center)
@@ -435,6 +453,15 @@ struct BowlingPlanView: View {
                     .font(.system(size: 11 * TextScale.factor, weight: .bold))
                     .foregroundStyle(fit > 3 ? Palette.accent : (fit < 0 ? Color.orange : Palette.muted))
                     .frame(width: 70, alignment: .leading)
+                if showHome {
+                    HStack(spacing: 3) {
+                        PitchFitMark(fit: homeFit, size: 10)
+                        Text(homeFit == true ? "suits" : (homeFit == false ? "poor" : "ok"))
+                    }
+                    .font(.system(size: 11 * TextScale.factor, weight: .bold))
+                    .foregroundStyle(homeFit == true ? Palette.accent : (homeFit == false ? Color.orange : Palette.muted))
+                    .frame(width: 60, alignment: .leading)
+                }
                 if vSize == .compact {
                     Text(overs).font(.score(11, weight: .semibold)).foregroundStyle(Palette.muted)
                         .lineLimit(1).minimumScaleFactor(0.6).frame(width: 80, alignment: .leading)

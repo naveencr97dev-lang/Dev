@@ -298,6 +298,9 @@ struct CareerMarketTab: View {
     @State private var scope: StatScope = .season
     /// Name search (owner: couldn't find Harry Brook or Pat Cummins among 460 players).
     @State private var query = ""
+    /// Trait filter and home-pitch filter (owner: find bowlers for the plan, players for the pitch).
+    @State private var trait: Trait? = nil
+    @State private var homeOnly = false
 
     private static let roles: [Role?] = [nil, .BAT, .WK, .AR, .BOWL]
     private static let roleLabels = ["All", "BAT", "WK", "AR", "BOWL"]
@@ -308,6 +311,8 @@ struct CareerMarketTab: View {
             let list = c.marketPlayers(role: Self.roles[roleIndex], slot: Self.slots[slotIndex], bowlType: Self.bowls[bowlIndex],
                                        freeAgentsOnly: freeOnly, sort: sort, scope: scope)
                 .filter { query.isEmpty || $0.name.localizedCaseInsensitiveContains(query.trimmingCharacters(in: .whitespaces)) }
+                .filter { trait == nil || $0.traits.contains(trait!) }
+                .filter { !homeOnly || c.suitsUserPitch($0) == true }
             if landscape {
                 // Device feedback: one full-height panel; purse and filters stay put, only the list scrolls.
                 PanelBox {
@@ -348,12 +353,8 @@ struct CareerMarketTab: View {
             }
             .buttonStyle(.plain)
         }
-        if landscape {
-            filters
-        } else {
-            // Portrait (device tour): the chips wrapped letter by letter; they scroll sideways now.
-            ScrollView(.horizontal, showsIndicators: false) { filters.fixedSize() }
-        }
+        // The chips scroll sideways (portrait wrapped them letter by letter; landscape now has more).
+        ScrollView(.horizontal, showsIndicators: false) { filters.fixedSize() }
         MarketColumns(landscape: landscape, statTitle: sort.isStat ? sort.label : nil, count: count)
     }
 
@@ -399,6 +400,19 @@ struct CareerMarketTab: View {
             menu(Self.bowlLabels[bowlIndex]) {
                 ForEach(0..<Self.bowls.count, id: \.self) { i in Button(Self.bowlLabels[i]) { bowlIndex = i } }
             }
+            menu(trait?.label ?? "Any trait") {
+                Button("Any trait") { trait = nil }
+                ForEach(Career.marketTraits, id: \.self) { t in Button(t.label) { trait = t } }
+            }
+            Button { homeOnly.toggle() } label: {
+                Label("Suits home", systemImage: homeOnly ? "house.fill" : "house")
+                    .font(.system(size: 12 * TextScale.factor, weight: .semibold))
+                    .foregroundStyle(homeOnly ? Palette.ink : .white)
+                    .padding(.horizontal, 10).padding(.vertical, 5)
+                    .background(Capsule().fill(homeOnly ? Palette.accent : Palette.surfaceHi))
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("suitsHome")
             Button { freeOnly.toggle() } label: {
                 Text("Free agents").font(.system(size: 12 * TextScale.factor, weight: .semibold))
                     .foregroundStyle(freeOnly ? Palette.ink : .white)

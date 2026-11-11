@@ -400,6 +400,13 @@ struct MatchEngine {
         }
     }
 
+    /// Fit for a bowling-plan slot (0-1 new ball + death, 2-4 middle overs), from traits alone.
+    /// Above 3 "suits", below 0 "poor" (Bowling plan › JOB FIT).
+    static func slotFit(_ p: Player, slot: Int) -> Int {
+        slot < 2 ? phaseFit(p, .powerplay, pitch: nil) + phaseFit(p, .death, pitch: nil) : phaseFit(p, .middle, pitch: nil)
+    }
+    static let slotSuits = 3
+
     /// Captain's choice: best five for the pitch, with the new-ball/death slots (overs 1-4 and 15-20)
     /// going to the bowlers who suit those phases best.
     static func autoAttack(_ xi: [Player], pitch: Pitch?) -> [Player] {

@@ -52,7 +52,10 @@ extension CareerTests {
         XCTAssertEqual(c.year, 2031, "reached the 2031 season (after steps: \(steps))")
         XCTAssertGreaterThanOrEqual(userMatches, 3 * 36, "played every league match")
         XCTAssertGreaterThan(intlMatches, 0, "coached the national side")
-        XCTAssertTrue(seen.isSuperset(of: ["goToOffseason", "openWindow", "retention", "auction", "startSeason", "playMatch", "continueToMatch"]), "\(seen)")
+        XCTAssertTrue(seen.isSuperset(of: ["goToOffseason", "retention", "auction", "startSeason", "playMatch", "continueToMatch"]), "\(seen)")
+        // The international window opens from its own step or from "continue to match" (the
+        // schedule is drawn each season); either way the window has to be reached.
+        XCTAssertFalse(seen.isDisjoint(with: ["openWindow", "simWindow", "playIntl"]), "\(seen)")
         XCTAssertGreaterThan(c.history.count, 2)
         // The save still round-trips at the end.
         XCTAssertNoThrow(try CareerSave.decode(CareerSave.encode(c)))
