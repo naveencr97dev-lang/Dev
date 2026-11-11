@@ -25,12 +25,34 @@ extension CareerTests {
         XCTAssertGreaterThan(attack.runs, neutral.runs + 5)
         XCTAssertGreaterThan(attack.wkts, neutral.wkts)
         XCTAssertLessThan(block.runs, neutral.runs - 5)
-        XCTAssertLessThan(block.wkts, neutral.wkts)
+        XCTAssertLessThan(block.wkts, neutral.wkts * 0.6, "Block has to be felt: about half the wickets")
         let defend = runs(bat: nil, bowl: Tactics(field: [.defend, .defend, .defend]))
         XCTAssertLessThan(defend.boundaries, neutral.boundaries)
         // Neutral tactics are exactly the old engine (quick game unchanged).
         let explicitNeutral = runs(bat: Tactics(), bowl: Tactics())
         XCTAssertEqual(explicitNeutral.runs, neutral.runs, accuracy: 0.001)
+    }
+
+    /// Owner's device test: chasing 227 and set to Block, batters still swung and got out. Told
+    /// to block, they block: the chase pressure doesn't override it.
+    func testBlockHoldsInABigChase() {
+        let c = newCareer(seed: 63)
+        let a = c.side(c.clubs[1].id), b = c.side(c.clubs[2].id)
+        func chase(_ intent: BatIntent) -> (wkts: Double, sixes: Double) {
+            var engine = MatchEngine(rng: SeededRNG(seed: 11))
+            engine.realisticChase = true
+            var wk = 0, six = 0
+            for _ in 0..<300 {
+                var log: [BallEvent] = []
+                var batting = a; batting.tactics = Tactics(intent: [intent, intent, intent])
+                let inn = engine.innings(batting: batting, bowling: b, target: 227, maxOvers: 20, index: 1, pitch: .aussieBounce, log: &log)
+                wk += inn.wickets; six += inn.batters.reduce(0) { $0 + $1.sixes }
+            }
+            return (Double(wk) / 300, Double(six) / 300)
+        }
+        let rotate = chase(.rotate), block = chase(.block)
+        XCTAssertLessThan(block.wkts, rotate.wkts * 0.6, "block \(block.wkts) v rotate \(rotate.wkts)")
+        XCTAssertLessThan(block.sixes, rotate.sixes * 0.6)
     }
 
     func testMigrationFromSchema5() throws {

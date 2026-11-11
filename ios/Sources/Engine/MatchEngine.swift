@@ -787,9 +787,14 @@ struct MatchEngine {
             // Risk depends on the surface: swinging on a seamer or a turner costs far more wickets
             // than on a flat track (the probe found All-out attack best on every pitch before this).
             let risk = pitch.wicketMult / 0.95
+            // Owner's request (device test): the setting has to be felt. Block roughly halves the
+            // wickets and the batters stop chasing the rate (no swinging when told to block); Attack
+            // scores clearly faster for clearly more wickets.
             switch t.intent[phaseIndex] {
             case .attack: w[4] *= 1.12; w[5] *= 1.25; w[6] *= 1.15 * risk; w[0] *= 0.95
-            case .block: w[4] *= 0.8; w[5] *= 0.65; w[6] *= 0.86 / risk.squareRoot(); w[1] *= 1.1; w[0] *= 1.08
+            case .block:
+                w[4] *= 0.7; w[5] *= 0.4; w[6] *= 0.5; w[1] *= 1.15; w[0] *= 1.12
+                aggression = min(aggression, 0)
             case .rotate: break
             }
         }

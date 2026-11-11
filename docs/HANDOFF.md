@@ -82,7 +82,7 @@ Last updated 2026-11-11 (after the table-format pass on every pushed screen) on 
 - **Swift toolchain:** if `/opt/swift` is missing, install it with
   `curl -sSfL https://download.swift.org/swift-6.0.3-release/ubuntu2404/swift-6.0.3-RELEASE/swift-6.0.3-RELEASE-ubuntu24.04.tar.gz | tar xz --strip-components=1 -C /opt/swift`
   (run `mkdir -p /opt/swift` first). Then `export PATH=/opt/swift/usr/bin:$PATH`.
-- **Engine tests:** `cd ios && swift test` (112 tests, all green). Pipe the output to a file and
+- **Engine tests:** `cd ios && swift test` (113 tests, all green). Pipe the output to a file and
   check the "Executed … with 0 failures" line before committing. One push once went out red because
   a grep in a command chain hid the failure.
 - **Whole-app type-check:** `tools/typecheck/run.sh`. It checks all 48 files against SwiftUI, UIKit
@@ -238,6 +238,10 @@ for each version in `CareerSave.migrations`.
     ₹75 Cr cap at 99; age barely matters (0.92 from 33). Wages, retentions and auctions stay on
     `value`. Central revenue is ₹65 Cr, so a mid-table season clears about ₹15 Cr after wages and a
     title about ₹40-50 Cr: one star per good season (`testTransferFeesMatchTheOwnersTargets`).
+  - **Batting mentality (owner's device test):** Block roughly halves wickets (one every 38-50
+    balls v 16-21 on Rotate) at about 1.5-2 runs an over less, and it overrides chase pressure (told
+    to block, batters don't swing). Blocking a whole match wins 19-32%, so it's a tool for seeing off
+    a bowler or rebuilding (`testBlockHoldsInABigChase`). Attack is unchanged.
   - **Superstars vs conditions (measured, 300 games a pitch):** an XI of the best players (avg 89
     OVR) picked ignoring the pitch beat XIs built for the pitch 63-93% of the time at avg 76-81 OVR,
     and 54-81% at avg 81-84 OVR. Conditions are worth about 4-6 OVR points; they don't beat a
