@@ -70,6 +70,7 @@ final class TourTests: XCTestCase {
 
     /// Continue, start, skip straight to the result, next.
     private func quickMatch() {
+        tab("Home")
         guard tap(app.buttons["continue"].firstMatch, "Continue") else { return }
         sleep(2)
         guard tap(find("Skip to result"), "Skip to result") else { return }
@@ -108,6 +109,7 @@ final class TourTests: XCTestCase {
     // MARK: A match
 
     private func match() {
+        tab("Home")
         guard tap(app.buttons["continue"].firstMatch, "Continue") else { return }
         sleep(2)
         shot("match-teams")
@@ -145,8 +147,22 @@ final class TourTests: XCTestCase {
     }
 
     private func tab(_ name: String) {
+        toRoot()
         _ = tap(app.buttons["tab.\(name)"].firstMatch, "tab \(name)")
         sleep(1)
+    }
+
+    /// Back to the hub (run 4 got stranded on a pushed screen and missed the matches).
+    private func toRoot() {
+        for _ in 0..<5 {
+            if app.buttons["tab.Home"].firstMatch.exists { return }
+            let bar = app.navigationBars.firstMatch
+            var button = bar.buttons["BackButton"]
+            if !button.exists { button = bar.buttons.element(boundBy: 0) }
+            guard bar.exists, button.exists, button.isHittable, !button.label.contains("More") else { return }
+            button.tap()
+            sleep(1)
+        }
     }
 
     /// The navigation bar's back button (run 3 tapped the hub's ⋯ menu instead and stopped).
@@ -185,8 +201,12 @@ final class TourTests: XCTestCase {
             return false
         }
         if !e.isHittable {
-            notes.append("[\(tag)] not hittable: \(what)")
-            return false
+            app.swipeUp()   // below the fold in a scrolling column
+            sleep(1)
+            if !e.isHittable {
+                notes.append("[\(tag)] not hittable: \(what)")
+                return false
+            }
         }
         e.tap()
         return true

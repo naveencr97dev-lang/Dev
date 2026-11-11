@@ -145,7 +145,7 @@ struct CareerHubView: View {
         case .club:
             // Device feedback: club essentials left; squad development and finances right. The left
             // column scrolls (device tour: six office rows didn't fit and pushed the top bar off).
-            AdaptiveColumns(leftScrolls: true, rightScrolls: false) {
+            AdaptiveColumns(leftScrolls: true, rightScrolls: true) {
                 CareerClubTab(path: $path)
             } right: {
                 ClubDevelopmentTiles(career: c)
