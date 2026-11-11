@@ -56,8 +56,10 @@ struct CareerTuning: Codable, Hashable {
     var salaryCap = 12_000
     var startingBank = 2_500
     var minWage = 20
-    /// Paid to every club after each season, plus prize money by finish.
-    var seasonRevenue = 8_000
+    /// Paid to every club after each season, plus prize money by finish. ₹65 Cr (was ₹80 Cr) so a
+    /// mid-table season clears about ₹15 Cr after wages and a title about ₹50 Cr: one star a good
+    /// season, never the whole market (owner's request).
+    var seasonRevenue = 6_500
     /// Owner's request: ₹40 Cr to the champions (the rest scaled the same).
     var prizeMoney = [4_000, 2_600, 1_400, 1_300]   // champion, runner-up, lost Q2, lost Eliminator
     /// Mega auction every N seasons (up to `maxRetentions` kept); mini auctions in between.

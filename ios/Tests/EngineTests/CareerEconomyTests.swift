@@ -38,23 +38,28 @@ extension CareerTests {
         XCTAssertGreaterThanOrEqual(c.sponsorMonthly(for: c.userClubId), 40)
     }
 
-    /// Owner's request: stars can't be bought in season 1. Fees follow `transferValue` (steep at the
-    /// top), wages stay on `value`, so the salary cap and auctions are unchanged.
-    func testStarsCostMoreThanASeasonOfProfit() {
+    /// Owner's targets: ₹25 Cr starting money buys an 85-86, 90+ players cost about ₹45 Cr and up,
+    /// the very best ₹50-75 Cr, and a season's profit buys one star at most.
+    func testTransferFeesMatchTheOwnersTargets() {
         var c = newCareer()
         let me = c.userClubId
         let others = c.players.values.filter { $0.clubId != nil && $0.clubId != me && !$0.retired }
+        let mid = others.filter { $0.rating == 85 || $0.rating == 86 }.map { c.askingPrice($0) }
+        XCTAssertFalse(mid.isEmpty)
+        XCTAssertLessThanOrEqual(mid.min()!, c.bank(me), "an 85-86 is affordable on day 1")
         let stars = others.filter { $0.rating >= 90 }
         XCTAssertFalse(stars.isEmpty)
-        for p in stars { XCTAssertGreaterThan(c.askingPrice(p), c.bank(me), "\(p.name) affordable on day 1") }
-        // The best player costs more than the season's profit (after wages), even for the champions.
-        let top = others.max { c.askingPrice($0) < c.askingPrice($1) }!
+        for p in stars {
+            XCTAssertGreaterThan(c.askingPrice(p), c.bank(me), "\(p.name) affordable on day 1")
+            XCTAssertGreaterThanOrEqual(c.askingPrice(p), 4_000, p.name)
+            XCTAssertLessThanOrEqual(c.askingPrice(p), 7_500, p.name)
+        }
+        XCTAssertGreaterThanOrEqual(CareerPlayer.feeCurve(95) * c.tuning.askXIMultiplier, 6_000)
+        // A season's profit (after wages) buys one star, not two.
         let before = c.bank(me)
         c.simToSeasonEnd()
         c.beginOffseason()
-        XCTAssertGreaterThan(c.askingPrice(top), c.bank(me) - before + c.tuning.prizeMoney[0] / 2, "\(top.name)")
-        // Fees rise steeply with rating; a squad player stays within reach.
-        let mid = others.filter { $0.rating == 75 }.map { c.askingPrice($0) }.min() ?? 0
-        XCTAssertLessThan(mid, c.tuning.startingBank)
+        let cheapest = stars.map { c.askingPrice($0) }.min()!
+        XCTAssertLessThan(c.bank(me) - before, cheapest * 2)
     }
 }

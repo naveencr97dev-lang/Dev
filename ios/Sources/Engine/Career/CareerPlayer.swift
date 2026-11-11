@@ -149,18 +149,33 @@ struct CareerPlayer: Codable, Identifiable, Hashable {
         return max(20, Int((base * ageFactor * potentialBoost / 5).rounded()) * 5)
     }
 
-    /// Transfer value in lakhs: the fee clubs pay to buy him, on top of his wage. Steeper than the
-    /// wage value: a star's fee is a few seasons of club income, so nobody buys Bumrah in season 1
-    /// (owner's request; season 1 nets about ₹30 Cr mid-table, ₹65 Cr for the champions).
-    /// Prime-age XI asking prices: about ₹3 Cr at 70, ₹8 Cr at 75, ₹16 Cr at 80, ₹33 Cr at 85,
-    /// ₹64 Cr at 90, ₹120 Cr at 95. Older stars cost less, but still more than a season's profit.
+    /// Transfer value in lakhs: the fee clubs pay to buy him, on top of his wage. Set by rating
+    /// (owner's targets; an XI player's asking price is 1.5×): ₹25 Cr starting money buys an 85-86,
+    /// 90+ start at about ₹45 Cr, the very best cost ₹55-75 Cr. Age barely matters: a star costs
+    /// a star's fee until his rating drops. Wages use `value`.
     func transferValue(in year: Int) -> Int {
-        let base = 30 * exp(Double(rating - 50) * 0.1)
-        let starPremium = 1 + Double(max(0, rating - 70)) * 0.08
         let a = age(in: year)
-        let ageFactor = a <= 23 ? 1.3 : (a <= 29 ? 1.0 : (a <= 32 ? 0.9 : (a <= 35 ? 0.8 : 0.65)))
+        let ageFactor = a <= 23 ? 1.15 : (a <= 32 ? 1.0 : 0.92)
         let potentialBoost = a <= 23 ? 1 + Double(max(0, potential - rating)) * 0.03 : 1
-        return max(20, Int((base * starPremium * ageFactor * potentialBoost / 5).rounded()) * 5)
+        let v = CareerPlayer.feeCurve(rating) * ageFactor * potentialBoost
+        return max(20, Int((v / 5).rounded()) * 5)
+    }
+
+    /// Fee by rating, in lakhs (prime age, before the XI/bench mark-up); straight lines between points.
+    static let feePoints: [(rating: Int, fee: Double)] = [
+        (50, 15), (55, 25), (60, 45), (65, 80), (70, 150), (75, 330), (80, 700),
+        (85, 1_400), (86, 1_600), (87, 1_870), (88, 2_200), (89, 2_600), (90, 3_070),
+        (92, 3_600), (95, 4_400), (99, 5_000),
+    ]
+
+    static func feeCurve(_ rating: Int) -> Double {
+        let pts = feePoints
+        if rating <= pts[0].rating { return pts[0].fee }
+        for (lo, hi) in zip(pts, pts.dropFirst()) where rating <= hi.rating {
+            let t = Double(rating - lo.rating) / Double(hi.rating - lo.rating)
+            return lo.fee + (hi.fee - lo.fee) * t
+        }
+        return pts[pts.count - 1].fee
     }
 
     /// Auction base price in lakhs (₹20 L … ₹2 Cr).

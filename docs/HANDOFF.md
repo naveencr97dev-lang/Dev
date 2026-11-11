@@ -232,11 +232,16 @@ for each version in `CareerSave.migrations`.
     revenue and prizes after the final (₹40 Cr to the champions), wages and upkeep. Facility
     upgrades cost ₹30 L × the next level, so a season of tickets pays for one upgrade of every
     facility (`CareerEconomyTests`). A Money screen breaks it down; League › Table shows the prizes.
-  - **Transfer fees vs wages:** fees use `CareerPlayer.transferValue` (steep star premium: prime XI
-    asks about ₹8 Cr at 75, ₹16 Cr at 80, ₹33 Cr at 85, ₹64 Cr at 90, ₹100 Cr+ at 95; gentler age
-    discount), wages, retentions and auctions stay on `value`. Season 1 nets about ₹30 Cr mid-table
-    and ₹65 Cr for the champions after ₹73 Cr wages, so a 90+ star needs savings or a sale
-    (`testStarsCostMoreThanASeasonOfProfit`).
+  - **Transfer fees vs wages:** fees use `CareerPlayer.transferValue`, a rating table
+    (`feePoints`) set to the owner's targets: XI asking price about ₹5 Cr at 75, ₹10 Cr at 80,
+    ₹20-24 Cr at 85-86 (the ₹25 Cr starting bank buys one), ₹42-50 Cr at 90-92, ₹61 Cr for Bumrah,
+    ₹75 Cr cap at 99; age barely matters (0.92 from 33). Wages, retentions and auctions stay on
+    `value`. Central revenue is ₹65 Cr, so a mid-table season clears about ₹15 Cr after wages and a
+    title about ₹40-50 Cr: one star per good season (`testTransferFeesMatchTheOwnersTargets`).
+  - **Superstars vs conditions (measured, 300 games a pitch):** an XI of the best players (avg 89
+    OVR) picked ignoring the pitch beat XIs built for the pitch 63-93% of the time at avg 76-81 OVR,
+    and 54-81% at avg 81-84 OVR. Conditions are worth about 4-6 OVR points; they don't beat a
+    7-8 point gap.
 - **Manager:** XP, levels, 24 perks in 3 trees. **Gold**, with a test-mode store where the Tester
   Pack (1,000,000 gold) is free and unlimited, and a gold→cash exchange.
 - **International:** 20 nations, rankings, bilateral series, the T20 World Cup in even years, the
