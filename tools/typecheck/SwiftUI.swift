@@ -490,6 +490,7 @@ extension View {
     public func pickerStyle<S: PickerStyle>(_ s: S) -> _Mod { _Mod() }
     public func listStyle<S: ListStyle>(_ s: S) -> _Mod { _Mod() }
     public func accessibilityIdentifier(_ id: String) -> _Mod { _Mod() }
+    public func clipped(antialiased: Bool = false) -> _Mod { _Mod() }
     public func disabled(_ d: Bool) -> _Mod { _Mod() }
     public func tag<V: Hashable>(_ v: V) -> _Mod { _Mod() }
     public func id<V: Hashable>(_ v: V) -> _Mod { _Mod() }

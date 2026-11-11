@@ -26,9 +26,11 @@ struct CareerHubView: View {
                             HubTopBar(career: c, menu: { hubMenu }) { perform(c.nextAction) }
                             if tab.ownScroll {
                                 // Each column scrolls on its own (AdaptiveColumns).
+                                // Clipped (device tour): a tab taller than the screen pushed the top bar off.
                                 tabContent(c)
                                     .padding(.horizontal, DS.Space.md)
                                     .frame(maxHeight: .infinity, alignment: .top)
+                                    .clipped()
                             } else {
                                 ScrollView {
                                     VStack(alignment: .leading, spacing: DS.Space.sm) { tabContent(c) }
@@ -141,8 +143,9 @@ struct CareerHubView: View {
             .padding(.top, landscape ? DS.Space.sm : 0)
             .frame(maxHeight: landscape ? .infinity : nil, alignment: .top)
         case .club:
-            // Device feedback: club essentials left; squad development and finances right; no scrolling.
-            AdaptiveColumns(leftScrolls: false, rightScrolls: false) {
+            // Device feedback: club essentials left; squad development and finances right. The left
+            // column scrolls (device tour: six office rows didn't fit and pushed the top bar off).
+            AdaptiveColumns(leftScrolls: true, rightScrolls: false) {
                 CareerClubTab(path: $path)
             } right: {
                 ClubDevelopmentTiles(career: c)
@@ -735,7 +738,8 @@ struct CareerFixturesTab: View {
 
     var body: some View {
         if let c = store.career {
-            VStack(alignment: .leading, spacing: 4) {
+            // One box (device tour): the rows floated as separate pills.
+            PanelBox(fill: false) {
                 Picker("Show", selection: $showAll) {
                     Text("Your matches").tag(false)
                     Text("League results").tag(true)
@@ -768,6 +772,7 @@ struct CareerFixturesTab: View {
 }
 
 struct FixtureRow: View {
+    @Environment(\.inPanel) private var inPanel
     @Environment(\.compactLandscape) private var compact
     let career: Career
     let fixture: Fixture
@@ -803,7 +808,12 @@ struct FixtureRow: View {
         }
         .padding(.vertical, compact ? 4 : 8)
         .padding(.horizontal, compact ? DS.Space.sm : DS.Space.md)
-        .background(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous).fill(Palette.surface))
+        .background(Group {
+            if inPanel { Color.clear } else {
+                RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous).fill(Palette.surface)
+            }
+        })
+        .overlay(alignment: .bottom) { if inPanel { Hairline() } }
     }
 
     private func scoreLine(_ r: MatchResult) -> String {

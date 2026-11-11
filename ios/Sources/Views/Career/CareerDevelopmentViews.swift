@@ -145,7 +145,7 @@ struct AcademyView: View {
                     Text("BOWL").frame(width: TCol.stat, alignment: .trailing)
                 }
                 Text("POT").frame(width: TCol.stat, alignment: .trailing)
-                Text("").frame(width: vSize == .compact ? 150 : 76)
+                Text("").frame(width: vSize == .compact ? 200 : 76)
             }
         } rows: {
             ForEach(kids) { p in
@@ -173,7 +173,7 @@ struct AcademyView: View {
                             store.careerReleaseAcademy(p.id)
                         }
                     }
-                    .frame(width: vSize == .compact ? 150 : 76, alignment: .trailing)
+                    .frame(width: vSize == .compact ? 200 : 76, alignment: .trailing)
                 }
                 .tableRow()
             }

@@ -205,7 +205,10 @@ struct LeadersGrid: View {
         if let c = store.career {
             let season = c.seasonStatLines
             if season.isEmpty {
-                Text("No matches played this season yet.").foregroundStyle(.secondary)
+                PanelBox(fill: false) {
+                    Text("No matches played this season yet.").foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
             } else {
                 VStack(spacing: DS.Space.sm) {
                     HStack(alignment: .top, spacing: DS.Space.sm) {

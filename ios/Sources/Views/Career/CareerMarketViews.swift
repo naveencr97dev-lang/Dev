@@ -306,16 +306,18 @@ struct CareerMarketTab: View {
             let list = c.marketPlayers(role: Self.roles[roleIndex], slot: Self.slots[slotIndex], bowlType: Self.bowls[bowlIndex],
                                        freeAgentsOnly: freeOnly, sort: sort, scope: scope)
             if landscape {
-                // Device feedback: purse and filters stay put; only the player list scrolls.
-                VStack(alignment: .leading, spacing: 6) {
+                // Device feedback: one full-height panel; purse and filters stay put, only the list scrolls.
+                PanelBox {
                     header(c, count: list.count)
+                    Hairline()
                     ScrollView { rows(c, list, season).padding(.bottom, DS.Space.sm) }
                 }
-                .padding(.top, 6)
+                .padding(.vertical, DS.Space.sm)
                 .frame(maxHeight: .infinity, alignment: .top)
             } else {
-                VStack(alignment: .leading, spacing: 6) {
+                PanelBox(fill: false) {
                     header(c, count: list.count)
+                    Hairline()
                     rows(c, list, season)
                 }
             }
@@ -341,13 +343,25 @@ struct CareerMarketTab: View {
             }
             .buttonStyle(.plain)
         }
+        if landscape {
+            filters
+        } else {
+            // Portrait (device tour): the chips wrapped letter by letter; they scroll sideways now.
+            ScrollView(.horizontal, showsIndicators: false) { filters.fixedSize() }
+        }
+        MarketColumns(landscape: landscape, statTitle: sort.isStat ? sort.label : nil, count: count)
+    }
+
+
+    /// Role chips, slot and bowling menus, free agents, sort and scope.
+    private var filters: some View {
         HStack(spacing: 6) {
             ForEach(0..<Self.roleLabels.count, id: \.self) { i in
                 Button { roleIndex = i } label: {
                     Text(Self.roleLabels[i]).font(.system(size: 12 * TextScale.factor, weight: .semibold))
                         .foregroundStyle(roleIndex == i ? Palette.ink : .white)
                         .padding(.horizontal, 10).padding(.vertical, 5)
-                        .background(Capsule().fill(roleIndex == i ? Palette.accent : Palette.surface))
+                        .background(Capsule().fill(roleIndex == i ? Palette.accent : Palette.surfaceHi))
                 }
                 .buttonStyle(.plain)
             }
@@ -361,7 +375,7 @@ struct CareerMarketTab: View {
                 Text("Free agents").font(.system(size: 12 * TextScale.factor, weight: .semibold))
                     .foregroundStyle(freeOnly ? Palette.ink : .white)
                     .padding(.horizontal, 10).padding(.vertical, 5)
-                    .background(Capsule().fill(freeOnly ? Palette.accent : Palette.surface))
+                    .background(Capsule().fill(freeOnly ? Palette.accent : Palette.surfaceHi))
             }
             .buttonStyle(.plain)
             Spacer(minLength: 4)
@@ -373,11 +387,10 @@ struct CareerMarketTab: View {
                 Button("All-time") { scope = .allTime }
             }
         }
-        MarketColumns(landscape: landscape, statTitle: sort.isStat ? sort.label : nil, count: count)
     }
 
     @ViewBuilder private func rows(_ c: Career, _ list: [CareerPlayer], _ season: [String: StatLine]) -> some View {
-        LazyVStack(spacing: 4) {
+        LazyVStack(spacing: 0) {
             ForEach(list) { p in
                 NavigationLink { CareerPlayerView(playerId: p.id) } label: {
                     MarketRow(career: c, player: p, scope: scope, season: season, sort: sort, landscape: landscape)
@@ -393,7 +406,7 @@ struct CareerMarketTab: View {
             .font(.system(size: 12 * TextScale.factor, weight: .semibold))
             .foregroundStyle(highlight ? Palette.ink : Palette.accent)
             .padding(.horizontal, 10).padding(.vertical, 5)
-            .background(Capsule().fill(highlight ? Palette.accent : Palette.surface))
+            .background(Capsule().fill(highlight ? Palette.accent : Palette.surfaceHi))
             .lineLimit(1)
     }
 
@@ -406,7 +419,7 @@ struct CareerMarketTab: View {
             .font(.system(size: 12 * TextScale.factor, weight: .semibold))
             .foregroundStyle(Palette.accent)
             .padding(.horizontal, 10).padding(.vertical, 5)
-            .background(Capsule().fill(Palette.surface))
+            .background(Capsule().fill(Palette.surfaceHi))
         }
     }
 }
@@ -414,6 +427,7 @@ struct CareerMarketTab: View {
 /// Purse, bank, squad and overseas on one short line (the Transfers header).
 struct PurseLine: View {
     let career: Career
+    @Environment(\.inPanel) private var inPanel
 
     var body: some View {
         let c = career
@@ -425,7 +439,7 @@ struct PurseLine: View {
             cell("\(squad.filter(\.overseas).count)/\(c.tuning.maxOverseasSquad)", "overseas")
         }
         .padding(.vertical, 6)
-        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Palette.surface))
+        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(inPanel ? Palette.surfaceHi : Palette.surface))
     }
 
     private func cell(_ v: String, _ l: String) -> some View {
@@ -517,10 +531,7 @@ struct MarketRow: View {
                     .lineLimit(1).frame(maxWidth: .infinity, alignment: .leading)
             }
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, landscape ? 6 : 7)
-        .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(Palette.surface))
-        .contentShape(Rectangle())
+        .tableRow()
     }
 
     private func statValue(_ c: Career) -> String {

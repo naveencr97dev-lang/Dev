@@ -47,6 +47,35 @@ final class TourTests: XCTestCase {
         tag = "P"
         sleep(2)
         match()
+
+        // A play session: a few more rounds (line-ups, then straight to the result), then the
+        // screens that fill up with stats, in landscape.
+        XCUIDevice.shared.orientation = .landscapeLeft
+        tag = "L"
+        sleep(2)
+        for _ in 0..<4 { quickMatch() }
+        tag = "S"
+        tab("Home"); shot("home-after-6")
+        tab("League"); shot("table-after-6")
+        for section in ["Stats", "Leaders"] {
+            if tap(find(section), "League › \(section)") { shot("league-\(section.lowercased())-after-6") }
+        }
+        _ = tap(find("Table"), "League › Table")
+        tab("Club")
+        for screen in ["Club stats", "Squad report", "Development", "Money"] { visit(screen) }
+        tab("Squad"); shot("squad-after-6")
+        tab("Transfers"); shot("transfers-after-6")
+        tab("Home")
+    }
+
+    /// Continue, start, skip straight to the result, next.
+    private func quickMatch() {
+        guard tap(app.buttons["continue"].firstMatch, "Continue") else { return }
+        sleep(2)
+        guard tap(find("Skip to result"), "Skip to result") else { return }
+        sleep(2)
+        _ = tap(find("Next"), "Next")
+        sleep(2)
     }
 
     // MARK: The hub
@@ -120,9 +149,18 @@ final class TourTests: XCTestCase {
         sleep(1)
     }
 
+    /// The navigation bar's back button (run 3 tapped the hub's ⋯ menu instead and stopped).
     private func back() {
         let bar = app.navigationBars.firstMatch
-        if bar.exists, bar.buttons.firstMatch.exists { bar.buttons.firstMatch.tap() } else { notes.append("[\(tag)] no back button") }
+        var button = bar.buttons["BackButton"]
+        if !button.exists { button = bar.buttons.element(boundBy: 0) }
+        if bar.exists, button.exists, button.isHittable, !button.label.contains("More") {
+            button.tap()
+        } else {
+            notes.append("[\(tag)] no back button; edge swipe")
+            let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.01, dy: 0.5))
+            start.press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: 0.5)))
+        }
         sleep(1)
     }
 

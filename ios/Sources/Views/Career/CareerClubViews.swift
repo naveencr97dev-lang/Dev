@@ -89,10 +89,10 @@ struct PerkRow: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             if owned {
-                Image(systemName: "checkmark.seal.fill").foregroundStyle(Palette.accent).frame(width: 74, alignment: .trailing)
+                Image(systemName: "checkmark.seal.fill").foregroundStyle(Palette.accent).frame(width: 100, alignment: .trailing)
             } else {
                 ActionChip(icon: "plus", title: "Learn \(perk.cost)", disabled: block != nil, action: learn)
-                    .frame(width: 74, alignment: .trailing)
+                    .frame(width: 100, alignment: .trailing)
             }
         }
     }

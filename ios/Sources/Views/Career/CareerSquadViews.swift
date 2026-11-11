@@ -625,10 +625,10 @@ struct SquadReportView: View {
                 SummaryCell(value: Money.format(r.totalValue), label: "value"),
             ])
             Text("BEST PLAYERS").font(.system(size: 10 * TextScale.factor, weight: .heavy)).foregroundStyle(Palette.muted)
-            SquadTableHead(count: r.stars.count, form: true)
+            SquadTableHead(count: r.stars.count, form: true, compact: true)
             ForEach(r.stars) { p in
                 NavigationLink { CareerPlayerView(playerId: p.id) } label: {
-                    SquadTableRow(player: p, year: c?.year ?? 0, pitchFit: c?.suitsUserPitch(p))
+                    SquadTableRow(player: p, year: c?.year ?? 0, pitchFit: c?.suitsUserPitch(p), compact: true)
                 }
                 .buttonStyle(.plain)
             }
