@@ -11,7 +11,9 @@ struct MatchView: View {
     @State private var shown = 0
     @State private var finished = false
     /// Speed multiplier; 1× = one ball every `ballSeconds`. Remembered between matches.
-    @AppStorage("matchSpeedV3") private var speed: Double = 1
+    /// Owner's request: 2× for everyone by default, and the last speed each player picks is kept
+    /// (a new key, so every device starts on 2× once).
+    @AppStorage("matchSpeedV4") private var speed: Double = 2
     static let speeds: [(label: String, value: Double)] = [("1×", 1), ("2×", 2), ("4×", 4)]
     /// Seconds for a big moment at 1×; dots and singles take a third to a half of this
     /// (about 7 minutes for a full match).
@@ -145,6 +147,47 @@ struct MatchView: View {
         paused = true
         showCentre = true
         Haptics.tap()
+    }
+
+    // MARK: Mentality on the match screen (owner's request)
+
+    /// The tactics in force now: the last live change's, else the club's.
+    private var liveTactics: Tactics {
+        changes.last(where: { $0.tactics != nil })?.tactics ?? store.career?.tactics ?? Tactics()
+    }
+
+    /// Block / Rotate / Attack while you bat; Defensive / Balanced / Aggressive while you bowl. A tap
+    /// applies from the next ball for the rest of the innings. Only in your own career matches.
+    @ViewBuilder private func mentalityBar(_ r: MatchResult, current: BallEvent?, userTeam: Int?) -> some View {
+        if pendingCommit, let team = userTeam, !finished {
+            let innings = current?.innings ?? 0
+            let batting = r.card(innings).teamId == team
+            let over = current?.over ?? 0
+            let phase = over < 6 ? 0 : (over < 16 ? 1 : 2)
+            let t = liveTactics
+            if batting {
+                MentalityBar(title: "Batting", options: BatIntent.allCases.map(\.label),
+                             selected: BatIntent.allCases.firstIndex(of: t.intent[phase]) ?? 1) { i in
+                    setMentality(team: team, current: current) { $0.intent = Array(repeating: BatIntent.allCases[i], count: 3) }
+                }
+            } else {
+                let fields: [FieldSetting] = [.defend, .balanced, .attack]
+                MentalityBar(title: "Bowling", options: fields.map(\.label),
+                             selected: fields.firstIndex(of: t.field[phase]) ?? 1) { i in
+                    setMentality(team: team, current: current) { $0.field = Array(repeating: fields[i], count: 3) }
+                }
+            }
+        }
+    }
+
+    private func setMentality(team: Int, current: BallEvent?, _ edit: (inout Tactics) -> Void) {
+        var t = liveTactics
+        edit(&t)
+        t.plan = nil
+        var change = LiveChange(innings: current?.innings ?? 0,
+                                fromBall: current.map { $0.over * 6 + $0.ballInOver } ?? 0, teamId: team)
+        change.tactics = t
+        if applyChange(change) { Haptics.tap() } else { Haptics.warning() }
     }
 
     /// Re-plays the match with one more change; everything already shown must stay the same.
@@ -283,6 +326,7 @@ struct MatchView: View {
         let numbers = LiveReport.numbers(cards: soFar, log: log, upTo: shown)
         let userTeam = store.inCareer ? store.careerUserTeam(in: fixtureId) : nil
         let advice = userTeam.flatMap { LiveReport.advice(cards: soFar, log: log, upTo: shown, userTeam: $0).first }
+        let mentality = mentalityBar(r, current: current, userTeam: userTeam)
         // Only build up to the next ball after something worth pausing on.
         let anticipating = !inningsBreak && shown < log.count && ballWait >= MatchView.ballSeconds * 0.85
             && ballClock > ballWait * 0.45
@@ -332,6 +376,7 @@ struct MatchView: View {
                     }
                 }
             }
+            mentality
             HStack(spacing: 10) {
                 PauseButton(paused: paused) { if paused { paused = false } else { pauseForCentre() } }
                 SpeedPicker(speed: $speed, options: MatchView.speeds.map(\.value),
@@ -343,7 +388,7 @@ struct MatchView: View {
             Group {
                 if vSize == .compact {
                     landscape(r, current: current, thisOver: thisOver, shots: shots, anticipating: anticipating,
-                              numbers: numbers, advice: advice)
+                              numbers: numbers, advice: advice, mentality: mentality)
                 } else {
                     ScrollView {
                         VStack(spacing: DS.Space.md) { board; feed }
@@ -365,7 +410,7 @@ struct MatchView: View {
     /// on the left, the wagon wheel filling the right half at full height. No scrolling.
     private func landscape(_ r: MatchResult, current: BallEvent?, thisOver: [BallEvent],
                            shots: [WagonWheel.Shot], anticipating: Bool,
-                           numbers: LiveReport.Numbers?, advice: String?) -> some View {
+                           numbers: LiveReport.Numbers?, advice: String?, mentality: some View) -> some View {
         GeometryReader { geo in
             let gap: CGFloat = 12
             let col = max(0, (geo.size.width - gap) / 2)
@@ -394,6 +439,7 @@ struct MatchView: View {
                         }
                         .frame(height: 26)
                         .animation(.spring(response: 0.3, dampingFraction: 0.6), value: thisOver.count)
+                        mentality
                         HStack(spacing: 8) {
                             PauseButton(paused: paused) { if paused { paused = false } else { pauseForCentre() } }
                             SpeedPicker(speed: $speed, options: MatchView.speeds.map(\.value),
@@ -509,6 +555,33 @@ struct AssistantTicker: View {
         .padding(.horizontal, 10).padding(.vertical, compact ? 6 : 9)
         .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Palette.surface))
         .animation(.easeInOut(duration: 0.2), value: text)
+    }
+}
+
+/// Three-way mentality switch on the match screen: the current setting highlighted.
+struct MentalityBar: View {
+    let title: String
+    let options: [String]
+    let selected: Int
+    let pick: (Int) -> Void
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Text(title.uppercased()).font(.system(size: 10 * TextScale.factor, weight: .heavy)).foregroundStyle(Palette.muted)
+                .frame(width: 58, alignment: .leading)
+            ForEach(Array(options.enumerated()), id: \.offset) { i, option in
+                Button { if i != selected { pick(i) } } label: {
+                    Text(option).font(.system(size: 13 * TextScale.factor, weight: .semibold))
+                        .foregroundStyle(i == selected ? Palette.ink : .white)
+                        .lineLimit(1).minimumScaleFactor(0.7)
+                        .frame(maxWidth: .infinity, minHeight: 32)
+                        .background(RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .fill(i == selected ? Palette.accent : Palette.surfaceHi))
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("mentality.\(option)")
+            }
+        }
     }
 }
 

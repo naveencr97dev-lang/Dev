@@ -116,6 +116,13 @@ final class TourTests: XCTestCase {
         guard tap(find("Start match"), "Start match") else { return }
         sleep(4)
         shot("match-live-1")
+        // The on-screen mentality: attack if we're batting, aggressive if we're bowling.
+        for option in ["Attack", "Aggressive"] where app.buttons["mentality.\(option)"].exists {
+            if tap(app.buttons["mentality.\(option)"].firstMatch, "Mentality \(option)", timeout: 1) {
+                sleep(1)
+                shot("match-mentality-\(option.lowercased())")
+            }
+        }
         if tap(app.buttons["pause"].firstMatch, "Pause") {
             sleep(1)
             for t in ["Overview", "Ratings", "Around the league", "Scorecard", "Tactics", "Batting", "Bowling"] {
