@@ -278,6 +278,11 @@ struct MatchView: View {
         let recent = Array(log[..<shown].suffix(8).reversed())
         let shots = log[..<shown].enumerated().filter { $0.element.innings == inningsNow }
             .map { WagonWheel.Shot(index: $0.offset, event: $0.element) }
+        // Device feedback: the ⏸ Overview's numbers and the assistant on the match screen itself.
+        let soFar = MatchEngine.scorecardSoFar(result: r, log: log, upTo: shown)
+        let numbers = LiveReport.numbers(cards: soFar, log: log, upTo: shown)
+        let userTeam = store.inCareer ? store.careerUserTeam(in: fixtureId) : nil
+        let advice = userTeam.flatMap { LiveReport.advice(cards: soFar, log: log, upTo: shown, userTeam: $0).first }
         // Only build up to the next ball after something worth pausing on.
         let anticipating = !inningsBreak && shown < log.count && ballWait >= MatchView.ballSeconds * 0.85
             && ballClock > ballWait * 0.45
@@ -294,6 +299,8 @@ struct MatchView: View {
             if let e = current {
                 CreaseCard(event: e, battingTeam: store.team(r.card(e.innings).teamId), order: r.card(e.innings).batters.map(\.name))
             }
+            if let numbers { LiveNumbersGrid(numbers: numbers) }
+            if let advice { AssistantTicker(text: advice) }
         }
         let feed = VStack(alignment: .leading, spacing: DS.Space.sm) {
             VStack(alignment: .leading, spacing: DS.Space.sm) {
@@ -335,7 +342,8 @@ struct MatchView: View {
         return ZStack {
             Group {
                 if vSize == .compact {
-                    landscape(r, current: current, thisOver: thisOver, shots: shots, anticipating: anticipating)
+                    landscape(r, current: current, thisOver: thisOver, shots: shots, anticipating: anticipating,
+                              numbers: numbers, advice: advice)
                 } else {
                     ScrollView {
                         VStack(spacing: DS.Space.md) { board; feed }
@@ -356,7 +364,8 @@ struct MatchView: View {
     /// Landscape (iPhone Pro Max is ~830 × 420 pt inside the safe area): scoreboard and controls
     /// on the left, the wagon wheel filling the right half at full height. No scrolling.
     private func landscape(_ r: MatchResult, current: BallEvent?, thisOver: [BallEvent],
-                           shots: [WagonWheel.Shot], anticipating: Bool) -> some View {
+                           shots: [WagonWheel.Shot], anticipating: Bool,
+                           numbers: LiveReport.Numbers?, advice: String?) -> some View {
         GeometryReader { geo in
             let gap: CGFloat = 12
             let col = max(0, (geo.size.width - gap) / 2)
@@ -372,6 +381,8 @@ struct MatchView: View {
                             CreaseCard(event: e, battingTeam: store.team(r.card(e.innings).teamId), compact: true,
                                        order: r.card(e.innings).batters.map(\.name))
                         }
+                        if let numbers { LiveNumbersGrid(numbers: numbers, oneRow: true) }
+                        if let advice { AssistantTicker(text: advice, compact: true) }
                         // Device feedback: the column centred itself; now it spans the ground panel,
                         // with the over and the controls at the foot.
                         Spacer(minLength: 6)
@@ -443,6 +454,61 @@ struct MatchView: View {
     private func overString(_ e: BallEvent) -> String {
         let balls = e.over * 6 + e.ballInOver
         return "\(balls / 6).\(balls % 6)"
+    }
+}
+
+/// The live numbers (the ⏸ Overview's tiles) on the match screen: run rate, required rate or
+/// projection, last five overs, partnership, 4s · 6s, dot balls. One row in landscape.
+struct LiveNumbersGrid: View {
+    let numbers: LiveReport.Numbers
+    var oneRow = false
+
+    var body: some View {
+        let n = numbers
+        let cols = Array(repeating: GridItem(.flexible(), spacing: 5), count: oneRow ? 6 : 3)
+        LazyVGrid(columns: cols, spacing: 5) {
+            tile(String(format: "%.2f", n.runRate), "Run rate")
+            if let rrr = n.requiredRate {
+                tile(String(format: "%.2f", rrr), "Required", rrr > n.runRate + 1.5 ? .orange : Palette.accent)
+            } else {
+                tile(n.projected.map { "\($0)" } ?? "–", "Projected")
+            }
+            tile("\(n.lastFive)", "Last 5 ov")
+            tile("\(n.partnershipRuns) (\(n.partnershipBalls))", "Stand")
+            tile("\(n.fours) · \(n.sixes)", "4s · 6s")
+            tile("\(n.dotPercent)%", "Dots", n.dotPercent >= 45 ? .orange : .white)
+        }
+    }
+
+    private func tile(_ value: String, _ label: String, _ color: Color = .white) -> some View {
+        VStack(spacing: 1) {
+            Text(value).font(.score(oneRow ? 13 : 16)).foregroundStyle(color).lineLimit(1).minimumScaleFactor(0.6)
+            Text(label.uppercased()).font(.system(size: (oneRow ? 7.5 : 9) * TextScale.factor, weight: .heavy))
+                .foregroundStyle(Palette.muted).lineLimit(1).minimumScaleFactor(0.6)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, oneRow ? 5 : 8)
+        .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Palette.surface))
+    }
+}
+
+/// The assistant manager's top line, live on the match screen.
+struct AssistantTicker: View {
+    let text: String
+    var compact = false
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: "person.wave.2.fill")
+                .font(.system(size: (compact ? 12 : 14) * TextScale.factor, weight: .semibold))
+                .foregroundStyle(Palette.accent)
+            Text(text).font(.system(size: (compact ? 12 : 13) * TextScale.factor, weight: .semibold))
+                .foregroundStyle(.white).lineLimit(2).minimumScaleFactor(0.85)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.horizontal, 10).padding(.vertical, compact ? 6 : 9)
+        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Palette.surface))
+        .animation(.easeInOut(duration: 0.2), value: text)
     }
 }
 
