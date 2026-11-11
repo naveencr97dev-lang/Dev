@@ -512,7 +512,6 @@ struct MatchView: View {
                         }
                         .frame(height: 26)
                         .animation(.spring(response: 0.3, dampingFraction: 0.6), value: thisOver.count)
-                        mentality
                         HStack(spacing: 8) {
                             PauseButton(paused: paused) { if paused { paused = false } else { pauseForCentre() } }
                             SpeedPicker(speed: $speed, options: MatchView.speeds.map(\.value),
@@ -524,11 +523,17 @@ struct MatchView: View {
                 }
                 .frame(width: col)
 
-                FieldOrWheel(shots: shots, latest: shown - 1)
-                    .frame(width: col, height: geo.size.height)
-                    .overlay {
-                        if let e = current, !anticipating { BigCall(event: e).id(shown) }
-                    }
+                // Owner's request: the mentality switch under a slightly smaller wagon wheel, at the
+                // bottom right where the thumb rests.
+                VStack(spacing: 6) {
+                    FieldOrWheel(shots: shots, latest: shown - 1)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .overlay {
+                            if let e = current, !anticipating { BigCall(event: e).id(shown) }
+                        }
+                    mentality
+                }
+                .frame(width: col, height: geo.size.height)
             }
             .frame(width: geo.size.width, height: geo.size.height)
         }
