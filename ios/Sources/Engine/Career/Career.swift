@@ -55,7 +55,7 @@ struct CareerFlags: Codable, Hashable {
 /// The whole career save. A pure value type: every rule lives here or in the engines, so the
 /// career can be unit-tested and simulated headlessly.
 struct Career: Codable {
-    static let currentSchema = 14
+    static let currentSchema = 15
     static let maxNews = 80
 
     var schemaVersion = Career.currentSchema
@@ -108,6 +108,8 @@ struct Career: Codable {
     var board = BoardState()
     /// Schema 14: the squad planner's depth chart (optional: nil until the manager opens it).
     var plan: SquadPlan? = nil
+    /// Schema 15: the last month (year × 12 + month) the main sponsor paid for.
+    var sponsorMonthPaid: Int? = nil
 
     /// Home grounds, by franchise template order.
     static let homePitches: [Pitch] = [.indianFlat, .dustyTurner, .indianFlat, .caribbeanSlow, .englishSeam,
@@ -877,6 +879,15 @@ enum CareerSave {
 
     /// JSON migrations, keyed by the version they upgrade from.
     static let migrations: [Int: ([String: Any]) -> [String: Any]] = [
+        // v14 → v15: monthly sponsor (an optional field) and new tuning keys (sponsorMonthly).
+        14: { json in
+            var j = json
+            var tuning = j["tuning"] as? [String: Any] ?? [:]
+            let standard = CareerSave.jsonObject(CareerTuning.standard) as? [String: Any] ?? [:]
+            for (k, v) in standard where tuning[k] == nil { tuning[k] = v }
+            j["tuning"] = tuning
+            return j
+        },
         // v13 → v14: squad planner (an optional field: nothing to convert).
         13: { json in json },
         // v12 → v13: morale and squad roles replaced by form; drop their player fields.

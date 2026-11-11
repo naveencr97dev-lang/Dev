@@ -82,7 +82,7 @@ Last updated 2026-11-11 (after the table-format pass on every pushed screen) on 
 - **Swift toolchain:** if `/opt/swift` is missing, install it with
   `curl -sSfL https://download.swift.org/swift-6.0.3-release/ubuntu2404/swift-6.0.3-RELEASE/swift-6.0.3-RELEASE-ubuntu24.04.tar.gz | tar xz --strip-components=1 -C /opt/swift`
   (run `mkdir -p /opt/swift` first). Then `export PATH=/opt/swift/usr/bin:$PATH`.
-- **Engine tests:** `cd ios && swift test` (103 tests, all green). Pipe the output to a file and
+- **Engine tests:** `cd ios && swift test` (107 tests, all green). Pipe the output to a file and
   check the "Executed … with 0 failures" line before committing. One push once went out red because
   a grep in a command chain hid the failure.
 - **Whole-app type-check:** `tools/typecheck/run.sh`. It checks all 48 files against SwiftUI, UIKit
@@ -119,7 +119,7 @@ Last updated 2026-11-11 (after the table-format pass on every pushed screen) on 
 ## 6. What's built (career mode)
 
 The engine is in `ios/Sources/Engine/Career/`, the screens in `ios/Sources/Views/Career/`, and the
-store glue in `ios/Sources/Store/GameStore+Career.swift`. **Save schema 14**, with a JSON migration
+store glue in `ios/Sources/Store/GameStore+Career.swift`. **Save schema 15**, with a JSON migration
 for each version in `CareerSave.migrations`.
 
 - **Season:** 10 fictional clubs, 36 league matches each, home pitches, IPL playoffs, awards,
@@ -218,8 +218,12 @@ for each version in `CareerSave.migrations`.
   - Academy.
 - **Club:**
   - 7 facilities.
-  - Money: **weekly ticket sales** (ticket price Low / Normal / High) and **merchandise**, central
-    revenue and prizes after the final, wages and upkeep. A Money screen breaks it down.
+  - Money: **weekly ticket sales** (ticket price Low / Normal / High; ₹50 L+ a home match at a
+    level-2 stadium), **merchandise**, a **main sponsor paid each month** of the season (Jan-Nov,
+    ₹40 L+ a month, more with the Commercial Hub; schema 15 adds `sponsorMonthPaid`), central
+    revenue and prizes after the final (₹40 Cr to the champions), wages and upkeep. Facility
+    upgrades cost ₹30 L × the next level, so a season of tickets pays for one upgrade of every
+    facility (`CareerEconomyTests`). A Money screen breaks it down; League › Table shows the prizes.
 - **Manager:** XP, levels, 24 perks in 3 trees. **Gold**, with a test-mode store where the Tester
   Pack (1,000,000 gold) is free and unlimited, and a gold→cash exchange.
 - **International:** 20 nations, rankings, bilateral series, the T20 World Cup in even years, the

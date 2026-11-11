@@ -65,6 +65,45 @@ extension Career {
         }
         let merch = Career.round5(Double(commercialIncome(for: userClubId)) / 36 * difficulty.incomeMult)
         if merch > 0 { post(userClubId, "Merchandise sales", merch) }
+        paySponsor()
+    }
+
+    // MARK: Sponsor (owner's request: sponsors pay each month)
+
+    /// Months of the season a sponsor pays for (January to November).
+    static let sponsorMonths = 11
+
+    /// Fictional sponsors, one per club.
+    static let sponsorNames = ["Saffron Bank", "Kestrel Mobile", "Aravali Cement", "Bluepeak Insurance", "Monsoon Motors",
+                               "Harbour Tea", "Lumen Fintech", "Peakline Tyres", "Tidewave Paints", "Northstar Telecom"]
+
+    func sponsorName(_ clubId: Int) -> String { Career.sponsorNames[abs(clubId) % Career.sponsorNames.count] }
+
+    /// What the main sponsor pays a month: more with a bigger Commercial Hub.
+    func sponsorMonthly(for clubId: Int) -> Int {
+        let user = clubId == userClubId
+        let level = user ? facility(.commercial) : tuning.aiFacilityLevel
+        let perk = user && manager.has(.sponsorFriend) ? 1.1 : 1
+        return Career.round5(Double(tuning.sponsorMonthly) * (1 + 0.15 * Double(max(0, level - 1))) * perk
+                             * (user ? difficulty.incomeMult : 1))
+    }
+
+    /// Pays the user's sponsor for each month of the season reached since the last payment.
+    /// Called after every match the user plays.
+    mutating func paySponsor() {
+        guard phase == .season else { return }
+        let (month, _) = CareerCalendar.monthDay(currentDay)
+        let key = year * 12 + month
+        let last = sponsorMonthPaid ?? (key - 1)
+        guard key > last else { return }
+        let amount = sponsorMonthly(for: userClubId)
+        for m in (max(last + 1, key - 2))...key where (m % 12 + 12) % 12 < Career.sponsorMonths {
+            post(userClubId, "Sponsor: \(sponsorName(userClubId)) (\(CareerCalendar.monthNames[(m % 12 + 12) % 12]))", amount)
+        }
+        if sponsorMonthPaid == nil {
+            addNews(.info, "🤝 \(sponsorName(userClubId)) are your main sponsor: \(Money.format(amount)) a month through the season.")
+        }
+        sponsorMonthPaid = key
     }
 
     // MARK: Gold → cash (testing and shortcuts)

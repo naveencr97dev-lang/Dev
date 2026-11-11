@@ -7,7 +7,7 @@ struct SeasonMoneyCard: View {
 
     var body: some View {
         let c = career
-        let earned: [MoneyCategory] = [.tickets, .merchandise, .sales, .revenue, .prizes]
+        let earned: [MoneyCategory] = [.tickets, .sponsors, .merchandise, .sales, .revenue, .prizes]
         let spent: [MoneyCategory] = [.wages, .purchases, .facilities]
         let net = MoneyCategory.allCases.reduce(0) { $0 + c.seasonTotal($1) }
         VStack(alignment: .leading, spacing: 6) {
@@ -29,6 +29,14 @@ struct SeasonMoneyCard: View {
                 }
                 Hairline(inset: 14)
                 HStack {
+                    Text("Main sponsor").font(.system(size: 14 * TextScale.factor)).foregroundStyle(Palette.muted)
+                    Spacer()
+                    Text("\(c.sponsorName(c.userClubId)) · \(Money.format(c.sponsorMonthly(for: c.userClubId))) a month")
+                        .font(.score(14)).foregroundStyle(.white).lineLimit(1).minimumScaleFactor(0.8)
+                }
+                .padding(.horizontal, 14).padding(.vertical, 10)
+                Hairline(inset: 14)
+                HStack {
                     Text("Ticket price").font(.system(size: 14 * TextScale.factor)).foregroundStyle(Palette.muted)
                     Spacer()
                     Picker("Ticket price", selection: Binding(get: { c.settings.ticketPrice },
@@ -41,7 +49,7 @@ struct SeasonMoneyCard: View {
                 .padding(.horizontal, 14).padding(.vertical, 8)
             }
             .gameFrame()
-            Text("Money comes in every week: tickets after each home match, merchandise every week, and fees when you sell players (Transfers). Central revenue and prize money arrive after the final. A bigger Stadium sells more tickets; the Commercial Hub sells more merchandise.")
+            Text("Money comes in every week: tickets after each home match, merchandise every week, your sponsor every month, and fees when you sell players (Transfers). Central revenue and prize money arrive after the final. A bigger Stadium sells more tickets; the Commercial Hub brings more merchandise and a bigger sponsor deal.")
                 .font(.system(size: 12 * TextScale.factor)).foregroundStyle(Palette.muted)
                 .padding(.horizontal, 4)
         }

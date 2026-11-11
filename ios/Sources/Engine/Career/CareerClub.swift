@@ -194,7 +194,7 @@ extension Career {
     /// Cost of the next level, in lakhs.
     func upgradeCost(_ k: FacilityKind) -> Int {
         let next = facility(k) + 1
-        let base = Double(tuning.facilityBaseCost * next * next)
+        let base = Double(tuning.facilityBaseCost * next)
         return Career.round5(base * (manager.has(.leanBuild) ? 0.9 : 1))
     }
 
@@ -257,6 +257,7 @@ extension Career {
             } else {
                 post(club.id, "Gate money (\(homeGames) home matches)", gate(for: club.id) * homeGames)
                 post(club.id, "Sponsors & merchandise", commercialIncome(for: club.id))
+                post(club.id, "Sponsor: \(sponsorName(club.id)) (season)", sponsorMonthly(for: club.id) * Career.sponsorMonths)
             }
         }
         let b = bank(userClubId)

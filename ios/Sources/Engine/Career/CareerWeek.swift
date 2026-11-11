@@ -13,12 +13,13 @@ enum TicketPrice: String, Codable, CaseIterable, Identifiable {
 
 /// Where the user's money came from (and went) this season.
 enum MoneyCategory: String, Codable, CaseIterable {
-    case tickets, merchandise, revenue, prizes, sales, purchases, wages, facilities, other
+    case tickets, merchandise, sponsors, revenue, prizes, sales, purchases, wages, facilities, other
 
     var label: String {
         switch self {
         case .tickets: return "Ticket sales"
         case .merchandise: return "Merchandise"
+        case .sponsors: return "Sponsor"
         case .revenue: return "Central revenue"
         case .prizes: return "Prize money"
         case .sales: return "Player sales"
@@ -31,6 +32,7 @@ enum MoneyCategory: String, Codable, CaseIterable {
 
     static func of(_ text: String, amount: Int) -> MoneyCategory {
         if text.hasPrefix("Tickets") || text.hasPrefix("Gate") { return .tickets }
+        if text.hasPrefix("Sponsor:") { return .sponsors }
         if text.hasPrefix("Merchandise") || text.hasPrefix("Sponsors") { return .merchandise }
         if text.contains("central revenue") { return .revenue }
         if text.hasPrefix("Prize") { return .prizes }

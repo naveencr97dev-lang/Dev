@@ -22,12 +22,12 @@
   "draftBalance" : 2,
   "drillChance" : 0.05,
   "engineBatBoost" : 8,
-  "facilityBaseCost" : 40,
+  "facilityBaseCost" : 30,
   "facilityUpkeep" : 5,
   "focusMultiplier" : 2.5,
   "formCap" : 10,
   "formDecay" : 2,
-  "gatePerLevel" : 15,
+  "gatePerLevel" : 35,
   "goldForTitle" : 200,
   "goldPerBuildWeek" : 40,
   "goldPerLevel" : 20,
@@ -107,10 +107,10 @@
     323
   ],
   "prizeMoney" : [
-    2000,
-    1300,
-    700,
-    650
+    4000,
+    2600,
+    1400,
+    1300
   ],
   "releaseCompensation" : 0.5,
   "retireAge" : 35,
@@ -123,6 +123,7 @@
   "scoutWage" : 25,
   "seasonRevenue" : 8000,
   "secondTraitChance" : 0.25,
+  "sponsorMonthly" : 40,
   "squadShape" : [
     2,
     6,
