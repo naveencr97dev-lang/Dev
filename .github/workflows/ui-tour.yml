@@ -89,6 +89,19 @@ jobs:
           fi
           ls -la ~/ui-tour || true
 
+      - name: Shrink the recording
+        if: always()
+        run: |
+          # GitHub refuses files over 100 MB: re-encode small, drop it if it's still too big.
+          if [ -f ~/ui-tour/tour.mp4 ]; then
+            avconvert --source ~/ui-tour/tour.mp4 --preset Preset960x540 --output ~/ui-tour/tour-small.mp4 --replace || true
+            rm -f ~/ui-tour/tour.mp4
+            if [ -f ~/ui-tour/tour-small.mp4 ] && [ "$(stat -f%z ~/ui-tour/tour-small.mp4)" -gt 90000000 ]; then
+              rm -f ~/ui-tour/tour-small.mp4
+            fi
+          fi
+          ls -la ~/ui-tour | tail -5
+
       - name: Publish to the ui-tour-shots branch
         if: always()
         env:
@@ -96,12 +109,13 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/pub" && cd "$RUNNER_TEMP/pub"
           cp -R ~/ui-tour/. . 2>/dev/null || true
+          find . -type f -size +95M -delete
           {
             echo "# UI tour"
             echo
             echo "- Commit: ${{ github.sha }} on ${{ github.ref_name }}"
             echo "- Simulator: ${{ steps.sim.outputs.name }}"
-            echo "- Xcode: $(xcodebuild -version | head -1)"
+            echo "- Xcode: $(xcodebuild -version 2>/dev/null | tr '\n' ' ')"
             echo "- Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
             echo "- Screenshots: $(ls *.png 2>/dev/null | wc -l | tr -d ' ')"
           } > RUN.md
