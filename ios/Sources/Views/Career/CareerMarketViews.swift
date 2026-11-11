@@ -296,6 +296,8 @@ struct CareerMarketTab: View {
     private static let bowls: [BowlType?] = [nil, .pace, .spin]
     private static let bowlLabels = ["Any bowling", "Pace", "Spin"]
     @State private var scope: StatScope = .season
+    /// Name search (owner: couldn't find Harry Brook or Pat Cummins among 460 players).
+    @State private var query = ""
 
     private static let roles: [Role?] = [nil, .BAT, .WK, .AR, .BOWL]
     private static let roleLabels = ["All", "BAT", "WK", "AR", "BOWL"]
@@ -305,6 +307,7 @@ struct CareerMarketTab: View {
             let season = c.seasonStatLines
             let list = c.marketPlayers(role: Self.roles[roleIndex], slot: Self.slots[slotIndex], bowlType: Self.bowls[bowlIndex],
                                        freeAgentsOnly: freeOnly, sort: sort, scope: scope)
+                .filter { query.isEmpty || $0.name.localizedCaseInsensitiveContains(query.trimmingCharacters(in: .whitespaces)) }
             if landscape {
                 // Device feedback: one full-height panel; purse and filters stay put, only the list scrolls.
                 PanelBox {
@@ -330,7 +333,9 @@ struct CareerMarketTab: View {
         HStack(spacing: 10) {
             Circle().fill(c.windowOpen ? Palette.accent : Palette.wicket).frame(width: 7, height: 7)
             Text(c.windowLabel).font(.system(size: 12 * TextScale.factor, weight: .semibold)).foregroundStyle(Palette.muted).lineLimit(1)
+                .layoutPriority(-1)
             Spacer(minLength: 6)
+            searchField
             if !c.market.offers.isEmpty || !c.market.listed.isEmpty {
                 NavigationLink { OffersScreen() } label: {
                     chip("tray.full", "\(c.market.offers.count) offer\(c.market.offers.count == 1 ? "" : "s") · \(c.market.listed.count) listed",
@@ -352,6 +357,29 @@ struct CareerMarketTab: View {
         MarketColumns(landscape: landscape, statTitle: sort.isStat ? sort.label : nil, count: count)
     }
 
+
+    /// Find a player by name.
+    private var searchField: some View {
+        HStack(spacing: 5) {
+            Image(systemName: "magnifyingglass").font(.system(size: 11 * TextScale.factor, weight: .semibold))
+                .foregroundStyle(Palette.muted)
+            TextField("Search players", text: $query)
+                .font(.system(size: 12 * TextScale.factor, weight: .semibold))
+                .foregroundStyle(.white)
+                .autocorrectionDisabled()
+                .textInputAutocapitalization(.never)
+                .accessibilityIdentifier("marketSearch")
+            if !query.isEmpty {
+                Button { query = "" } label: {
+                    Image(systemName: "xmark.circle.fill").font(.system(size: 12 * TextScale.factor)).foregroundStyle(Palette.muted)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, 10).padding(.vertical, 5)
+        .frame(width: landscape ? 150 : 130)
+        .background(Capsule().fill(Palette.surfaceHi))
+    }
 
     /// Role chips, slot and bowling menus, free agents, sort and scope.
     private var filters: some View {

@@ -19,6 +19,7 @@
     70
   ],
   "depthPlayers" : 160,
+  "developmentRaise" : 0.5,
   "draftBalance" : 2,
   "drillChance" : 0.05,
   "engineBatBoost" : 8,
@@ -35,23 +36,23 @@
   "growth" : [
     [
       20,
-      2,
-      7
+      3,
+      8
     ],
     [
       23,
+      2,
+      6
+    ],
+    [
+      26,
       1,
       5
     ],
     [
-      26,
-      0,
-      3
-    ],
-    [
       29,
-      -1,
-      1
+      0,
+      2
     ],
     [
       32,
@@ -84,6 +85,8 @@
       12
     ]
   ],
+  "matchGrowthAge" : 25,
+  "matchGrowthMatches" : 10,
   "maxOverseasSquad" : 8,
   "maxOverseasXI" : 4,
   "maxRetentions" : 6,
@@ -112,6 +115,7 @@
     1400,
     1300
   ],
+  "raiseAge" : 29,
   "releaseCompensation" : 0.5,
   "retireAge" : 35,
   "retireBase" : 0.3,

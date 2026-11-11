@@ -55,7 +55,7 @@ struct CareerFlags: Codable, Hashable {
 /// The whole career save. A pure value type: every rule lives here or in the engines, so the
 /// career can be unit-tested and simulated headlessly.
 struct Career: Codable {
-    static let currentSchema = 15
+    static let currentSchema = 16
     static let maxNews = 80
 
     var schemaVersion = Career.currentSchema
@@ -125,13 +125,11 @@ struct Career: Codable {
         for p in curated where flags.legendsEra || !p.legend {
             let b = born[p.id] ?? (year - 27)
             let age = year - b
-            let headroom = age <= 21 ? Int.random(in: 5...12, using: &rng)
-                : (age <= 24 ? Int.random(in: 2...7, using: &rng) : (age <= 27 ? Int.random(in: 0...3, using: &rng) : 0))
             let attr = Attributes.seeded(bat: p.bat, bowl: p.bowl, keeper: p.role == .WK, traits: p.traits, rng: &rng)
             var cp = CareerPlayer(id: p.id, name: p.name, country: p.country, role: p.role, bowlType: p.bowlType,
                                   slot: p.slot, traits: p.traits, born: b, attr: attr, potential: 0,
                                   legend: p.legend, generated: false, line: p.line, clubId: nil)
-            cp.potential = min(99, max(cp.bat, cp.bowl) + headroom)
+            cp.potential = Career.curatedPotential(main: max(cp.bat, cp.bowl), age: age, rng: &rng)
             players[p.id] = cp
         }
         let taken = Set(players.values.map(\.name))
@@ -767,6 +765,32 @@ struct Career: Codable {
         return report
     }
 
+    /// Potential of a real (curated) player at the start of a career, from his main skill and age.
+    /// Owner's request: the best young players can reach 92-95, so buying one pays off for years.
+    static func curatedPotential(main: Int, age: Int, rng: inout SeededRNG) -> Int {
+        let headroom = age <= 21 ? Int.random(in: 10...16, using: &rng)
+            : age <= 24 ? Int.random(in: 7...12, using: &rng)
+            : age <= 26 ? Int.random(in: 4...8, using: &rng)
+            : age <= 28 ? Int.random(in: 1...4, using: &rng) : 0
+        var potential = main + headroom
+        // Elite youngsters (80+ by 26) are future superstars.
+        if age <= 26 && main >= 80 { potential = max(potential, Int.random(in: 92...95, using: &rng)) }
+        return max(main, min(95, potential))
+    }
+
+    /// Saves from before schema 16: raise the potential of young real players to the new rule
+    /// (never lowered; seeded by player id, so it's the same on every load).
+    mutating func refreshCuratedPotential() {
+        for id in players.keys.sorted() {
+            guard var p = players[id], !p.generated, !p.retired else { continue }
+            let age = p.age(in: year)
+            guard age <= 28 else { continue }
+            var r = SeededRNG(seed: UInt64(truncatingIfNeeded: id.unicodeScalars.reduce(5381) { ($0 &* 33) &+ Int($1.value) }))
+            let fresh = Career.curatedPotential(main: max(p.bat, p.bowl), age: age, rng: &r)
+            if fresh > p.potential { p.potential = fresh; players[id] = p }
+        }
+    }
+
     /// Yearly development, ageing and retirement.
     /// Chance a player retires at this age (the retirement watch uses the same rule).
     func retireChance(_ p: CareerPlayer, age: Int) -> Double {
@@ -780,12 +804,26 @@ struct Career: Codable {
 
     mutating func develop() -> RolloverReport {
         var report = RolloverReport()
+        // Matches played this season: young regulars develop faster (owner's request).
+        var played: [String: Int] = [:]
+        for r in results {
+            for inn in r.innings.prefix(2) { for b in inn.batters { played[b.id, default: 0] += 1 } }
+        }
+        var raises: [String] = []
         for id in players.keys.sorted() {
             guard var p = players[id], !p.retired else { continue }
             let age = p.age(in: year)
             var gain = Int.random(in: tuning.growthRange(age: age), using: &rng)
+            if age <= tuning.matchGrowthAge && played[id, default: 0] >= tuning.matchGrowthMatches && gain >= 0 { gain += 1 }
             let main = max(p.bat, p.bowl)
+            // Late bloomers (24-29) well short of their ceiling keep climbing: a 26-year-old 84 with
+            // 94 potential reaches about 90 by 29 instead of stalling at 86.
+            if (24...29).contains(age) && gain >= 0 {
+                let gap = p.potential - main
+                gain += gap >= 6 ? 2 : (gap >= 3 ? 1 : 0)
+            }
             if gain > 0 { gain = min(gain, max(0, p.potential - main)) }
+            let valueBefore = p.value(in: year)
             let mine = p.clubId == userClubId
             if mine && gain < 0 && age >= 30 && manager.has(.veteranCare) { gain += 1 }
             if gain != 0 {
@@ -800,6 +838,18 @@ struct Career: Codable {
                 if gain < 0 { p.attr.fielding = Attributes.clamp(p.attr.fielding + gain / 2) }
             }
             if gain >= 4 && p.clubId == userClubId { report.bigRisers.append(p.name) }
+            // A young player who improves earns a raise on his contract: half the rise in his wage
+            // value, within the club's cap room. The full rate comes at the next mega auction.
+            if gain > 0, age <= tuning.raiseAge, let cid = p.clubId, var k = p.contract {
+                let raise = Career.round5(Double(p.value(in: year) - valueBefore) * tuning.developmentRaise)
+                let room = capRoom(cid)
+                let paid = min(raise, max(0, room))
+                if paid > 0 {
+                    k.wage += paid
+                    p.contract = k
+                    if cid == userClubId { raises.append("\(p.name) +\(Money.format(paid))") }
+                }
+            }
             p.form = 0
 
             // Retirement.
@@ -832,6 +882,9 @@ struct Career: Codable {
                 }
             }
             players[id] = p
+        }
+        if !raises.isEmpty {
+            addNews(.squad, "📈 Pay rises for improving young players: \(raises.joined(separator: ", ")).")
         }
         // Forget retired players nobody will look up again.
         for id in players.keys.sorted() {
@@ -879,6 +932,8 @@ enum CareerSave {
 
     /// JSON migrations, keyed by the version they upgrade from.
     static let migrations: [Int: ([String: Any]) -> [String: Any]] = [
+        // v15 → v16: young real players get higher potential (done after decoding, as it needs ratings).
+        15: { json in json },
         // v14 → v15: monthly sponsor (an optional field) and new tuning keys (sponsorMonthly).
         14: { json in
             var j = json
@@ -1010,6 +1065,7 @@ enum CareerSave {
         let upgraded = try JSONSerialization.data(withJSONObject: json)
         var c = try JSONDecoder().decode(Career.self, from: upgraded)
         c.repairContracts()
+        if version < 16 { c.refreshCuratedPotential() }
         return c
     }
 }

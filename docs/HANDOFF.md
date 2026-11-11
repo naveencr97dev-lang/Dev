@@ -82,7 +82,7 @@ Last updated 2026-11-11 (after the table-format pass on every pushed screen) on 
 - **Swift toolchain:** if `/opt/swift` is missing, install it with
   `curl -sSfL https://download.swift.org/swift-6.0.3-release/ubuntu2404/swift-6.0.3-RELEASE/swift-6.0.3-RELEASE-ubuntu24.04.tar.gz | tar xz --strip-components=1 -C /opt/swift`
   (run `mkdir -p /opt/swift` first). Then `export PATH=/opt/swift/usr/bin:$PATH`.
-- **Engine tests:** `cd ios && swift test` (113 tests, all green). Pipe the output to a file and
+- **Engine tests:** `cd ios && swift test` (116 tests, all green). Pipe the output to a file and
   check the "Executed … with 0 failures" line before committing. One push once went out red because
   a grep in a command chain hid the failure.
 - **Whole-app type-check:** `tools/typecheck/run.sh`. It checks all 48 files against SwiftUI, UIKit
@@ -119,7 +119,7 @@ Last updated 2026-11-11 (after the table-format pass on every pushed screen) on 
 ## 6. What's built (career mode)
 
 The engine is in `ios/Sources/Engine/Career/`, the screens in `ios/Sources/Views/Career/`, and the
-store glue in `ios/Sources/Store/GameStore+Career.swift`. **Save schema 15**, with a JSON migration
+store glue in `ios/Sources/Store/GameStore+Career.swift`. **Save schema 16**, with a JSON migration
 for each version in `CareerSave.migrations`.
 
 - **Season:** 10 fictional clubs, 36 league matches each, home pitches, IPL playoffs, awards,
@@ -238,6 +238,13 @@ for each version in `CareerSave.migrations`.
     ₹75 Cr cap at 99; age barely matters (0.92 from 33). Wages, retentions and auctions stay on
     `value`. Central revenue is ₹65 Cr, so a mid-table season clears about ₹15 Cr after wages and a
     title about ₹40-50 Cr: one star per good season (`testTransferFeesMatchTheOwnersTargets`).
+  - **Young players (owner's request, schema 16):** real players' potential comes from
+    `Career.curatedPotential` (headroom 10-16 at 21 or under, 7-12 to 24, 4-8 to 26, 1-4 to 28;
+    80+ by 26 means 92-95). Growth is faster (3-8 / 2-6 / 1-5 / 0-2 up to 29), players aged 25 or
+    under with 10+ matches gain a point, and 24-29s well short of their potential get +1/+2.
+    Improving players aged 29 or under get a raise of half the rise in wage value (within cap room);
+    the full rate comes at the mega auction. Old saves get the new potential on load
+    (`refreshCuratedPotential`). Transfers has a name search. Tests: `CareerYouthTests`.
   - **Batting mentality (owner's device test):** Block roughly halves wickets (one every 38-50
     balls v 16-21 on Rotate) at about 1.5-2 runs an over less, and it overrides chase pressure (told
     to block, batters don't swing). Blocking a whole match wins 19-32%, so it's a tool for seeing off

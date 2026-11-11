@@ -39,7 +39,14 @@ struct CareerTuning: Codable, Hashable {
 
     // Development (per season, applied to the main skill)
     /// Growth range by age band: [maxAge, min, max].
-    var growth: [[Int]] = [[20, 2, 7], [23, 1, 5], [26, 0, 3], [29, -1, 1], [32, -3, 0], [35, -5, -1], [99, -7, -2]]
+    /// Owner's request: faster growth for young players (was 2-7, 1-5, 0-3, -1-1 up to 29).
+    var growth: [[Int]] = [[20, 3, 8], [23, 2, 6], [26, 1, 5], [29, 0, 2], [32, -3, 0], [35, -5, -1], [99, -7, -2]]
+    /// Players this age or younger with this many matches in a season gain an extra point.
+    var matchGrowthAge = 25
+    var matchGrowthMatches = 10
+    /// Improving players this age or younger get a raise: this share of the rise in wage value.
+    var raiseAge = 29
+    var developmentRaise = 0.5
     /// Retirement: earliest age, base chance at that age, extra chance per year after.
     var retireAge = 35
     var retireBase = 0.3

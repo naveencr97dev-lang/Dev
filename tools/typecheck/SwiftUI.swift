@@ -464,6 +464,7 @@ extension View {
     public func overlay<V: View>(alignment: Alignment = .center, @ViewBuilder content: () -> V) -> _Mod { _Mod() }
     public func opacity(_ o: Double) -> _Mod { _Mod() }
     public func lineLimit(_ n: Int?) -> _Mod { _Mod() }
+    public func layoutPriority(_ p: Double) -> _Mod { _Mod() }
     public func minimumScaleFactor(_ f: CGFloat) -> _Mod { _Mod() }
     public func accessibilityLabel<S: StringProtocol>(_ label: S) -> _Mod { _Mod() }
     public func multilineTextAlignment(_ a: TextAlignment) -> _Mod { _Mod() }
