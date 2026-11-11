@@ -185,7 +185,7 @@ struct CareerAuctionView: View {
                 Label(fit.text, systemImage: fit.good ? "house.fill" : "house")
                     .font(.system(size: 12 * TextScale.factor, weight: .semibold)).foregroundStyle(fit.good ? Palette.accent : Color.orange)
             }
-            Text("Value \(Money.format(p.value(in: c.year))) · base \(Money.format(p.basePrice(in: c.year)))")
+            Text("Wage value \(Money.format(p.value(in: c.year))) · base \(Money.format(p.basePrice(in: c.year)))")
                 .font(.system(size: 12 * TextScale.factor)).foregroundStyle(Palette.muted)
             if c.isRTMLot(p.id) {
                 Text("Your player last season · Right to Match cards: \(c.offseason?.rtmLeft ?? 0)")
@@ -592,7 +592,7 @@ struct OffersScreen: View {
                         }
                         .buttonStyle(.plain)
                         if vSize == .compact {
-                            TNum(text: c.players[id].map { Money.format($0.value(in: c.year)) } ?? "–", width: TCol.money, color: Palette.muted)
+                            TNum(text: c.players[id].map { Money.format($0.transferValue(in: c.year)) } ?? "–", width: TCol.money, color: Palette.muted)
                         }
                         TNum(text: Money.format(c.market.listed[id] ?? 0), width: 90)
                         HStack {
@@ -627,7 +627,7 @@ struct OfferRow: View {
             }
             .buttonStyle(.plain)
             if vSize == .compact {
-                TNum(text: p.map { Money.format($0.value(in: c.year)) } ?? "–", width: TCol.money, color: Palette.muted)
+                TNum(text: p.map { Money.format($0.transferValue(in: c.year)) } ?? "–", width: TCol.money, color: Palette.muted)
             }
             TNum(text: Money.format(offer.fee), width: 90, color: Palette.accent)
             HStack(spacing: 6) {
@@ -700,8 +700,8 @@ struct TransferActions: View {
             Button("Take off the list") { store.careerUnlist(p.id) }
                 .buttonStyle(SecondaryButtonStyle())
         } else {
-            Button("List for transfer at \(Money.format(p.value(in: c.year)))") {
-                store.careerList(p.id, asking: p.value(in: c.year))
+            Button("List for transfer at \(Money.format(p.transferValue(in: c.year)))") {
+                store.careerList(p.id, asking: p.transferValue(in: c.year))
                 message = c.windowOpen ? "Listed. Check the Market tab for bids." : "Listed. Bids arrive when the window opens."
             }
             .buttonStyle(SecondaryButtonStyle())

@@ -23,7 +23,7 @@ built, and the next steps. Key points:
 - **Build:** no Mac. Codemagic builds an unsigned IPA, then Signulous installs it on an iPhone 17 Pro Max.
   Landscape (about 830 × 420 pt) must fit with no scrolling.
 - **Checks:** run `tools/typecheck/run.sh` (whole app, SwiftUI stubs) and `cd ios && swift test`
-  (111 tests). Install Swift 6.0.3 into /opt/swift if it's missing (command in HANDOFF.md).
+  (112 tests). Install Swift 6.0.3 into /opt/swift if it's missing (command in HANDOFF.md).
 - **Docs:** `docs/ARCHITECTURE.md` (feature tree and layers; fix in the lowest-risk layer),
   `docs/MOBILE-DESIGN.md` (clean native look, banned AI tells), `docs/career/GDD.md`,
   `docs/career/ROADMAP.md`.

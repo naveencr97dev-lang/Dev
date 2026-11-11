@@ -37,4 +37,24 @@ extension CareerTests {
         XCTAssertEqual(c.seasonTotal(.sponsors), c.sponsorMonthly(for: c.userClubId) * Career.sponsorMonths)
         XCTAssertGreaterThanOrEqual(c.sponsorMonthly(for: c.userClubId), 40)
     }
+
+    /// Owner's request: stars can't be bought in season 1. Fees follow `transferValue` (steep at the
+    /// top), wages stay on `value`, so the salary cap and auctions are unchanged.
+    func testStarsCostMoreThanASeasonOfProfit() {
+        var c = newCareer()
+        let me = c.userClubId
+        let others = c.players.values.filter { $0.clubId != nil && $0.clubId != me && !$0.retired }
+        let stars = others.filter { $0.rating >= 90 }
+        XCTAssertFalse(stars.isEmpty)
+        for p in stars { XCTAssertGreaterThan(c.askingPrice(p), c.bank(me), "\(p.name) affordable on day 1") }
+        // The best player costs more than the season's profit (after wages), even for the champions.
+        let top = others.max { c.askingPrice($0) < c.askingPrice($1) }!
+        let before = c.bank(me)
+        c.simToSeasonEnd()
+        c.beginOffseason()
+        XCTAssertGreaterThan(c.askingPrice(top), c.bank(me) - before + c.tuning.prizeMoney[0] / 2, "\(top.name)")
+        // Fees rise steeply with rating; a squad player stays within reach.
+        let mid = others.filter { $0.rating == 75 }.map { c.askingPrice($0) }.min() ?? 0
+        XCTAssertLessThan(mid, c.tuning.startingBank)
+    }
 }

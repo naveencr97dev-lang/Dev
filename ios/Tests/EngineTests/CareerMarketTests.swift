@@ -138,7 +138,8 @@ extension CareerTests {
         XCTAssertEqual(c.bank(seller.id), sellerBefore + ask)
         XCTAssertFalse(c.club(seller.id)!.squad.contains(target.id))
         // Three strikes per player per window.
-        let other = c.squad(seller.id).first { $0.id != target.id && !$0.overseas }!
+        let other = c.squad(seller.id).filter { $0.id != target.id && !$0.overseas }
+            .min { c.askingPrice($0) < c.askingPrice($1) }!
         for _ in 0..<3 { _ = c.makeOffer(playerId: other.id, fee: 0, wage: c.tuning.minWage) }
         XCTAssertTrue(c.makeOffer(playerId: other.id, fee: c.askingPrice(other), wage: c.wageDemand(other)).message.contains("stopped"))
 

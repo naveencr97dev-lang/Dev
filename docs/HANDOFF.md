@@ -82,7 +82,7 @@ Last updated 2026-11-11 (after the table-format pass on every pushed screen) on 
 - **Swift toolchain:** if `/opt/swift` is missing, install it with
   `curl -sSfL https://download.swift.org/swift-6.0.3-release/ubuntu2404/swift-6.0.3-RELEASE/swift-6.0.3-RELEASE-ubuntu24.04.tar.gz | tar xz --strip-components=1 -C /opt/swift`
   (run `mkdir -p /opt/swift` first). Then `export PATH=/opt/swift/usr/bin:$PATH`.
-- **Engine tests:** `cd ios && swift test` (111 tests, all green). Pipe the output to a file and
+- **Engine tests:** `cd ios && swift test` (112 tests, all green). Pipe the output to a file and
   check the "Executed … with 0 failures" line before committing. One push once went out red because
   a grep in a command chain hid the failure.
 - **Whole-app type-check:** `tools/typecheck/run.sh`. It checks all 48 files against SwiftUI, UIKit
@@ -232,6 +232,11 @@ for each version in `CareerSave.migrations`.
     revenue and prizes after the final (₹40 Cr to the champions), wages and upkeep. Facility
     upgrades cost ₹30 L × the next level, so a season of tickets pays for one upgrade of every
     facility (`CareerEconomyTests`). A Money screen breaks it down; League › Table shows the prizes.
+  - **Transfer fees vs wages:** fees use `CareerPlayer.transferValue` (steep star premium: prime XI
+    asks about ₹8 Cr at 75, ₹16 Cr at 80, ₹33 Cr at 85, ₹64 Cr at 90, ₹100 Cr+ at 95; gentler age
+    discount), wages, retentions and auctions stay on `value`. Season 1 nets about ₹30 Cr mid-table
+    and ₹65 Cr for the champions after ₹73 Cr wages, so a 90+ star needs savings or a sale
+    (`testStarsCostMoreThanASeasonOfProfit`).
 - **Manager:** XP, levels, 24 perks in 3 trees. **Gold**, with a test-mode store where the Tester
   Pack (1,000,000 gold) is free and unlimited, and a gold→cash exchange.
 - **International:** 20 nations, rankings, bilateral series, the T20 World Cup in even years, the

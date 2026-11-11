@@ -48,7 +48,7 @@ extension Career {
         guard !s.isEmpty else { return r }
         r.averageRating = s.map(\.rating).reduce(0, +) / s.count
         r.averageAge = Double(s.map { $0.age(in: year) }.reduce(0, +)) / Double(s.count)
-        r.totalValue = s.map { $0.value(in: year) }.reduce(0, +)
+        r.totalValue = s.map { $0.transferValue(in: year) }.reduce(0, +)
         r.stars = Array(s.sorted { $0.rating != $1.rating ? $0.rating > $1.rating : $0.id < $1.id }.prefix(3))
 
         let ranked = clubs.map(\.id).sorted { strength($0) > strength($1) }

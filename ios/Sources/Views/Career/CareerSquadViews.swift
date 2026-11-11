@@ -439,7 +439,7 @@ struct CareerPlayerView: View {
                 number("\(p.bowl)", "BOWL", strengthColor(p.bowl))
                 number(FormStyle.text(c.formScore(p.id)), "FORM", FormStyle.color(c.formScore(p.id)))
             }
-            Text("Value \(Money.format(p.value(in: c.year))) · Potential \(c.potentialLabel(p))\(c.knowledge(of: p.id) < 100 ? " (\(c.knowledge(of: p.id))%)" : "")")
+            Text("Value \(Money.format(p.transferValue(in: c.year))) · Potential \(c.potentialLabel(p))\(c.knowledge(of: p.id) < 100 ? " (\(c.knowledge(of: p.id))%)" : "")")
                 .font(.system(size: 12 * TextScale.factor, weight: .semibold)).lineLimit(1).minimumScaleFactor(0.8)
             if !p.traits.isEmpty { TraitChips(traits: p.traits, inline: true) }
         }
@@ -525,7 +525,7 @@ struct CareerPlayerView: View {
                 dealRow("Wage", "\(Money.format(k.wage)) a season")
                 dealRow("Runs to", "\(String(k.until)) mega auction · \(max(0, k.until - c.year)) season\(k.until - c.year == 1 ? "" : "s") left")
             }
-            dealRow("Market value", Money.format(p.value(in: c.year)))
+            dealRow("Market value", Money.format(p.transferValue(in: c.year)))
             if mine {
                 let inXI = c.userClub.xi.contains(p.id)
                 if let listed = c.market.listed[p.id] {
@@ -637,7 +637,7 @@ struct CareerPlayerView: View {
                     big("\(p.bowl)", "BOWL", strengthColor(p.bowl))
                     big(FormStyle.text(c.formScore(p.id)), "FORM", FormStyle.color(c.formScore(p.id)))
                 }
-                Text("Value \(Money.format(p.value(in: c.year))) · Potential \(c.potentialLabel(p))\(c.knowledge(of: p.id) < 100 ? " (scouted \(c.knowledge(of: p.id))%)" : "")")
+                Text("Value \(Money.format(p.transferValue(in: c.year))) · Potential \(c.potentialLabel(p))\(c.knowledge(of: p.id) < 100 ? " (scouted \(c.knowledge(of: p.id))%)" : "")")
                     .font(.subheadline.weight(.semibold))
                 if !p.line.isEmpty {
                     Text(p.line).font(.caption).foregroundStyle(Palette.muted)

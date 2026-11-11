@@ -106,7 +106,7 @@ extension Career {
             switch sort {
             case .rating: return Double(p.rating)
             case .potential: return Double(potentialRange(p).upperBound)
-            case .value: return Double(p.value(in: year))
+            case .value: return Double(p.transferValue(in: year))
             case .runs: return Double(s.runs)
             case .wickets: return Double(s.wickets) - s.economy / 100
             case .strikeRate: return s.balls >= minB ? s.strikeRate : -1

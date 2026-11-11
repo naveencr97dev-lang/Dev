@@ -139,13 +139,28 @@ struct CareerPlayer: Codable, Identifiable, Hashable {
     func age(in year: Int) -> Int { year - born }
     var overseas: Bool { country != "IND" }
 
-    /// Market value in lakhs, from rating and age.
+    /// Wage value in lakhs, from rating and age: what he's paid a season (wage demands, draft
+    /// contracts, retentions, auction base price). Fees use `transferValue`.
     func value(in year: Int) -> Int {
         let base = 30 * exp(Double(rating - 50) * 0.1)
         let a = age(in: year)
         let ageFactor = a <= 23 ? 1.3 : (a <= 29 ? 1.0 : (a <= 32 ? 0.8 : 0.5))
         let potentialBoost = a <= 23 ? 1 + Double(max(0, potential - rating)) * 0.03 : 1
         return max(20, Int((base * ageFactor * potentialBoost / 5).rounded()) * 5)
+    }
+
+    /// Transfer value in lakhs: the fee clubs pay to buy him, on top of his wage. Steeper than the
+    /// wage value: a star's fee is a few seasons of club income, so nobody buys Bumrah in season 1
+    /// (owner's request; season 1 nets about ₹30 Cr mid-table, ₹65 Cr for the champions).
+    /// Prime-age XI asking prices: about ₹3 Cr at 70, ₹8 Cr at 75, ₹16 Cr at 80, ₹33 Cr at 85,
+    /// ₹64 Cr at 90, ₹120 Cr at 95. Older stars cost less, but still more than a season's profit.
+    func transferValue(in year: Int) -> Int {
+        let base = 30 * exp(Double(rating - 50) * 0.1)
+        let starPremium = 1 + Double(max(0, rating - 70)) * 0.08
+        let a = age(in: year)
+        let ageFactor = a <= 23 ? 1.3 : (a <= 29 ? 1.0 : (a <= 32 ? 0.9 : (a <= 35 ? 0.8 : 0.65)))
+        let potentialBoost = a <= 23 ? 1 + Double(max(0, potential - rating)) * 0.03 : 1
+        return max(20, Int((base * starPremium * ageFactor * potentialBoost / 5).rounded()) * 5)
     }
 
     /// Auction base price in lakhs (₹20 L … ₹2 Cr).
