@@ -82,7 +82,7 @@ Last updated 2026-11-11 (after the table-format pass on every pushed screen) on 
 - **Swift toolchain:** if `/opt/swift` is missing, install it with
   `curl -sSfL https://download.swift.org/swift-6.0.3-release/ubuntu2404/swift-6.0.3-RELEASE/swift-6.0.3-RELEASE-ubuntu24.04.tar.gz | tar xz --strip-components=1 -C /opt/swift`
   (run `mkdir -p /opt/swift` first). Then `export PATH=/opt/swift/usr/bin:$PATH`.
-- **Engine tests:** `cd ios && swift test` (108 tests, all green). Pipe the output to a file and
+- **Engine tests:** `cd ios && swift test` (111 tests, all green). Pipe the output to a file and
   check the "Executed … with 0 failures" line before committing. One push once went out red because
   a grep in a command chain hid the failure.
 - **Whole-app type-check:** `tools/typecheck/run.sh`. It checks all 48 files against SwiftUI, UIKit
@@ -135,6 +135,14 @@ for each version in `CareerSave.migrations`.
 - **Assistant manager** (`CareerAssistant.swift`): explains losing runs with fixes, and a retirement
   watch at season start. Settings › **Assistant picks my XI** (on for new careers; manual picks turn it off).
 - **Mega auction:** **Right to Match** cards (retentions + RTM = 6).
+- **Form score** (owner's scale, `Career.formScore`): 60% the last five match ratings + 40% the
+  season average, stretched so a typical player reads about 7, good 8-8.5, exceptional 9+; a dash
+  before his first match. Shown next to OVR in the Squad tab's XI and bench, in squad tables
+  (Pick XI, retentions…) and on the player card, colour-coded (`FormStyle`). The old -10…+10
+  `form` still drives the match engine. **AI bids are priced by form** (`Career.offerRange`):
+  under 6.5 at 60-80% of value, average about value, 8.5+ at 120-160% (clubs poach in-form players
+  even when not listed). Listed players draw bids most matches; a buyer at its overseas or squad
+  limit releases its weakest player of that kind to make room.
 - **Form, not morale** (`CareerSquadReport.swift`): the owner chose form over SM26-style morale, so
   squad roles and morale were removed in schema 13. The player page has a Form card (form label and
   value, trend from match ratings, last 5 ratings); transfer bids show the player's form and a

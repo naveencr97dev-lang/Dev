@@ -441,6 +441,7 @@ struct SquadTableRow: View {
     /// A narrow pane: no age, form or type columns.
     var compact = false
     @Environment(\.verticalSizeClass) private var vSize
+    @EnvironmentObject private var store: GameStore
 
     var body: some View {
         let p = player
@@ -454,7 +455,10 @@ struct SquadTableRow: View {
             TNum(text: "\(p.bat)", width: TCol.stat, color: p.primaryIsBat ? strengthColor(p.bat) : Palette.muted)
             TNum(text: p.bowl >= 25 ? "\(p.bowl)" : "–", width: TCol.stat,
                  color: p.bowl >= 40 && !p.primaryIsBat ? strengthColor(p.bowl) : Palette.muted)
-            if form && wide { TNum(text: CareerText.form(p.form), width: TCol.form, color: CareerText.formColor(p.form)) }
+            if form && wide {
+                let f = store.career?.formScore(p.id)
+                TNum(text: FormStyle.text(f), width: TCol.form, color: FormStyle.color(f))
+            }
             if let trailing { TNum(text: trailing, width: TCol.money, color: trailingColor) }
             if wide {
                 Text(p.roleDescription).font(.system(size: 12 * TextScale.factor)).foregroundStyle(Palette.muted)
@@ -462,5 +466,35 @@ struct SquadTableRow: View {
             }
         }
         .tableRow(selected: selected)
+    }
+}
+
+// MARK: - Form score (owner's scale)
+
+/// The form score as shown everywhere: one decimal, a dash before his first match, coloured
+/// by the owner's scale (about 7 average, 8 to 8.5 good, 9+ exceptional).
+enum FormStyle {
+    static func text(_ score: Double?) -> String { score.map { String(format: "%.1f", $0) } ?? "–" }
+
+    static func color(_ score: Double?) -> Color {
+        guard let s = score else { return Palette.muted }
+        switch s {
+        case 9...: return CareerPalette.gold
+        case 8..<9: return Palette.accent
+        case 7..<8: return .white
+        case 6..<7: return .orange
+        default: return Palette.wicket
+        }
+    }
+
+    static func label(_ score: Double?) -> String {
+        guard let s = score else { return "No matches yet" }
+        switch s {
+        case 9...: return "Exceptional"
+        case 8..<9: return "Good"
+        case 7..<8: return "Average"
+        case 6..<7: return "Below par"
+        default: return "Out of form"
+        }
     }
 }

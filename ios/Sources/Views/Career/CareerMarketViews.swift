@@ -721,8 +721,8 @@ struct TransferActions: View {
         } else {
             Text("Free agent · wants \(Money.format(demand)) a season").font(.caption).foregroundStyle(Palette.muted)
         }
-        Text("Form: \(Career.formLabel(p.form)) (\(CareerText.form(p.form)))\(c.averageRating(p.id).map { " · match rating \(String(format: "%.2f", $0))" } ?? "")")
-            .font(.caption.weight(.semibold)).foregroundStyle(CareerText.formColor(p.form))
+        Text("Form: \(FormStyle.label(c.formScore(p.id))) (\(FormStyle.text(c.formScore(p.id))))\(c.averageRating(p.id).map { " · match rating \(String(format: "%.2f", $0))" } ?? "")")
+            .font(.caption.weight(.semibold)).foregroundStyle(FormStyle.color(c.formScore(p.id)))
         Stepper("Wage \(Money.format(wage))", value: $wage, in: c.tuning.minWage...c.tuning.salaryCap, step: wage < 200 ? 5 : 25)
         MoodBar(value: c.offerMood(p, wage: wage), talksLeft: max(0, 3 - c.market.talks[p.id, default: 0]))
         Button("Pay asking price: \(p.clubId == nil ? "" : Money.format(c.askingPrice(p)) + " + ")\(Money.format(demand))/yr") {

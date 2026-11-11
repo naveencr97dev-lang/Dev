@@ -560,6 +560,28 @@ extension Career {
         if clubs[ci].bowlingOrder.count != 5 { clubs[ci].bowlingOrder = [] }
     }
 
+    /// A buying club at its overseas limit or full squad lets its weakest player of that kind go.
+    private mutating func makeRoom(at bi: Int, for p: CareerPlayer) {
+        let buyer = clubs[bi].id
+        func release(_ q: CareerPlayer) {
+            clubs[bi].squad.removeAll { $0 == q.id }
+            clubs[bi].xi.removeAll { $0 == q.id }
+            clubs[bi].bowlingOrder.removeAll { $0 == q.id }
+            players[q.id]?.clubId = nil
+            players[q.id]?.contract = nil
+        }
+        let others = squad(buyer).filter { $0.id != p.id }
+        if p.overseas, others.filter(\.overseas).count >= tuning.maxOverseasSquad,
+           let q = others.filter(\.overseas).min(by: { $0.rating != $1.rating ? $0.rating < $1.rating : $0.id < $1.id }) {
+            release(q)
+        }
+        let left = squad(buyer).filter { $0.id != p.id }
+        if left.count >= tuning.maxSquad, let q = left.min(by: { $0.rating != $1.rating ? $0.rating < $1.rating : $0.id < $1.id }) {
+            release(q)
+        }
+        if clubs[bi].xi.count < 11 { patchXI(clubId: buyer) }
+    }
+
     private mutating func completeTransfer(playerId: String, to buyer: Int, fee: Int, wage: Int) {
         guard let p = players[playerId], let bi = clubs.firstIndex(where: { $0.id == buyer }) else { return }
         if let seller = p.clubId, let si = clubs.firstIndex(where: { $0.id == seller }) {
@@ -571,6 +593,7 @@ extension Career {
             patchXI(clubId: seller)
         }
         if fee > 0 { post(buyer, "Signed \(p.name)", -fee) }
+        makeRoom(at: bi, for: p)
         sign(playerId, to: bi, wage: wage)
         market.listed[playerId] = nil
         market.offers.removeAll { $0.playerId == playerId }
@@ -596,7 +619,7 @@ extension Career {
         guard windowOpen, let o = market.offers.first(where: { $0.id == id }), let p = players[o.playerId],
               p.clubId == userClubId, let buyer = club(o.fromClub) else { return false }
         let wage = p.contract?.wage ?? wageDemand(p)
-        guard bank(buyer.id) >= o.fee, capRoom(buyer.id) >= wage, squad(buyer.id).count < tuning.maxSquad else {
+        guard bank(buyer.id) >= o.fee, capRoom(buyer.id) >= wage else {
             market.offers.removeAll { $0.id == id }
             return false
         }
@@ -624,26 +647,62 @@ extension Career {
     }
 
     /// AI bids for a listed player.
+    /// What AI clubs bid for one of your players, as a share of his value, by his form (owner's
+    /// request): out of form, a bargain (60-80%); average, about his value; in form, a bit more;
+    /// on fire (8.5+), they try to poach him (120-160%). No matches yet: a cautious 85-100%.
+    static func offerRange(formScore f: Double?) -> ClosedRange<Double> {
+        guard let f else { return 0.85...1.0 }
+        switch f {
+        case ..<6.5: return 0.6...0.8
+        case ..<7.5: return 0.85...1.05
+        case ..<8.5: return 1.0...1.2
+        default: return 1.2...1.6
+        }
+    }
+
+    /// Clubs that could bid for one of the user's players (room is made for him on signing, so a
+    /// full squad or overseas list doesn't stop a bid; run 1401: 8 of 9 clubs had 8 overseas and
+    /// nobody could bid for an overseas player).
+    private func bidders(for p: CareerPlayer) -> [Franchise] {
+        let wage = p.contract?.wage ?? wageDemand(p)
+        return clubs.filter { c in
+            c.id != userClubId && capRoom(c.id) >= wage
+                && !market.offers.contains { $0.playerId == p.id && $0.fromClub == c.id }
+        }
+    }
+
+    private mutating func bid(for p: CareerPlayer, from buyer: Franchise, range: ClosedRange<Double>) -> Int? {
+        let value = Double(p.value(in: year))
+        let deal = manager.has(.dealmaker) ? 1.1 : 1.0
+        let fee = min(bank(buyer.id), Career.round5(value * rng.range(range.lowerBound, range.upperBound) * deal))
+        guard fee >= Career.round5(value * 0.5) else { return nil }
+        market.offers.append(TransferOffer(id: market.nextOfferId, playerId: p.id, fromClub: buyer.id, fee: fee))
+        market.nextOfferId += 1
+        return fee
+    }
+
+    /// AI bids for a listed player, priced by his form. Asking well above what clubs think he's
+    /// worth means fewer bids, but there are always some.
     mutating func generateOffers(for playerId: String, attempts: Int) {
         guard let p = players[playerId], p.clubId == userClubId else { return }
-        let asking = market.listed[playerId] ?? p.value(in: year)
-        let value = Double(p.value(in: year))
-        let wage = p.contract?.wage ?? wageDemand(p)
-        // Overpriced listings attract fewer bids.
-        let appetite = max(0.1, min(0.8, 0.8 - (Double(asking) / max(1, value) - 1) * 0.8))
+        let range = Career.offerRange(formScore: formScore(p.id))
+        let expected = Double(p.value(in: year)) * (range.lowerBound + range.upperBound) / 2
+        let asking = Double(market.listed[playerId] ?? p.value(in: year))
+        let appetite = max(0.3, min(0.9, 0.9 - (asking / max(1, expected) - 1) * 0.6))
         for _ in 0..<attempts {
-            guard rng.unit() < appetite else { continue }
-            let buyers = clubs.filter { c in
-                c.id != userClubId && capRoom(c.id) >= wage && squad(c.id).count < tuning.maxSquad
-                    && (!p.overseas || squad(c.id).filter(\.overseas).count < tuning.maxOverseasSquad)
-                    && !market.offers.contains { $0.playerId == playerId && $0.fromClub == c.id }
-            }
-            guard let buyer = buyers.randomElement(using: &rng) else { continue }
-            let deal = manager.has(.dealmaker) ? 1.1 : 1.0
-            let fee = min(bank(buyer.id), Career.round5(value * rng.range(0.8, 1.15) * deal))
-            guard fee >= Career.round5(value * 0.5) else { continue }
-            market.offers.append(TransferOffer(id: market.nextOfferId, playerId: playerId, fromClub: buyer.id, fee: fee))
-            market.nextOfferId += 1
+            guard rng.unit() < appetite, let buyer = bidders(for: p).randomElement(using: &rng) else { continue }
+            _ = bid(for: p, from: buyer, range: range)
+        }
+    }
+
+    /// Clubs try to poach your players in top form (8.5+ over 3+ matches), listed or not.
+    mutating func poachingBids(chance: Double) {
+        for p in squad(userClubId).sorted(by: { $0.id < $1.id }) where market.listed[p.id] == nil {
+            guard let f = formScore(p.id), f >= 8.5, matchRatings(p.id).count >= 3,
+                  !market.offers.contains(where: { $0.playerId == p.id }), rng.unit() < chance,
+                  let buyer = bidders(for: p).randomElement(using: &rng),
+                  let fee = bid(for: p, from: buyer, range: Career.offerRange(formScore: f)) else { continue }
+            addNews(.squad, "📨 \(buyer.short) bid \(Money.format(fee)) for \(p.name): his form (\(String(format: "%.1f", f))) has clubs circling.")
         }
     }
 
@@ -654,7 +713,9 @@ extension Career {
             let wage = p.contract?.wage ?? wageDemand(p)
             let buyers = clubs.filter { $0.id != userClubId && capRoom($0.id) >= wage && squad($0.id).count < tuning.maxSquad }
             guard let buyer = buyers.randomElement(using: &rng) else { continue }
-            let fee = min(bank(buyer.id), Career.round5(Double(p.value(in: year)) * rng.range(1.1, 1.5) * (manager.has(.dealmaker) ? 1.1 : 1)))
+            let r = Career.offerRange(formScore: formScore(p.id))
+            let fee = min(bank(buyer.id), Career.round5(Double(p.value(in: year)) * rng.range(max(1.05, r.lowerBound), max(1.3, r.upperBound))
+                                                     * (manager.has(.dealmaker) ? 1.1 : 1)))
             guard fee > 0 else { continue }
             market.offers.append(TransferOffer(id: market.nextOfferId, playerId: p.id, fromClub: buyer.id, fee: fee))
             market.nextOfferId += 1
@@ -769,12 +830,15 @@ extension Career {
     mutating func marketTick() {
         guard phase == .season else { return }
         if settings.marketAlwaysOpen {
-            // Open market: bids for listed players keep coming in.
-            for id in market.listed.keys.sorted() where rng.unit() < 0.15 { generateOffers(for: id, attempts: 1) }
+            // Open market: bids for listed players keep coming in (owner: listed players got none),
+            // and clubs chase your in-form players.
+            for id in market.listed.keys.sorted() where rng.unit() < 0.5 { generateOffers(for: id, attempts: 1) }
+            poachingBids(chance: 0.1)
         }
         if windowOpen, let f = nextFixture, round(of: f) == 25, !market.aiWindowsDone.contains("\(year)-mid") {
             aiWindowActivity(key: "\(year)-mid")
             unsolicitedOffers()
+            poachingBids(chance: 0.5)
             for id in market.listed.keys.sorted() { generateOffers(for: id, attempts: 2) }
             addNews(.squad, "Mid-season transfer window is open this round.")
         } else if !windowOpen && (!market.offers.isEmpty || !market.talks.isEmpty) {

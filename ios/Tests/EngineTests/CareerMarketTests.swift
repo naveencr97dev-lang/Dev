@@ -51,7 +51,12 @@ extension CareerTests {
         XCTAssertEqual(c.phase, .offseason)
         XCTAssertEqual(c.offseason?.stage, .auction, "2028 is a mini-auction year")
         XCTAssertGreaterThan(c.offseason?.auction.queue.count ?? 0, 10)
-        // The user bids on the first lot until they lead or can't.
+        // Skip lots the user can't bid on (e.g. an overseas player with the overseas slots full).
+        while let id = c.offseason?.auction.currentId, let p = c.players[id],
+              c.userBidBlock(p, amount: c.auctionNextBid ?? p.basePrice(in: c.year)) != nil {
+            _ = c.passLot()
+        }
+        // The user bids on the first lot they can until they lead or can't.
         let first = c.offseason!.auction.currentId!
         XCTAssertTrue(c.userBid())
         let a = c.offseason!.auction

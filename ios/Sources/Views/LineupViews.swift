@@ -11,6 +11,9 @@ struct LineupRow: View {
     /// Home-pitch fit (career): true suits, false struggles, nil neither.
     var pitchFit: Bool? = nil
     var tag = ""
+    /// Career: the form score column before the rating (a dash before his first match).
+    var showsForm = false
+    var formScore: Double? = nil
     var rating: Int? = nil
     var selected = false
     /// Stretch to share the available height (the Squad tab's XI fills the left column).
@@ -39,6 +42,10 @@ struct LineupRow: View {
             if !tag.isEmpty {
                 Text(tag).font(.system(size: 11 * TextScale.factor, weight: .semibold)).foregroundStyle(Palette.muted).lineLimit(1)
             }
+            if showsForm {
+                Text(FormStyle.text(formScore)).font(.score(13)).foregroundStyle(FormStyle.color(formScore))
+                    .frame(width: 30, alignment: .trailing)
+            }
             if let rating {
                 Text("\(rating)").font(.score(13)).foregroundStyle(strengthColor(rating)).frame(width: 24, alignment: .trailing)
             }
@@ -55,17 +62,26 @@ struct LineupPanel<Rows: View>: View {
     let title: String
     var color: Color = Palette.surfaceHi
     var darkText = false
+    /// Column titles at the right of the header, lined up with the rows' trailing columns.
+    var columns: [(title: String, width: CGFloat)] = []
     @ViewBuilder var rows: Rows
 
     var body: some View {
         VStack(spacing: 0) {
-            Text(title.uppercased())
-                .font(.system(size: 13 * TextScale.factor, weight: .heavy))
-                .foregroundStyle(darkText ? Palette.ink : .white)
-                .lineLimit(1)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 10).padding(.vertical, 5)
-                .background(color)
+            HStack(spacing: 6) {
+                Text(title.uppercased())
+                    .font(.system(size: 13 * TextScale.factor, weight: .heavy))
+                    .foregroundStyle(darkText ? Palette.ink : .white)
+                    .lineLimit(1)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                ForEach(Array(columns.enumerated()), id: \.offset) { _, col in
+                    Text(col.title).font(.system(size: 10 * TextScale.factor, weight: .heavy))
+                        .foregroundStyle(darkText ? Palette.ink : Palette.muted)
+                        .frame(width: col.width, alignment: .trailing)
+                }
+            }
+            .padding(.horizontal, 10).padding(.vertical, 5)
+            .background(color)
             VStack(spacing: 0) { rows }
                 .frame(maxHeight: .infinity, alignment: .top)
         }
@@ -162,7 +178,7 @@ struct EditableLineup: View {
 
     var body: some View {
         if let c = store.career {
-            LineupPanel(title: title) {
+            LineupPanel(title: title, columns: [("FORM", 30), ("OVR", 24)]) {
                 if ids.isEmpty {
                     Text("Nobody here.").font(.system(size: 12 * TextScale.factor)).foregroundStyle(Palette.muted).padding(10)
                 }
@@ -171,7 +187,7 @@ struct EditableLineup: View {
                     if let p = c.players[id] {
                         LineupRow(number: numbered ? i + 1 : nil, name: p.name, keeper: p.role == .WK,
                                   captain: c.tactics.captain == id, overseas: p.overseas, pitchFit: c.suitsUserPitch(p),
-                                  tag: "\(p.role.short) · \(CareerText.form(p.form))", rating: p.rating,
+                                  tag: p.role.short, showsForm: true, formScore: c.formScore(id), rating: p.rating,
                                   selected: selected == id, fill: fill)
                             .onTapGesture { tap(id) }
                             .draggable(id)

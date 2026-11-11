@@ -110,6 +110,7 @@ struct SquadAction: View {
 struct CareerPlayerRow: View {
     let player: CareerPlayer
     let year: Int
+    @EnvironmentObject private var store: GameStore
     /// Home-pitch fit for the user's club: true suits, false struggles, nil neither (or not shown).
     var pitchFit: Bool? = nil
 
@@ -127,8 +128,8 @@ struct CareerPlayerRow: View {
                     RoleChip(role: player.role)
                     Text("Age \(player.age(in: year)) · BAT \(player.bat) · BOWL \(player.bowl)")
                         .font(.caption2).foregroundStyle(Palette.muted)
-                    Text("FORM \(CareerText.form(player.form))")
-                        .font(.caption2.weight(.bold)).foregroundStyle(CareerText.formColor(player.form))
+                    Text("FORM \(FormStyle.text(store.career?.formScore(player.id)))")
+                        .font(.caption2.weight(.bold)).foregroundStyle(FormStyle.color(store.career?.formScore(player.id)))
                 }
             }
             Spacer(minLength: 4)
@@ -423,7 +424,7 @@ struct CareerPlayerView: View {
                 number("\(p.rating)", "OVR", strengthColor(p.rating))
                 number("\(p.bat)", "BAT", strengthColor(p.bat))
                 number("\(p.bowl)", "BOWL", strengthColor(p.bowl))
-                number(CareerText.form(p.form), "FORM", CareerText.formColor(p.form))
+                number(FormStyle.text(c.formScore(p.id)), "FORM", FormStyle.color(c.formScore(p.id)))
             }
             Text("Value \(Money.format(p.value(in: c.year))) · Potential \(c.potentialLabel(p))\(c.knowledge(of: p.id) < 100 ? " (\(c.knowledge(of: p.id))%)" : "")")
                 .font(.system(size: 12 * TextScale.factor, weight: .semibold)).lineLimit(1).minimumScaleFactor(0.8)
@@ -444,8 +445,8 @@ struct CareerPlayerView: View {
         let trend = c.formTrend(p.id)
         return HStack {
             sectionTitle("Form")
-            Text("\(Career.formLabel(p.form)) (\(CareerText.form(p.form)))\(trend > 0 ? " · rising" : (trend < 0 ? " · falling" : ""))")
-                .font(.system(size: 12 * TextScale.factor, weight: .semibold)).foregroundStyle(CareerText.formColor(p.form))
+            Text("\(FormStyle.label(c.formScore(p.id)))\(trend > 0 ? " · rising" : (trend < 0 ? " · falling" : ""))")
+                .font(.system(size: 12 * TextScale.factor, weight: .semibold)).foregroundStyle(FormStyle.color(c.formScore(p.id)))
             Spacer()
             if let avg = c.averageRating(p.id) {
                 Text("avg rating \(String(format: "%.2f", avg))").font(.system(size: 11 * TextScale.factor)).foregroundStyle(Palette.muted)
@@ -621,7 +622,7 @@ struct CareerPlayerView: View {
                     big("\(p.rating)", "OVR", strengthColor(p.rating))
                     big("\(p.bat)", "BAT", strengthColor(p.bat))
                     big("\(p.bowl)", "BOWL", strengthColor(p.bowl))
-                    big(CareerText.form(p.form), "FORM", CareerText.formColor(p.form))
+                    big(FormStyle.text(c.formScore(p.id)), "FORM", FormStyle.color(c.formScore(p.id)))
                 }
                 Text("Value \(Money.format(p.value(in: c.year))) · Potential \(c.potentialLabel(p))\(c.knowledge(of: p.id) < 100 ? " (scouted \(c.knowledge(of: p.id))%)" : "")")
                     .font(.subheadline.weight(.semibold))
@@ -689,8 +690,8 @@ struct FormCard: View {
         VStack(alignment: .leading, spacing: DS.Space.sm) {
             SectionLabel(text: "Form")
             VStack(spacing: 0) {
-                InfoRow(label: "Form", value: "\(Career.formLabel(p.form)) · \(CareerText.form(p.form))",
-                        color: CareerText.formColor(p.form), chevron: false)
+                InfoRow(label: "Form", value: "\(FormStyle.label(c.formScore(p.id))) · \(FormStyle.text(c.formScore(p.id)))",
+                        color: FormStyle.color(c.formScore(p.id)), chevron: false)
                 Hairline(inset: 16)
                 InfoRow(label: "Trend", value: trend > 0 ? "Rising" : (trend < 0 ? "Falling" : "Level"),
                         color: trend > 0 ? Palette.accent : (trend < 0 ? Palette.wicket : .white), chevron: false)

@@ -217,3 +217,23 @@ extension Career {
         return out
     }
 }
+
+// MARK: - Form score (owner's scale: about 7 average, 8 to 8.5 good, 9+ exceptional)
+
+extension Career {
+    /// A player's form from his match ratings: 60% his last five, 40% his season average, so a
+    /// big season isn't wiped out by one bad week (nor a bad season by one good one). Stretched
+    /// onto the owner's scale: a typical match rating (6.3) reads 7, the top tenth about 8.2, the
+    /// best few 9+. nil before his first match.
+    func formScore(_ id: String) -> Double? {
+        let all = matchRatings(id)
+        guard !all.isEmpty else { return nil }
+        let last = Array(all.suffix(5))
+        let blend = 0.6 * last.reduce(0, +) / Double(last.count) + 0.4 * all.reduce(0, +) / Double(all.count)
+        return Career.formScale(blend)
+    }
+
+    static func formScale(_ rating: Double) -> Double {
+        (max(3, min(10, 7 + (rating - 6.3) * 1.6)) * 10).rounded() / 10
+    }
+}
