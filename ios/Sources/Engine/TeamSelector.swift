@@ -11,14 +11,10 @@ enum TeamSelector {
         }
         func bat(_ p: Player) -> Int { p.bat + (pitch?.batFit(p) ?? 0) }
         func bowl(_ p: Player) -> Int { p.bowl >= 25 ? p.bowl + (pitch?.bowlFit(p) ?? 0) : p.bowl }
-        // The pitch decides which bowlers play, not how many: when filling the last places a
-        // bowler's pitch bonus is measured against the best kind for the surface, so the bonus
-        // never puts an extra bowler ahead of a batter (that left home sides short of batting).
-        let best = pitch.map { max(0, $0.paceBonus, $0.spinBonus) } ?? 0
-        func value(_ p: Player) -> Int {
-            let w = p.bowl >= 25 ? bowl(p) - best : p.bowl
-            return max(bat(p), w) + min(bat(p), w) / 2
-        }
+        // Once the keeper and five bowlers are in, the places left are batting places: fill them by
+        // batting, with a little credit for a useful second skill. (Panel 2: judged by main skill
+        // alone, a sixth and seventh bowler took them and good batters sat on the bench.)
+        func value(_ p: Player) -> Int { bat(p) + (p.isBowlingOption ? p.bowl / 4 : 0) }
 
         if let wk = squad.filter({ $0.role == .WK }).sorted(by: { bat($0) > bat($1) }).first(where: canAdd) {
             picked.append(wk)

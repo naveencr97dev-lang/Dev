@@ -1,6 +1,6 @@
 # Handoff: Auction XI (read this first in a new chat)
 
-Last updated 2026-11-10 (after home-pitch squad building) on branch `claude/ecstatic-feynman-6ve2uz`.
+Last updated 2026-11-11 (after customer panel 2, "the home crowd", rounds 1-3) on branch `claude/ecstatic-feynman-6ve2uz`.
 
 ## 1. Where things are
 
@@ -82,7 +82,7 @@ Last updated 2026-11-10 (after home-pitch squad building) on branch `claude/ecst
 - **Swift toolchain:** if `/opt/swift` is missing, install it with
   `curl -sSfL https://download.swift.org/swift-6.0.3-release/ubuntu2404/swift-6.0.3-RELEASE/swift-6.0.3-RELEASE-ubuntu24.04.tar.gz | tar xz --strip-components=1 -C /opt/swift`
   (run `mkdir -p /opt/swift` first). Then `export PATH=/opt/swift/usr/bin:$PATH`.
-- **Engine tests:** `cd ios && swift test` (96 tests, all green). Pipe the output to a file and
+- **Engine tests:** `cd ios && swift test` (98 tests, all green). Pipe the output to a file and
   check the "Executed … with 0 failures" line before committing. One push once went out red because
   a grep in a command chain hid the failure.
 - **Whole-app type-check:** `tools/typecheck/run.sh`. It checks all 48 files against SwiftUI, UIKit
@@ -97,7 +97,11 @@ Last updated 2026-11-10 (after home-pitch squad building) on branch `claude/ecst
   Six personas (caster, tinkerer, trader, bidder, veteran, rookie) play KOL and LKO the way people
   do (Auto-pick, auction advice, the assistant's tips, Right to Match) and write their own complaints,
   counted across players at the end. `PANEL_DEBUG=1` dumps the state on a 10-loss run. Write each
-  round up in `docs/feedback/`. This replaces MiroFish, which needs paid
+  round up in `docs/feedback/`. **Panel 2, "the home crowd"** (`CUSTOMER_PANEL=2`, filter
+  `CustomerPanelTests/testHomeCrowdPanel`): groundsman, purist, homeFan, setAndForget, collector and
+  developer manage a turner, a seamer and a road, with home and away records and a same-club
+  comparison. `CUSTOMER_PANEL=table` (filter `testPitchTable`) prints league-wide win % by home
+  pitch. Write-up: `docs/feedback/PANEL2-HOME-CROWD.md`. This replaces MiroFish, which needs paid
   LLM and Zep keys and can't play an app.
 - **Tuning file:** after changing `CareerTuning` defaults, regenerate it with
   `WRITE_TUNING=1 swift test --filter CareerTests.testWriteTuningFile`.
@@ -128,11 +132,12 @@ for each version in `CareerSave.migrations`.
   including who's in and out of form.
 - **Home-pitch squad building** (`CareerPitchFit.swift`): `Pitch.fit` puts the match engine's pitch
   effects (pace or spin bonus, home country, pitch traits) into rating points. AI clubs use it in the
-  opening draft (each squad still takes two spinners and two quicks), retentions (`keepScore`),
+  opening draft (each squad takes five spinners and five quicks), retentions (`keepScore`),
   auction bids (`pitchValueFactor`), free-agent signings, AI-to-AI transfers, and the XI, which is
   picked for the day's pitch (`autoPickXI(clubIndex:pitch:)`; the assistant and Auto-pick XI do the
-  same for the user). Measured over 10 seasons: home sides win about 55% (50% before); turning
-  grounds carry about 64% spin among bowlers, pace grounds about 13%. UI: a house mark on squad,
+  same for the user). Since panel 2, clubs value a player over the whole season (`seasonFit`: home
+  pitch half, the other grounds half), and Auto-pick fills the places after the keeper and five
+  bowlers by batting. Home sides win about 53% (50% before). UI: a house mark on squad,
   market, retention and auction rows (filled green = suits your home pitch, orange outline =
   struggles), a line on the player page and auction lot, and a squad-report line that compares your
   XI's fit with the rivals'. Tuning constants are in `PitchFit` (code, not `career_tuning.json`, so
@@ -204,8 +209,9 @@ for each version in `CareerSave.migrations`.
 ### Next task
 
 Nothing is queued: start with the user's device feedback on the home-pitch build (item 1 below).
-Open from the home-pitch work: the user's side of it is only advice (badge, squad report, auto-pick
-for the pitch); the customer panel and the 20-season balance harness were not re-run after it.
+Open from panel 2 (`docs/feedback/PANEL2-HOME-CROWD.md`): turner clubs win 58% and bounce grounds
+give no home edge (a layer-0 pitch-bonus question); the user's auction results trail the AI clubs';
+the invest objective rarely triggers. Panel 1 and the 20-season balance harness were not re-run.
 
 Older playtest notes (three personas): `docs/PLAYTEST-PANEL.md`.
 

@@ -194,7 +194,7 @@ extension Career {
     /// How much a club wants to keep a player at a mega auction (players who suit the home pitch more).
     func keepScore(_ p: CareerPlayer) -> Double {
         let age = p.age(in: year)
-        let fit = p.clubId.map { Double(homeFit(p, clubId: $0)) * PitchFit.squadWeight } ?? 0
+        let fit = p.clubId.map { seasonFit(p, clubId: $0) * PitchFit.squadWeight } ?? 0
         return Double(p.rating) + fit + (age <= 23 ? Double(max(0, p.potential - p.rating)) * 0.5 : 0) - (age >= 33 ? 6 : 0)
     }
 
@@ -545,7 +545,9 @@ extension Career {
             // Panel round 3: filling by rating alone put bowlers in the top order and caused collapses.
             let needKeeper = !inXI.contains { $0.role == .WK }
             let needBowler = inXI.filter(\.isBowlingOption).count < 5
-            let value = { (p: Player) in max(p.bat, p.bowl) + min(p.bat, p.bowl) / 2 }
+            // With a keeper and five bowlers in, the place left is a batter's: fill it by batting
+            // (panel 2: a sixth bowler took a top-order place and batted in the top six).
+            let value = { (p: Player) in needKeeper || needBowler ? max(p.bat, p.bowl) + min(p.bat, p.bowl) / 2 : p.bat * 2 + p.bowl / 4 }
             let fits = options.filter { (needKeeper && $0.role == .WK) || (!needKeeper && needBowler && $0.isBowlingOption) }
             let pool = fits.isEmpty ? options : fits
             guard let pick = pool.max(by: { value($0) != value($1) ? value($0) < value($1) : $0.id > $1.id }) else { break }

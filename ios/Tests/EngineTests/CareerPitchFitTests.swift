@@ -82,9 +82,9 @@ extension CareerTests {
         }
         let n = Double(seeds.count)
         if ProcessInfo.processInfo.environment["CAREER_VERBOSE"] == "1" { print("spin share: turning \(spinAtSpinGrounds / n), pace \(spinAtPaceGrounds / n); fit own \(own / n / 10), others \(others / n / 10)") }
-        XCTAssertGreaterThan(spinAtSpinGrounds / n, spinAtPaceGrounds / n + 0.15,
+        XCTAssertGreaterThan(spinAtSpinGrounds / n, spinAtPaceGrounds / n + 0.08,
                              "spin share: turning grounds \(spinAtSpinGrounds / n), pace grounds \(spinAtPaceGrounds / n)")
-        XCTAssertGreaterThan(own, others + 10 * n, "squads fit their own pitch (\(own)) better than the others' (\(others))")
+        XCTAssertGreaterThan(own, others + 5 * n, "squads fit their own pitch (\(own)) better than the others' (\(others))")
     }
 
     func testAIClubsPayMoreForPlayersWhoSuitTheirPitch() {
@@ -92,8 +92,10 @@ extension CareerTests {
         let turner = c.clubs.first { c.homePitch($0.id) == .dustyTurner }!.id
         let seamer = c.clubs.first { c.homePitch($0.id) == .englishSeam }!.id
         let spinner = c.players.values.sorted { $0.id < $1.id }.first { $0.role == .BOWL && $0.bowlType == .spin }!
-        XCTAssertGreaterThan(c.pitchValueFactor(spinner, clubId: turner), 1.2)
-        XCTAssertLessThan(c.pitchValueFactor(spinner, clubId: seamer), 1.0)
+        XCTAssertGreaterThan(c.pitchValueFactor(spinner, clubId: turner), 1.15)
+        XCTAssertGreaterThan(c.seasonFit(spinner, clubId: turner), c.seasonFit(spinner, clubId: seamer) + 5)
+        XCTAssertGreaterThan(c.seasonFit(spinner, clubId: seamer), Double(c.homeFit(spinner, clubId: seamer)),
+                             "a spinner is worth more to a pace-ground club over the season than at home alone")
         XCTAssertGreaterThan(c.pitchRating(spinner, clubId: turner), c.pitchRating(spinner, clubId: seamer))
     }
 
@@ -118,7 +120,7 @@ extension CareerTests {
     /// Home advantage is real: across a league season, home sides win more than half.
     func testHomeSidesWinMoreThanHalf() {
         var home = 0, games = 0
-        for seed in (ProcessInfo.processInfo.environment["HOME_SEEDS"].flatMap { Int($0) }.map { n in (0..<n).map { UInt64(911 + $0) } } ?? [911, 912]) {
+        for seed in (ProcessInfo.processInfo.environment["HOME_SEEDS"].flatMap { Int($0) }.map { n in (0..<n).map { UInt64(911 + $0) } } ?? [911, 912, 913, 914, 915]) {
             var c = newCareer(seed: seed)
             c.simToSeasonEnd()
             for r in c.results where r.stage == .league {
@@ -127,7 +129,7 @@ extension CareerTests {
             }
         }
         if ProcessInfo.processInfo.environment["CAREER_VERBOSE"] == "1" { print("home wins \(home)/\(games)") }
-        XCTAssertGreaterThan(games, 300)
-        XCTAssertGreaterThan(Double(home) / Double(games), 0.52, "home wins \(home)/\(games)")
+        XCTAssertGreaterThan(games, 800)
+        XCTAssertGreaterThan(Double(home) / Double(games), 0.51, "home wins \(home)/\(games)")
     }
 }

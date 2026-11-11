@@ -91,7 +91,8 @@ extension CareerTests {
         let xi = c.userClub.xi.compactMap { c.player($0) }
         XCTAssertEqual(xi.count, 11)
         XCTAssertTrue(c.xiIssues(c.userClubId).isEmpty, "\(c.xiIssues(c.userClubId))")
-        XCTAssertFalse(xi.indices.contains { xi[$0].isExposed(atPosition: $0) }, "a tail-ender in the top six")
+        XCTAssertFalse(xi.indices.contains { xi[$0].isExposed(atPosition: $0) },
+                       "a tail-ender in the top six: \(xi.map { "\($0.role.short) \($0.bat)/\($0.bowl)" }); bench \(c.squad(c.userClubId).filter { !c.userClub.xi.contains($0.id) }.map { "\($0.role.short) \($0.bat)/\($0.bowl)\($0.overseas ? "*" : "")" })")
     }
 
     func testAssistantExplainsALosingRun() throws {

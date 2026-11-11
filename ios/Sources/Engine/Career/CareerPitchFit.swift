@@ -13,15 +13,17 @@ enum PitchFit {
     /// "Suits the pitch" badge threshold, and the "struggles" one.
     static let suits = 6
     static let struggles = -4
-    /// Share of the fit that counts in squad building (half the matches are at home).
-    static let squadWeight = 0.5
+    /// Weight of the season fit (home ground half, the other clubs' grounds half) in squad building.
+    static let squadWeight = 1.0
     /// Every squad still wants this many bowlers of each kind (pace, spin) for away matches;
     /// the draft adds this many rating points until it has them.
-    static let minPerBowlType = 2
-    static let varietyPoints = 5.0
+    static let minPerBowlType = 5
+    static let varietyPoints = 10.0
     /// Value change per fit point when an AI club prices a player, and its limits.
-    static let valuePerPoint = 0.025
-    static let valueRange = 0.75...1.4
+    static let valuePerPoint = 0.03
+    /// A club short of one kind of bowler pays this much more for him.
+    static let varietyValue = 1.2
+    static let valueRange = 0.8...1.25
 }
 
 extension Pitch {
@@ -61,15 +63,32 @@ extension Career {
     /// Pitch fit of a player at a club's home ground.
     func homeFit(_ p: CareerPlayer, clubId: Int) -> Int { homePitch(clubId).fit(p) }
 
-    /// Rating as a club sees it for squad building: overall plus the home-pitch share.
-    func pitchRating(_ p: CareerPlayer, clubId: Int) -> Double {
-        Double(p.rating) + Double(homeFit(p, clubId: clubId)) * PitchFit.squadWeight
+    /// A player's fit over a club's season: half the matches on the home pitch, half spread over
+    /// the other clubs' grounds. (Panel 2, round 1: squads built for the home pitch alone travelled
+    /// badly. Pace-ground clubs won 33-35% away and 43% overall.)
+    func seasonFit(_ p: CareerPlayer, clubId: Int) -> Double {
+        let away = clubInfo.filter { $0.id != clubId }.map { Double($0.homePitch.fit(p)) }
+        let awayMean = away.isEmpty ? 0 : away.reduce(0, +) / Double(away.count)
+        return (Double(homeFit(p, clubId: clubId)) + awayMean) / 2
     }
 
-    /// Multiplier on what a club will pay for a player, from his fit to their home pitch.
+    /// Rating as a club sees it for squad building: overall plus his fit over the season.
+    func pitchRating(_ p: CareerPlayer, clubId: Int) -> Double {
+        Double(p.rating) + seasonFit(p, clubId: clubId) * PitchFit.squadWeight
+    }
+
+    /// Is the club short of this kind of bowler (pace or spin)? Every squad needs both to travel.
+    func shortOfBowlType(_ p: CareerPlayer, clubId: Int) -> Bool {
+        guard p.role == .BOWL || p.role == .AR else { return false }
+        let same = squad(clubId).filter { ($0.role == .BOWL || $0.role == .AR) && $0.bowlType == p.bowlType && $0.id != p.id }.count
+        return same < PitchFit.minPerBowlType
+    }
+
+    /// Multiplier on what a club will pay for a player, from his fit over their season.
     func pitchValueFactor(_ p: CareerPlayer, clubId: Int) -> Double {
-        let f = 1 + Double(homeFit(p, clubId: clubId)) * PitchFit.valuePerPoint
-        return min(PitchFit.valueRange.upperBound, max(PitchFit.valueRange.lowerBound, f))
+        let f = 1 + seasonFit(p, clubId: clubId) * PitchFit.valuePerPoint
+        let clamped = min(PitchFit.valueRange.upperBound, max(PitchFit.valueRange.lowerBound, f))
+        return shortOfBowlType(p, clubId: clubId) ? max(clamped, 1) * PitchFit.varietyValue : clamped
     }
 
     /// The badge on market and squad rows: does he suit the user's home pitch?
