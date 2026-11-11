@@ -74,7 +74,9 @@ struct MatchCentreView: View {
                     VStack(spacing: 0) {
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 6) {
-                                ForEach(tabs) { t in FilterChip(title: t.short, on: tab == t) { tab = t } }
+                                ForEach(tabs) { t in
+                                    FilterChip(title: t.short, on: tab == t) { tab = t }.accessibilityIdentifier("centre.\(t.rawValue)")
+                                }
                             }
                             .padding(.horizontal, DS.Space.md)
                         }
@@ -111,6 +113,7 @@ struct MatchCentreView: View {
                             .fill(tab == t ? Palette.accent.opacity(0.14) : Color.clear))
                     }
                     .buttonStyle(.plain)
+                    .accessibilityIdentifier("centre.\(t.rawValue)")
                 }
             }
             .padding(.vertical, DS.Space.sm)

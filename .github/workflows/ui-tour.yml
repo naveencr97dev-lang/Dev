@@ -1,0 +1,105 @@
+# UI tour: builds Auction XI for the iOS simulator on a GitHub Mac, runs ios/UITests/TourTests
+# (taps through every screen in landscape and portrait, plays two matches) and publishes the
+# screenshots, a screen recording and the notes to the `ui-tour-shots` branch, replacing the last
+# run. Free on a public repository.
+#
+# Runs on a push to a claude/** branch whose commit message contains [tour], or by hand
+# (Actions › UI tour › Run workflow).
+name: UI tour
+
+on:
+  push:
+    branches: ['claude/**']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ui-tour
+  cancel-in-progress: true
+
+jobs:
+  tour:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[tour]')
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Newest Xcode
+        run: |
+          ls -d /Applications/Xcode*.app
+          XCODE=$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)
+          sudo xcode-select -s "$XCODE"
+          xcodebuild -version
+
+      - name: Generate the Xcode project
+        run: |
+          brew install xcodegen
+          cd ios && xcodegen generate
+
+      - name: Pick and boot the largest iPhone simulator
+        id: sim
+        run: |
+          xcrun simctl list devices available
+          NAME=$(xcrun simctl list devices available | grep -oE "iPhone [0-9]+ Pro Max" | sort -V | tail -1)
+          UDID=$(xcrun simctl list devices available | grep "$NAME (" | head -1 | grep -oE "[0-9A-F]{8}-[0-9A-F-]{27}")
+          echo "Using $NAME ($UDID)"
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+          xcrun simctl boot "$UDID" || true
+          xcrun simctl bootstatus "$UDID" -b
+
+      - name: Run the tour (with a screen recording)
+        run: |
+          mkdir -p ~/ui-tour
+          xcrun simctl io "${{ steps.sim.outputs.udid }}" recordVideo --codec=h264 --force ~/ui-tour/tour.mp4 &
+          REC=$!
+          cd ios
+          set +e
+          xcodebuild test \
+            -project AuctionXI.xcodeproj \
+            -scheme AuctionXI \
+            -destination "id=${{ steps.sim.outputs.udid }}" \
+            -only-testing:AuctionXIUITests \
+            -resultBundlePath "$RUNNER_TEMP/tour.xcresult" \
+            CODE_SIGNING_ALLOWED=NO > "$RUNNER_TEMP/xcodebuild.log" 2>&1
+          STATUS=$?
+          set -e
+          kill -INT $REC || true
+          sleep 5
+          tail -150 "$RUNNER_TEMP/xcodebuild.log" > ~/ui-tour/xcodebuild-tail.txt
+          grep -E "error:|failed|Test Case|Executed" "$RUNNER_TEMP/xcodebuild.log" | tail -60 > ~/ui-tour/test-summary.txt || true
+          echo "$STATUS" > ~/ui-tour/exit-status.txt
+          echo "xcodebuild exit status: $STATUS"
+
+      - name: Fall back to the result bundle's attachments
+        if: always()
+        run: |
+          if ! ls ~/ui-tour/*.png >/dev/null 2>&1 && [ -d "$RUNNER_TEMP/tour.xcresult" ]; then
+            xcrun xcresulttool export attachments --path "$RUNNER_TEMP/tour.xcresult" --output-path ~/ui-tour/attachments || true
+          fi
+          ls -la ~/ui-tour || true
+
+      - name: Publish to the ui-tour-shots branch
+        if: always()
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/pub" && cd "$RUNNER_TEMP/pub"
+          cp -R ~/ui-tour/. . 2>/dev/null || true
+          {
+            echo "# UI tour"
+            echo
+            echo "- Commit: ${{ github.sha }} on ${{ github.ref_name }}"
+            echo "- Simulator: ${{ steps.sim.outputs.name }}"
+            echo "- Xcode: $(xcodebuild -version | head -1)"
+            echo "- Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            echo "- Screenshots: $(ls *.png 2>/dev/null | wc -l | tr -d ' ')"
+          } > RUN.md
+          git init -q
+          git checkout -q --orphan ui-tour-shots
+          git add -A
+          git -c user.name="ui-tour" -c user.email="ui-tour@users.noreply.github.com" commit -qm "UI tour for ${{ github.sha }}"
+          git push -f "https://x-access-token:${TOKEN}@github.com/${{ github.repository }}" HEAD:ui-tour-shots

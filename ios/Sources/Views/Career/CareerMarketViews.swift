@@ -383,6 +383,7 @@ struct CareerMarketTab: View {
                     MarketRow(career: c, player: p, scope: scope, season: season, sort: sort, landscape: landscape)
                 }
                 .buttonStyle(.plain)
+                .accessibilityIdentifier("marketRow")
             }
         }
     }

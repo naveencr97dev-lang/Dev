@@ -200,6 +200,7 @@ struct ContinueBar: View {
             .padding(.horizontal, 18)
         }
         .buttonStyle(GameButtonStyle(kind: .primary))
+        .accessibilityIdentifier("continue")
         .padding(.horizontal, DS.Space.md)
         .padding(.bottom, DS.Space.xs)
         .frame(maxWidth: 640)
@@ -251,6 +252,7 @@ struct HubTabBar: View {
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
+                    .accessibilityIdentifier("tab.\(t.label)")
                 }
             }
             .frame(maxWidth: 640)
@@ -303,6 +305,7 @@ struct HubRail: View {
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .accessibilityIdentifier("tab.\(t.label)")
             }
         }
         .padding(.vertical, 6)
@@ -353,6 +356,7 @@ struct HubTopBar<MenuContent: View>: View {
                 .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Palette.accent))
             }
             .buttonStyle(.plain)
+            .accessibilityIdentifier("continue")
         }
         .padding(.horizontal, DS.Space.md)
         .padding(.vertical, 6)

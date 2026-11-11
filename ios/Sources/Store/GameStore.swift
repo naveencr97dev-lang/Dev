@@ -50,6 +50,11 @@ final class GameStore: ObservableObject {
         }
         load()
         loadCareer()
+        #if DEBUG
+        // UI tour (tools/ui-tour): a fixed, fresh career with no setup screens, so screenshots are
+        // the same on every run.
+        if ProcessInfo.processInfo.arguments.contains("-UITour") { startTourCareer() }
+        #endif
         if game?.phase == .auction {
             // Saved right after a hammer: move on to the next lot.
             if game?.auction.lotClosed == true { mutate { $0.nextLot(book: book) } }

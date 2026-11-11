@@ -312,3 +312,15 @@ extension GameStore {
         career?.roundFixtures(around: fixtureId).filter { !$0.played } ?? []
     }
 }
+
+#if DEBUG
+extension GameStore {
+    /// UI tour: a fresh career with a fixed seed, the user at the first club, in season.
+    func startTourCareer() {
+        let draft = Career.new(managerName: "Tour", clubIndex: 0, seed: 2027, year: 2027,
+                               curated: book.all, born: careerBorn, tuning: careerTuning,
+                               flags: CareerFlags(legendsEra: false))
+        startCareer(draft, clubId: draft.clubs[0].id, managerName: "Tour")
+    }
+}
+#endif

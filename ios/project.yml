@@ -30,3 +30,20 @@ targets:
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         TARGETED_DEVICE_FAMILY: "1"
+    scheme:
+      testTargets:
+        - AuctionXIUITests
+  # The UI tour (screenshots of every screen on a simulator): .github/workflows/ui-tour.yml.
+  AuctionXIUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: UITests
+    dependencies:
+      - target: AuctionXI
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.auctionxi.uitests
+        GENERATE_INFOPLIST_FILE: "YES"
+        TEST_TARGET_NAME: AuctionXI
+        TARGETED_DEVICE_FAMILY: "1"

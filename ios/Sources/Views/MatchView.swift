@@ -465,6 +465,7 @@ struct PauseButton: View {
                 .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Palette.surfaceHi))
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("pause")
     }
 }
 

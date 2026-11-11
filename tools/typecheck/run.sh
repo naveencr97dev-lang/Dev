@@ -21,4 +21,6 @@ S=ios/Sources
 # Every app source file: the whole app must type-check.
 FILES=( $(find "$S" -name '*.swift' | sort) )
 swiftc -typecheck -parse-as-library -swift-version 5 -I "$OUT" "${FILES[@]}"
+# Debug-only code (the UI tour launch mode) too.
+swiftc -typecheck -parse-as-library -swift-version 5 -D DEBUG -I "$OUT" "${FILES[@]}"
 echo "typecheck OK (${#FILES[@]} files, the whole app)"

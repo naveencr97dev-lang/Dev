@@ -103,6 +103,16 @@ Last updated 2026-11-11 (after the table-format pass on every pushed screen) on 
   comparison. `CUSTOMER_PANEL=table` (filter `testPitchTable`) prints league-wide win % by home
   pitch. Write-up: `docs/feedback/PANEL2-HOME-CROWD.md`. This replaces MiroFish, which needs paid
   LLM and Zep keys and can't play an app.
+- **UI tour (see the real app, no Mac needed):** `.github/workflows/ui-tour.yml` runs
+  `ios/UITests/TourTests.swift` on a GitHub Mac (free: the repo is public) on the largest iPhone
+  simulator. The app starts a fixed career with the DEBUG launch argument `-UITour`; the test taps
+  through every tab and the screens they open, in landscape and portrait, plays two matches with the
+  ⏸ match centre, and saves numbered screenshots. Trigger: push to a `claude/**` branch with
+  `[tour]` in the commit message. Results (PNGs, `tour.mp4`, `notes.txt` listing buttons it
+  couldn't find, `test-summary.txt`, `RUN.md`) land on the `ui-tour-shots` branch:
+  `git fetch origin ui-tour-shots && git worktree add /tmp/shots origin/ui-tour-shots`, then look at
+  the PNGs. Tap targets use accessibility identifiers (`tab.<Name>`, `continue`, `pause`,
+  `centre.<Tab>`, `marketRow`); add one when a new screen joins the tour.
 - **Tuning file:** after changing `CareerTuning` defaults, regenerate it with
   `WRITE_TUNING=1 swift test --filter CareerTests.testWriteTuningFile`.
 
