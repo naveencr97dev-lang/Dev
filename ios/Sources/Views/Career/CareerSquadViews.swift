@@ -151,10 +151,28 @@ struct PickXIView: View {
     @State private var selected: Set<String> = []
     @State private var loaded = false
     @State private var roleIndex = 0
+    @State private var byRating = false
 
     private static let roles: [Role?] = [nil, .WK, .BAT, .AR, .BOWL]
+
+    /// Device feedback: sort by type, openers first: batters by their slot (openers, top order,
+    /// middle, finishers), then pace and spin bowlers.
+    static func typeRank(_ p: CareerPlayer) -> Int {
+        if p.role == .BOWL { return p.bowlType == .spin ? 11 : 10 }
+        return p.slot.ordinal
+    }
+
+    static func typeName(_ p: CareerPlayer) -> String {
+        if p.role == .BOWL { return p.bowlType == .spin ? "Spin bowlers" : "Pace bowlers" }
+        switch p.slot {
+        case .open: return "Openers"
+        case .top: return "Top order"
+        case .middle: return "Middle order"
+        case .finish: return "Finishers"
+        case .lower: return "Lower order"
+        }
+    }
     private static let roleLabels = ["All", "WK", "BAT", "AR", "BOWL"]
-    private static let roleOrder: [Role] = [.WK, .BAT, .AR, .BOWL]
 
     var body: some View {
         let c = store.career
@@ -163,8 +181,11 @@ struct PickXIView: View {
         let squad = all
             .filter { p in Self.roles[roleIndex].map { p.role == $0 } ?? true }
             .sorted { a, b in
-                let (ra, rb) = (Self.roleOrder.firstIndex(of: a.role) ?? 0, Self.roleOrder.firstIndex(of: b.role) ?? 0)
-                return ra != rb ? ra < rb : (a.rating != b.rating ? a.rating > b.rating : a.id < b.id)
+                if !byRating {
+                    let (ta, tb) = (Self.typeRank(a), Self.typeRank(b))
+                    if ta != tb { return ta < tb }
+                }
+                return a.rating != b.rating ? a.rating > b.rating : a.id < b.id
             }
         let picked = all.filter { selected.contains($0.id) }.compactMap { store.player($0.id) }
         let rules = c?.rules ?? Rules()
@@ -183,6 +204,10 @@ struct PickXIView: View {
                 ForEach(0..<Self.roleLabels.count, id: \.self) { i in
                     FilterChip(title: Self.roleLabels[i], on: roleIndex == i) { roleIndex = i }
                 }
+                MenuChip(title: byRating ? "Sort: Rating" : "Sort: Type") {
+                    Button("Type (openers first)") { byRating = false }
+                    Button("Rating") { byRating = true }
+                }
                 Spacer(minLength: 4)
                 ActionChip(icon: "sparkles", title: "Auto-pick") { autoPick() }
                 ActionChip(icon: "xmark", title: "Clear", destructive: true) { selected = []; Haptics.tap() }
@@ -192,7 +217,13 @@ struct PickXIView: View {
                                            : issues.joined(separator: " · "), warning: !issues.isEmpty)
             SquadTableHead(count: squad.count, check: true)
         } rows: {
-            ForEach(squad) { p in
+            ForEach(Array(squad.enumerated()), id: \.element.id) { i, p in
+                if !byRating, i == 0 || Self.typeName(squad[i - 1]) != Self.typeName(p) {
+                    Text(Self.typeName(p).uppercased())
+                        .font(.system(size: 10 * TextScale.factor, weight: .heavy)).foregroundStyle(Palette.accent)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 10).padding(.top, 8).padding(.bottom, 2)
+                }
                 Button { toggle(p.id) } label: {
                     SquadTableRow(player: p, year: year, check: selected.contains(p.id),
                                   pitchFit: c?.suitsUserPitch(p), selected: selected.contains(p.id))
@@ -255,40 +286,57 @@ struct CareerPlayerView: View {
     // MARK: Landscape: everything on one screen (device feedback)
 
     private func landscape(_ c: Career, _ p: CareerPlayer) -> some View {
-        HStack(alignment: .top, spacing: 10) {
-            VStack(alignment: .leading, spacing: 8) {
-                compactHeader(c, p)
-                compactForm(c, p)
-                Spacer(minLength: 0)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            VStack(alignment: .leading, spacing: 4) {
-                group("Batting · \(p.bat)") {
-                    RatingBar(label: "TEC", value: p.attr.technique, color: Palette.four, compact: true)
-                    RatingBar(label: "PWR", value: p.attr.power, color: Palette.four, compact: true)
-                    RatingBar(label: "PACE", value: p.attr.vsPace, color: Palette.four, compact: true)
-                    RatingBar(label: "SPIN", value: p.attr.vsSpin, color: Palette.four, compact: true)
-                    RatingBar(label: "TEMP", value: p.attr.temperament, color: Palette.four, compact: true)
-                }
-                group("Bowling · \(p.bowl) \(p.bowlingStyle ?? (p.bowlType == .spin ? "spin" : "pace"))") {
-                    RatingBar(label: "ACC", value: p.attr.accuracy, color: Palette.wicket, compact: true)
-                    RatingBar(label: p.bowlType == .spin ? "TURN" : "PACE", value: p.attr.potency, color: Palette.wicket, compact: true)
-                    RatingBar(label: "VAR", value: p.attr.variation, color: Palette.wicket, compact: true)
-                    RatingBar(label: "DTH", value: p.attr.death, color: Palette.wicket, compact: true)
-                    RatingBar(label: "NEW", value: p.attr.newBall, color: Palette.wicket, compact: true)
-                }
-                group("Fielding") {
-                    RatingBar(label: "FLD", value: p.attr.fielding, color: Palette.six, compact: true)
-                    if p.role == .WK { RatingBar(label: "KEEP", value: p.attr.keeping, color: Palette.six, compact: true) }
+        // Device feedback: three full-height boxes (Soccer Manager style): who he is, his form and
+        // last five matches; his attributes; his numbers and contract.
+        HStack(alignment: .top, spacing: DS.Space.sm) {
+            PanelBox(padding: 0) {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 10) {
+                        compactHeader(c, p)
+                        Hairline()
+                        compactForm(c, p)
+                        lastFive(c, p)
+                    }
+                    .padding(12)
                 }
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            VStack(alignment: .leading, spacing: 8) {
-                compactStats(c, p)
-                compactDeal(c, p)
-                Spacer(minLength: 0)
+            PanelBox(padding: 0) {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 10) {
+                        group("Batting · \(p.bat)") {
+                            RatingBar(label: "TEC", value: p.attr.technique, color: Palette.four, compact: true)
+                            RatingBar(label: "PWR", value: p.attr.power, color: Palette.four, compact: true)
+                            RatingBar(label: "PACE", value: p.attr.vsPace, color: Palette.four, compact: true)
+                            RatingBar(label: "SPIN", value: p.attr.vsSpin, color: Palette.four, compact: true)
+                            RatingBar(label: "TEMP", value: p.attr.temperament, color: Palette.four, compact: true)
+                        }
+                        Hairline()
+                        group("Bowling · \(p.bowl) \(p.bowlingStyle ?? (p.bowlType == .spin ? "spin" : "pace"))") {
+                            RatingBar(label: "ACC", value: p.attr.accuracy, color: Palette.wicket, compact: true)
+                            RatingBar(label: p.bowlType == .spin ? "TURN" : "PACE", value: p.attr.potency, color: Palette.wicket, compact: true)
+                            RatingBar(label: "VAR", value: p.attr.variation, color: Palette.wicket, compact: true)
+                            RatingBar(label: "DTH", value: p.attr.death, color: Palette.wicket, compact: true)
+                            RatingBar(label: "NEW", value: p.attr.newBall, color: Palette.wicket, compact: true)
+                        }
+                        Hairline()
+                        group("Fielding") {
+                            RatingBar(label: "FLD", value: p.attr.fielding, color: Palette.six, compact: true)
+                            if p.role == .WK { RatingBar(label: "KEEP", value: p.attr.keeping, color: Palette.six, compact: true) }
+                        }
+                    }
+                    .padding(12)
+                }
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            PanelBox(padding: 0) {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 10) {
+                        compactStats(c, p)
+                        Hairline()
+                        compactDeal(c, p)
+                    }
+                    .padding(12)
+                }
+            }
         }
         .padding(.horizontal, DS.Space.md)
         .padding(.vertical, DS.Space.sm)
@@ -307,13 +355,51 @@ struct CareerPlayerView: View {
         }
     }
 
+    /// Last five matches: when, who against, with the bat and the ball, the result and the rating.
+    private func lastFive(_ c: Career, _ p: CareerPlayer) -> some View {
+        let lines = c.recentMatches(p.id)
+        return VStack(alignment: .leading, spacing: 4) {
+            sectionTitle("Last \(max(lines.count, 1)) matches")
+            if lines.isEmpty {
+                Text("No matches this season").font(.system(size: 12 * TextScale.factor)).foregroundStyle(Palette.muted)
+            } else {
+                HStack(spacing: 6) {
+                    Text("MATCH").frame(maxWidth: .infinity, alignment: .leading)
+                    Text("BAT").frame(width: 56, alignment: .trailing)
+                    Text("BOWL").frame(width: 40, alignment: .trailing)
+                    Text("RTG").frame(width: 34, alignment: .trailing)
+                }
+                .font(.system(size: 9 * TextScale.factor, weight: .heavy)).foregroundStyle(Palette.muted)
+                ForEach(lines, id: \.resultId) { m in
+                    HStack(spacing: 6) {
+                        Circle().fill(m.won ? Palette.accent : Palette.wicket).frame(width: 6, height: 6)
+                        if let t = c.club(m.opponent) { TeamBadge(team: t, size: 18) }
+                        Text(m.day.map { CareerCalendar.label($0) } ?? "")
+                            .font(.system(size: 11 * TextScale.factor)).foregroundStyle(Palette.muted).lineLimit(1)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        Text(m.runs.map { "\($0)\(m.notOut ? "*" : "") (\(m.balls))" } ?? "–")
+                            .font(.score(12)).frame(width: 56, alignment: .trailing)
+                        Text(m.wickets.map { "\($0)-\(m.conceded)" } ?? "–")
+                            .font(.score(12)).foregroundStyle(m.wickets == nil ? Palette.muted : .white).frame(width: 40, alignment: .trailing)
+                        Text(String(format: "%.1f", m.rating)).font(.score(12)).foregroundStyle(RatingStyle.color(m.rating))
+                            .frame(width: 34, alignment: .trailing)
+                    }
+                    .padding(.vertical, 3)
+                    .overlay(alignment: .bottom) { Hairline() }
+                }
+            }
+        }
+    }
+
+    private func sectionTitle(_ t: String) -> some View {
+        Text(t.uppercased()).font(.system(size: 10 * TextScale.factor, weight: .heavy)).foregroundStyle(Palette.muted)
+    }
+
     private func group<C: View>(_ title: String, @ViewBuilder _ rows: () -> C) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             Text(title.uppercased()).font(.system(size: 10 * TextScale.factor, weight: .heavy)).foregroundStyle(Palette.muted)
             rows()
         }
-        .padding(8)
-        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Palette.surface))
     }
 
     private func compactHeader(_ c: Career, _ p: CareerPlayer) -> some View {
@@ -343,9 +429,7 @@ struct CareerPlayerView: View {
                 .font(.system(size: 12 * TextScale.factor, weight: .semibold)).lineLimit(1).minimumScaleFactor(0.8)
             if !p.traits.isEmpty { TraitChips(traits: p.traits, inline: true) }
         }
-        .padding(10)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Palette.surface))
     }
 
     private func number(_ v: String, _ l: String, _ color: Color) -> some View {
@@ -357,87 +441,109 @@ struct CareerPlayerView: View {
     }
 
     private func compactForm(_ c: Career, _ p: CareerPlayer) -> some View {
-        let recent = c.recentRatings(p.id)
         let trend = c.formTrend(p.id)
-        return VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Text("FORM").font(.system(size: 10 * TextScale.factor, weight: .heavy)).foregroundStyle(Palette.muted)
-                Text("\(Career.formLabel(p.form))\(trend > 0 ? " · rising" : (trend < 0 ? " · falling" : ""))")
-                    .font(.system(size: 12 * TextScale.factor, weight: .semibold)).foregroundStyle(CareerText.formColor(p.form))
-                Spacer()
-                if let avg = c.averageRating(p.id) {
-                    Text("avg \(String(format: "%.2f", avg))").font(.system(size: 11 * TextScale.factor)).foregroundStyle(Palette.muted)
-                }
-            }
-            if recent.isEmpty {
-                Text("No matches this season").font(.system(size: 11 * TextScale.factor)).foregroundStyle(Palette.muted)
-            } else {
-                HStack(spacing: 8) {
-                    ForEach(Array(recent.enumerated()), id: \.offset) { _, x in
-                        Text(String(format: "%.1f", x)).font(.score(14)).foregroundStyle(RatingStyle.color(x))
-                    }
-                }
+        return HStack {
+            sectionTitle("Form")
+            Text("\(Career.formLabel(p.form)) (\(CareerText.form(p.form)))\(trend > 0 ? " · rising" : (trend < 0 ? " · falling" : ""))")
+                .font(.system(size: 12 * TextScale.factor, weight: .semibold)).foregroundStyle(CareerText.formColor(p.form))
+            Spacer()
+            if let avg = c.averageRating(p.id) {
+                Text("avg rating \(String(format: "%.2f", avg))").font(.system(size: 11 * TextScale.factor)).foregroundStyle(Palette.muted)
             }
         }
-        .padding(10)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Palette.surface))
     }
 
+    /// This season as a grid of numbers (batting, then bowling when he bowls), all-time in a line.
     private func compactStats(_ c: Career, _ p: CareerPlayer) -> some View {
-        let season = c.statLine(p.id, scope: .season)
+        let s = c.statLine(p.id, scope: .season)
         let all = c.statLine(p.id, scope: .allTime)
-        return VStack(alignment: .leading, spacing: 4) {
-            Text("SEASON \(String(c.year)) · \(season.matches) M").font(.system(size: 10 * TextScale.factor, weight: .heavy)).foregroundStyle(Palette.muted)
-            Text(StatText.line(season, role: p.role)).font(.system(size: 12 * TextScale.factor).monospacedDigit()).lineLimit(2)
-            Text("ALL-TIME · \(all.matches) M\(p.stats.titles > 0 ? " · \(p.stats.titles) titles" : "")").font(.system(size: 10 * TextScale.factor, weight: .heavy)).foregroundStyle(Palette.muted)
-            Text(StatText.line(all, role: p.role)).font(.system(size: 12 * TextScale.factor).monospacedDigit()).lineLimit(2)
+        let bowls = p.bowl >= 40 || s.ballsBowled > 0
+        let cols = Array(repeating: GridItem(.flexible(), spacing: 6), count: 3)
+        return VStack(alignment: .leading, spacing: 6) {
+            sectionTitle("Season \(String(c.year)) · \(s.matches) matches")
+            LazyVGrid(columns: cols, spacing: 6) {
+                statTile("\(s.runs)", "Runs")
+                statTile(s.balls > 0 ? String(format: "%.0f", s.strikeRate) : "–", "Strike rate")
+                statTile(s.matches > 0 ? "\(s.highScore)" : "–", "Best")
+                statTile("\(s.fours) · \(s.sixes)", "4s · 6s")
+                statTile("\(s.fifties) · \(s.hundreds)", "50s · 100s")
+                statTile("\(s.potm)", "Player of match")
+                if bowls {
+                    statTile("\(s.wickets)", "Wickets")
+                    statTile(s.ballsBowled > 0 ? String(format: "%.2f", s.economy) : "–", "Economy")
+                    statTile("\(s.ballsBowled / 6)", "Overs")
+                }
+            }
+            HStack(spacing: 6) {
+                sectionTitle("All-time · \(all.matches) m\(p.stats.titles > 0 ? " · \(p.stats.titles) titles" : "")")
+                Spacer()
+            }
+            Text(StatText.line(all, role: p.role)).font(.system(size: 12 * TextScale.factor).monospacedDigit())
+                .lineLimit(2).fixedSize(horizontal: false, vertical: true)
         }
-        .padding(10)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Palette.surface))
+    }
+
+    private func statTile(_ value: String, _ label: String) -> some View {
+        VStack(spacing: 1) {
+            Text(value).font(.score(15)).foregroundStyle(.white).lineLimit(1).minimumScaleFactor(0.7)
+            Text(label.uppercased()).font(.system(size: 8 * TextScale.factor, weight: .heavy)).foregroundStyle(Palette.muted)
+                .lineLimit(1).minimumScaleFactor(0.7)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 6)
+        .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Palette.surfaceHi))
+    }
+
+    /// One line of the contract box: label left, value right.
+    private func dealRow(_ label: String, _ value: String, _ color: Color = .white) -> some View {
+        HStack {
+            Text(label).font(.system(size: 12 * TextScale.factor)).foregroundStyle(Palette.muted)
+            Spacer()
+            Text(value).font(.score(12)).foregroundStyle(color).lineLimit(1).minimumScaleFactor(0.8)
+        }
     }
 
     @ViewBuilder private func compactDeal(_ c: Career, _ p: CareerPlayer) -> some View {
+        let mine = p.clubId == c.userClubId
         VStack(alignment: .leading, spacing: 6) {
+            sectionTitle(p.clubId == nil ? "Free agent" : "Contract")
             if let k = p.contract {
-                Text("Contract \(Money.format(k.wage))/yr to \(String(k.until))").font(.system(size: 12 * TextScale.factor)).foregroundStyle(Palette.muted)
+                dealRow("Wage", "\(Money.format(k.wage)) a season")
+                dealRow("Runs to", "\(String(k.until)) mega auction · \(max(0, k.until - c.year)) season\(k.until - c.year == 1 ? "" : "s") left")
             }
-            if p.clubId == c.userClubId {
-                Button { showDeal = true } label: { Label("List or release…", systemImage: "arrow.left.arrow.right") }
-                    .font(.system(size: 13 * TextScale.factor, weight: .semibold))
+            dealRow("Market value", Money.format(p.value(in: c.year)))
+            if mine {
+                let inXI = c.userClub.xi.contains(p.id)
+                if let listed = c.market.listed[p.id] {
+                    dealRow("Status", "Listed at \(Money.format(listed))", .orange)
+                } else {
+                    dealRow("Status", inXI ? "In the XI" : "On the bench", inXI ? Palette.accent : .white)
+                }
+                ActionChip(icon: "arrow.left.arrow.right", title: "List or release…") { showDeal = true }
             } else if !p.retired {
                 let fee = p.clubId == nil ? 0 : c.askingPrice(p)
                 let wage = c.userWageDemand(p)
-                Text(p.clubId == nil ? "Free agent · wants \(Money.format(wage))/yr" : "Asking \(Money.format(fee)) · wants \(Money.format(wage))/yr")
-                    .font(.system(size: 12 * TextScale.factor, weight: .semibold)).lineLimit(1).minimumScaleFactor(0.8)
+                if let club = p.clubId.flatMap({ c.club($0) }) { dealRow("Club", club.name) }
+                if p.clubId != nil { dealRow("Asking fee", Money.format(fee), Palette.accent) }
+                dealRow("Wants", "\(Money.format(wage)) a season", Palette.accent)
+                let advice = c.scoutAdvice(p, fee: fee)
+                Label(advice.text, systemImage: advice.good ? "checkmark.circle" : "info.circle")
+                    .font(.system(size: 11 * TextScale.factor, weight: .semibold))
+                    .foregroundStyle(advice.good ? Palette.accent : Palette.muted)
+                    .fixedSize(horizontal: false, vertical: true)
                 HStack(spacing: 6) {
-                    Button {
+                    ActionChip(icon: "checkmark", title: "Pay asking", primary: true, disabled: !c.windowOpen) {
                         let outcome = store.careerMakeOffer(playerId: p.id, fee: fee, wage: wage)
                         dealMessage = outcome.message
                         if case .accepted = outcome { Haptics.success() } else { Haptics.warning() }
-                    } label: {
-                        Text("Pay asking").font(.system(size: 13 * TextScale.factor, weight: .bold)).foregroundStyle(Palette.ink)
-                            .padding(.horizontal, 12).padding(.vertical, 7)
-                            .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(Palette.accent))
                     }
-                    .buttonStyle(.plain)
-                    .disabled(!c.windowOpen)
-                    Button { showDeal = true } label: {
-                        Text("Negotiate…").font(.system(size: 13 * TextScale.factor, weight: .semibold)).foregroundStyle(Palette.accent)
-                            .padding(.horizontal, 12).padding(.vertical, 7)
-                            .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(Palette.surfaceHi))
-                    }
-                    .buttonStyle(.plain)
+                    ActionChip(icon: "bubble.left.and.bubble.right", title: "Negotiate…") { showDeal = true }
                 }
                 if let dealMessage { Text(dealMessage).font(.system(size: 11 * TextScale.factor, weight: .semibold)).foregroundStyle(Palette.accent).lineLimit(3) }
                 if !c.windowOpen { Text(c.windowLabel).font(.system(size: 11 * TextScale.factor)).foregroundStyle(Palette.muted) }
             }
             GoldActions(playerId: p.id).font(.system(size: 12 * TextScale.factor, weight: .semibold))
         }
-        .padding(10)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Palette.surface))
     }
 
     // MARK: Portrait

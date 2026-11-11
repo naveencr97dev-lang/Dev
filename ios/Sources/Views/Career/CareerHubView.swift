@@ -834,16 +834,56 @@ struct CareerTableTab: View {
             if compact {
                 HStack(alignment: .top, spacing: DS.Space.md) {
                     CareerPointsTable(career: c) { path.append(.team($0)) }
-                    if playoffs {
-                        CareerPlayoffs(career: c) { path.append(.result($0)) }.frame(maxWidth: 300)
+                    VStack(alignment: .leading, spacing: DS.Space.sm) {
+                        if playoffs { CareerPlayoffs(career: c) { path.append(.result($0)) } }
+                        PrizeMoneyBox(career: c)
                     }
+                    .frame(width: 250)
                 }
             } else {
                 VStack(alignment: .leading, spacing: DS.Space.lg) {
                     if playoffs { CareerPlayoffs(career: c) { path.append(.result($0)) } }
                     CareerPointsTable(career: c) { path.append(.team($0)) }
+                    PrizeMoneyBox(career: c)
                 }
             }
+        }
+    }
+}
+
+/// League › Table: what the season pays (device feedback: show prize money under the table).
+/// Central revenue goes to every club; prize money by how far you go in the playoffs.
+struct PrizeMoneyBox: View {
+    let career: Career
+
+    var body: some View {
+        let c = career
+        let mult = c.difficulty.incomeMult
+        let prizes = c.tuning.prizeMoney.map { Career.round5(Double($0) * mult) }
+        let places = ["Champions", "Runners-up", "Lost Qualifier 2", "Lost Eliminator"]
+        PanelBox(title: "Prize money", fill: false) {
+            ForEach(Array(zip(places, prizes).enumerated()), id: \.offset) { i, row in
+                HStack {
+                    Image(systemName: i == 0 ? "trophy.fill" : "medal")
+                        .font(.system(size: 11 * TextScale.factor))
+                        .foregroundStyle(i == 0 ? CareerPalette.gold : Palette.muted)
+                        .frame(width: 16)
+                    Text(row.0).font(.system(size: 13 * TextScale.factor)).foregroundStyle(.white)
+                    Spacer()
+                    Text(Money.format(row.1)).font(.score(13)).foregroundStyle(i == 0 ? CareerPalette.gold : .white)
+                }
+                Hairline()
+            }
+            HStack {
+                Image(systemName: "building.columns").font(.system(size: 11 * TextScale.factor)).foregroundStyle(Palette.muted)
+                    .frame(width: 16)
+                Text("Every club").font(.system(size: 13 * TextScale.factor)).foregroundStyle(.white)
+                Spacer()
+                Text(Money.format(Career.round5(Double(c.tuning.seasonRevenue) * mult))).font(.score(13))
+            }
+            Text("Paid after the final. Top 4 reach the playoffs; tap a club to see its squad.")
+                .font(.system(size: 11 * TextScale.factor)).foregroundStyle(Palette.muted)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 }
@@ -899,8 +939,6 @@ struct CareerPointsTable: View {
                     }
                 }
             }
-            Text("Top 4 reach the playoffs. Tap a club to see its squad.")
-                .font(.footnote).foregroundStyle(.secondary)
         }
     }
 }

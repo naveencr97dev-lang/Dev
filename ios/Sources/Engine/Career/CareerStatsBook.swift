@@ -175,3 +175,45 @@ extension Career {
             .sorted { $0.age(in: year) != $1.age(in: year) ? $0.age(in: year) < $1.age(in: year) : $0.id < $1.id }
     }
 }
+
+// MARK: - Recent matches (the player card's "Last 5")
+
+/// One match for one player: who against, when, what he did with bat and ball, and his rating.
+struct PlayerMatchLine: Hashable {
+    let resultId: UUID
+    let opponent: Int
+    let day: Int?
+    let won: Bool
+    /// nil = didn't bat.
+    let runs: Int?
+    let balls: Int
+    let notOut: Bool
+    /// nil = didn't bowl.
+    let wickets: Int?
+    let conceded: Int
+    let overs: String
+    let rating: Double
+}
+
+extension Career {
+    /// The player's last `n` matches this season, newest first.
+    func recentMatches(_ id: String, last n: Int = 5) -> [PlayerMatchLine] {
+        var out: [PlayerMatchLine] = []
+        for r in results.reversed() {
+            let inns = Array(r.innings.prefix(2))
+            guard let batInn = inns.first(where: { $0.batters.contains { $0.id == id } }),
+                  let rating = Career.matchRating(id, in: r) else { continue }
+            let bat = batInn.batters.first { $0.id == id }
+            let bowl = inns.first { $0.teamId != batInn.teamId }?.bowlers.first { $0.id == id && $0.balls > 0 }
+            let opponent = r.teamA == batInn.teamId ? r.teamB : r.teamA
+            let day = fixtures.first { $0.resultId == r.id }.map { self.day(of: $0) }
+            out.append(PlayerMatchLine(resultId: r.id, opponent: opponent, day: day, won: r.winnerId == batInn.teamId,
+                                       runs: bat?.batted == true ? bat?.runs : nil, balls: bat?.balls ?? 0,
+                                       notOut: bat?.batted == true && bat?.dismissal == nil,
+                                       wickets: bowl?.wickets, conceded: bowl?.runs ?? 0, overs: bowl?.overs ?? "",
+                                       rating: rating))
+            if out.count == n { break }
+        }
+        return out
+    }
+}

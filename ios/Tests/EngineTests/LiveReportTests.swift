@@ -84,3 +84,22 @@ extension CareerTests {
         XCTAssertFalse(played.isEmpty && f.id > all.map(\.id).min()!, "matches before the user's are already played")
     }
 }
+
+/// The player card's last five matches.
+extension CareerTests {
+    func testRecentMatchesAreTheLastFiveWithRatings() {
+        var c = newCareer(seed: 1205)
+        for _ in 0..<7 {
+            c.simUntilUserMatch()
+            guard let f = c.nextUserFixture else { break }
+            c.play(fixtureId: f.id)
+        }
+        let xi = c.userClub.xi
+        guard let id = xi.first else { return XCTFail("no XI") }
+        let lines = c.recentMatches(id)
+        XCTAssertEqual(lines.count, 5)
+        XCTAssertEqual(lines.map(\.rating), Array(c.matchRatings(id).suffix(5).reversed()), "newest first, same ratings")
+        XCTAssertTrue(lines.allSatisfy { $0.opponent != c.userClubId && $0.day != nil })
+        XCTAssertTrue(c.recentMatches("nobody").isEmpty)
+    }
+}
