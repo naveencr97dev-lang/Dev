@@ -1,7 +1,10 @@
 import SwiftUI
 
-/// Opened by ⏸ during a live match: the scorecard so far, and (in your own career matches)
-/// field, batting intent, batting order and bowling changes that apply from the next ball.
+/// Opened by ⏸ during a live match, laid out like Soccer Manager's in-match panel: a tab rail
+/// (left in landscape, chips in portrait) over Overview (the key numbers and the assistant's
+/// advice), live Ratings for both XIs, Around the league (the round's other results), the
+/// scorecard so far and, in your own career matches, tactics, batting order and bowling changes
+/// that apply from the next ball.
 struct MatchCentreView: View {
     @EnvironmentObject var store: GameStore
     @Environment(\.dismiss) private var dismiss
@@ -11,11 +14,32 @@ struct MatchCentreView: View {
     /// The user's team in this match, if changes are allowed.
     let userTeam: Int?
     let tactics: Tactics
+    /// The round's other results (career), for Around the league, and its matches still to come.
+    var round: [MatchResult] = []
+    var roundLater: [Fixture] = []
     /// Applies a change; returns false if it couldn't be applied.
     let apply: (LiveChange) -> Bool
 
+    enum Tab: String, CaseIterable, Identifiable {
+        case overview = "Overview", ratings = "Ratings", league = "Around the league", scorecard = "Scorecard"
+        case tactics = "Tactics", batting = "Batting", bowling = "Bowling"
+        var id: String { rawValue }
+        var icon: String {
+            switch self {
+            case .overview: return "gauge.with.dots.needle.50percent"
+            case .ratings: return "star"
+            case .league: return "trophy"
+            case .scorecard: return "list.bullet.rectangle"
+            case .tactics: return "slider.horizontal.3"
+            case .batting: return "arrow.up.arrow.down"
+            case .bowling: return "figure.cricket"
+            }
+        }
+        var short: String { self == .league ? "Scores" : rawValue }
+    }
+
     @Environment(\.verticalSizeClass) private var vSize
-    @State private var tab = 0
+    @State private var tab: Tab = .overview
     @State private var field: FieldSetting = .balanced
     @State private var intent: BatIntent = .rotate
     @State private var order: [String] = []
@@ -29,28 +53,34 @@ struct MatchCentreView: View {
     private var batInnings: Int? { userTeam.flatMap { t in [0, 1].first { result.card($0).teamId == t } } }
     private var bowlInnings: Int? { batInnings.map { 1 - $0 } }
 
+    private var tabs: [Tab] {
+        var t: [Tab] = [.overview, .ratings]
+        if !round.isEmpty || !roundLater.isEmpty { t.append(.league) }
+        t.append(.scorecard)
+        if userTeam != nil { t += [.tactics, .batting, .bowling] }
+        return t
+    }
+
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                Picker("View", selection: $tab) {
-                    Text("Scorecard").tag(0)
-                    if userTeam != nil {
-                        Text("Tactics").tag(1)
-                        Text("Batting").tag(2)
-                        Text("Bowling").tag(3)
+            Group {
+                if vSize == .compact {
+                    HStack(spacing: 0) {
+                        rail
+                        Rectangle().fill(Palette.stroke).frame(width: 0.5)
+                        page.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                     }
-                }
-                .pickerStyle(.segmented)
-                .padding(.horizontal, DS.Space.md)
-                .padding(.vertical, DS.Space.sm)
-                if let message {
-                    Text(message).font(.caption.weight(.bold)).foregroundStyle(Palette.accent).padding(.bottom, 4)
-                }
-                switch tab {
-                case 1: tacticsTab
-                case 2: battingTab
-                case 3: bowlingTab
-                default: scorecardTab
+                } else {
+                    VStack(spacing: 0) {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 6) {
+                                ForEach(tabs) { t in FilterChip(title: t.short, on: tab == t) { tab = t } }
+                            }
+                            .padding(.horizontal, DS.Space.md)
+                        }
+                        .padding(.vertical, DS.Space.sm)
+                        page.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                    }
                 }
             }
             .background(AppBackground())
@@ -63,6 +93,265 @@ struct MatchCentreView: View {
             }
             .onAppear(perform: load)
         }
+    }
+
+    /// Landscape: the tabs down the left, icon over label (like the hub rail).
+    private var rail: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: 2) {
+                ForEach(tabs) { t in
+                    Button { tab = t; Haptics.tap() } label: {
+                        VStack(spacing: 3) {
+                            Image(systemName: t.icon).font(.system(size: 16 * TextScale.factor, weight: .semibold))
+                            Text(t.short).font(.system(size: 10 * TextScale.factor, weight: .semibold)).lineLimit(1).minimumScaleFactor(0.7)
+                        }
+                        .foregroundStyle(tab == t ? Palette.accent : Palette.muted)
+                        .frame(width: 72, height: 46)
+                        .background(RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(tab == t ? Palette.accent.opacity(0.14) : Color.clear))
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.vertical, DS.Space.sm)
+            .padding(.horizontal, 6)
+        }
+        .frame(width: 84)
+    }
+
+    @ViewBuilder private var page: some View {
+        VStack(spacing: 0) {
+            if let message {
+                Text(message).font(.system(size: 12 * TextScale.factor, weight: .bold)).foregroundStyle(Palette.accent)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, DS.Space.md).padding(.top, DS.Space.sm)
+            }
+            switch tab {
+            case .overview: overviewTab
+            case .ratings: ratingsTab
+            case .league: leagueTab
+            case .tactics: tacticsTab
+            case .batting: battingTab.padding(.top, DS.Space.sm)
+            case .bowling: bowlingTab.padding(.top, DS.Space.sm)
+            case .scorecard: scorecardTab
+            }
+        }
+    }
+
+    // MARK: Overview: the numbers and the assistant
+
+    private var overviewTab: some View {
+        let n = LiveReport.numbers(cards: cards, log: log, upTo: shown)
+        let advice = userTeam.map {
+            LiveReport.advice(cards: cards, log: log, upTo: shown, userTeam: $0, intent: intent, field: field)
+        } ?? []
+        let team = n.flatMap { store.team($0.battingTeam) }
+        let wide = vSize == .compact
+        let layout = wide ? AnyLayout(HStackLayout(alignment: .top, spacing: DS.Space.md))
+                          : AnyLayout(VStackLayout(alignment: .leading, spacing: DS.Space.md))
+        return ScrollView {
+            layout {
+                VStack(alignment: .leading, spacing: DS.Space.sm) {
+                    if let n {
+                        HStack(alignment: .firstTextBaseline, spacing: 8) {
+                            if let team { TeamBadge(team: team, size: 26) }
+                            Text("\(n.runs)-\(n.wickets)").font(.score(26))
+                            Text("\(n.balls / 6).\(n.balls % 6) ov").font(.score(13)).foregroundStyle(Palette.muted)
+                            Spacer(minLength: 4)
+                            if let need = n.runsNeeded {
+                                Text(need > 0 ? "Need \(need) off \(n.ballsLeft)" : "Target reached")
+                                    .font(.system(size: 12 * TextScale.factor, weight: .bold)).foregroundStyle(Palette.accent)
+                            }
+                        }
+                        progressBar(n, team: team)
+                        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 3), spacing: 6) {
+                            tile(String(format: "%.2f", n.runRate), "Run rate")
+                            if let rrr = n.requiredRate {
+                                tile(String(format: "%.2f", rrr), "Required", color: rrr > n.runRate + 1.5 ? .orange : Palette.accent)
+                            } else {
+                                tile(n.projected.map { "\($0)" } ?? "–", "Projected")
+                            }
+                            tile("\(n.lastFive)", "Last 5 overs")
+                            tile("\(n.partnershipRuns) (\(n.partnershipBalls))", "Partnership")
+                            tile("\(n.fours) · \(n.sixes)", "4s · 6s")
+                            tile("\(n.dotPercent)%", "Dot balls", color: n.dotPercent >= 45 ? .orange : .white)
+                        }
+                    } else {
+                        Text("No balls bowled yet.").font(.system(size: 13 * TextScale.factor)).foregroundStyle(Palette.muted)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .topLeading)
+                if userTeam != nil {
+                    PaneBox(title: "Assistant manager") {
+                        ForEach(Array(advice.enumerated()), id: \.offset) { i, line in
+                            if i > 0 { Hairline() }
+                            HStack(alignment: .top, spacing: 8) {
+                                Image(systemName: i == 0 ? "person.wave.2.fill" : "arrow.turn.down.right")
+                                    .font(.system(size: 13 * TextScale.factor, weight: .semibold))
+                                    .foregroundStyle(i == 0 ? Palette.accent : Palette.muted)
+                                    .frame(width: 18)
+                                Text(line).font(.system(size: 13 * TextScale.factor, weight: i == 0 ? .semibold : .regular))
+                                    .fixedSize(horizontal: false, vertical: true)
+                                Spacer(minLength: 0)
+                            }
+                        }
+                        HStack(spacing: 6) {
+                            ActionChip(icon: Tab.tactics.icon, title: "Tactics") { tab = .tactics }
+                            ActionChip(icon: Tab.batting.icon, title: "Batting") { tab = .batting }
+                            ActionChip(icon: Tab.bowling.icon, title: "Bowling") { tab = .bowling }
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .topLeading)
+                }
+            }
+            .padding(.horizontal, DS.Space.md)
+            .padding(.vertical, DS.Space.sm)
+        }
+    }
+
+    /// Chase: runs against the target. First innings: balls bowled against the 20 overs.
+    private func progressBar(_ n: LiveReport.Numbers, team: Franchise?) -> some View {
+        let value = n.target.map { Double(n.runs) / Double(max(1, $0)) } ?? Double(n.balls) / Double(max(1, n.maxBalls))
+        let color = team.map { Color(hex: $0.colorHex) } ?? Palette.accent
+        return VStack(alignment: .leading, spacing: 3) {
+            GeometryReader { g in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(Palette.surfaceHi)
+                    Capsule().fill(color).frame(width: max(4, g.size.width * min(1, value)))
+                }
+            }
+            .frame(height: 6)
+            HStack {
+                Text(n.target == nil ? "Overs" : "Runs").font(.system(size: 10 * TextScale.factor, weight: .heavy))
+                Spacer()
+                Text(n.target.map { "\(n.runs) / \($0)" } ?? "\(n.balls / 6).\(n.balls % 6) / \(n.maxBalls / 6)")
+                    .font(.score(11))
+            }
+            .foregroundStyle(Palette.muted)
+        }
+    }
+
+    private func tile(_ value: String, _ label: String, color: Color = .white) -> some View {
+        VStack(spacing: 2) {
+            Text(value).font(.score(17)).foregroundStyle(color).lineLimit(1).minimumScaleFactor(0.7)
+            Text(label.uppercased()).font(.system(size: 9 * TextScale.factor, weight: .heavy)).foregroundStyle(Palette.muted)
+                .lineLimit(1).minimumScaleFactor(0.8)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 8)
+        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Palette.surface))
+    }
+
+    // MARK: Ratings: both XIs side by side
+
+    private var ratingsTab: some View {
+        let sides = [0, 1].map { result.card($0) }
+        let wide = vSize == .compact
+        let layout = wide ? AnyLayout(HStackLayout(alignment: .top, spacing: DS.Space.md))
+                          : AnyLayout(VStackLayout(alignment: .leading, spacing: DS.Space.md))
+        return ScrollView {
+            layout {
+                ForEach(Array(sides.enumerated()), id: \.offset) { i, inn in
+                    ratingsColumn(inn)
+                        .frame(maxWidth: .infinity, alignment: .top)
+                }
+            }
+            .padding(.horizontal, DS.Space.md)
+            .padding(.vertical, DS.Space.sm)
+        }
+    }
+
+    /// One XI: name, what he's done so far, and the live rating (3-10).
+    private func ratingsColumn(_ inn: InningsCard) -> some View {
+        let team = store.team(inn.teamId)
+        let soFar = cards
+        let batting = soFar.first { $0.teamId == inn.teamId }
+        let bowled = soFar.first { $0.teamId != inn.teamId }
+        return VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 8) {
+                if let team { TeamBadge(team: team, size: 22) }
+                Text(team?.name.uppercased() ?? "").font(.system(size: 12 * TextScale.factor, weight: .heavy)).lineLimit(1)
+                Spacer()
+                Text("RATING").font(.system(size: 10 * TextScale.factor, weight: .heavy)).foregroundStyle(Palette.muted)
+            }
+            .padding(.horizontal, 10)
+            ForEach(inn.batters) { b in
+                let bat = batting?.batters.first { $0.id == b.id }
+                let bowl = bowled?.bowlers.first { $0.id == b.id }
+                let did = [bat.flatMap { $0.batted ? "\($0.runs)\($0.dismissal == nil ? "*" : "") (\($0.balls))" : nil },
+                           bowl.flatMap { $0.balls > 0 ? "\($0.wickets)-\($0.runs)" : nil }].compactMap { $0 }
+                let rating = LiveReport.involved(b.id, cards: soFar) ? LiveReport.rating(b.id, cards: soFar) : nil
+                HStack(spacing: 8) {
+                    TName(text: b.name, overseas: store.player(b.id)?.overseas ?? false, bold: rating != nil)
+                    Text(did.joined(separator: " · ")).font(.score(11, weight: .semibold)).foregroundStyle(Palette.muted)
+                        .lineLimit(1).frame(width: 96, alignment: .trailing)
+                    TNum(text: rating.map { String(format: "%.1f", $0) } ?? "–", width: TCol.stat,
+                         color: rating.map { RatingStyle.color($0) } ?? Palette.muted)
+                }
+                .tableRow(dimmed: rating == nil)
+            }
+        }
+    }
+
+    // MARK: Around the league
+
+    private var leagueTab: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 4) {
+                TableNote(text: "The round's other matches: results so far, and those still to play.")
+                    .padding(.bottom, 2)
+                ForEach(round) { r in
+                    let a = r.innings.first, b = r.innings.count > 1 ? r.innings[1] : nil
+                    HStack(spacing: 8) {
+                        scoreSide(a, winner: r.winnerId)
+                        Text("v").font(.system(size: 11 * TextScale.factor, weight: .semibold)).foregroundStyle(Palette.muted)
+                        scoreSide(b, winner: r.winnerId)
+                        Text("\(store.team(r.winnerId)?.short ?? "") \(r.margin)")
+                            .font(.system(size: 11 * TextScale.factor, weight: .semibold)).foregroundStyle(Palette.muted)
+                            .lineLimit(1).minimumScaleFactor(0.7)
+                            .frame(width: vSize == .compact ? 200 : 120, alignment: .trailing)
+                    }
+                    .tableRow()
+                }
+                ForEach(roundLater) { f in
+                    HStack(spacing: 8) {
+                        fixtureSide(f.home)
+                        Text("v").font(.system(size: 11 * TextScale.factor, weight: .semibold)).foregroundStyle(Palette.muted)
+                        fixtureSide(f.away)
+                        Text("After your match").font(.system(size: 11 * TextScale.factor, weight: .semibold)).foregroundStyle(Palette.muted)
+                            .lineLimit(1).frame(width: vSize == .compact ? 200 : 120, alignment: .trailing)
+                    }
+                    .tableRow(dimmed: true)
+                }
+            }
+            .padding(.horizontal, DS.Space.md)
+            .padding(.vertical, DS.Space.sm)
+        }
+    }
+
+    private func fixtureSide(_ teamId: Int) -> some View {
+        HStack(spacing: 6) {
+            if let t = store.team(teamId) {
+                TeamBadge(team: t, size: 22)
+                Text(t.short).font(.system(size: 13 * TextScale.factor, weight: .semibold)).foregroundStyle(Palette.muted)
+            }
+            Spacer(minLength: 4)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private func scoreSide(_ inn: InningsCard?, winner: Int) -> some View {
+        HStack(spacing: 6) {
+            if let inn, let t = store.team(inn.teamId) {
+                TeamBadge(team: t, size: 22)
+                Text(t.short).font(.system(size: 13 * TextScale.factor, weight: inn.teamId == winner ? .heavy : .semibold))
+                    .foregroundStyle(inn.teamId == winner ? .white : Palette.muted)
+                Spacer(minLength: 4)
+                Text(inn.wickets >= 10 ? "\(inn.runs)" : "\(inn.runs)-\(inn.wickets)").font(.score(14))
+                    .foregroundStyle(inn.teamId == winner ? .white : Palette.muted)
+            }
+        }
+        .frame(maxWidth: .infinity)
     }
 
     // MARK: Tabs
@@ -78,7 +367,8 @@ struct MatchCentreView: View {
                     InningsCardView(innings: inn)
                 }
             }
-            .padding(DS.Space.lg)
+            .padding(.horizontal, DS.Space.md)
+            .padding(.vertical, DS.Space.sm)
         }
     }
 

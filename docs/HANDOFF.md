@@ -82,7 +82,7 @@ Last updated 2026-11-11 (after the table-format pass on every pushed screen) on 
 - **Swift toolchain:** if `/opt/swift` is missing, install it with
   `curl -sSfL https://download.swift.org/swift-6.0.3-release/ubuntu2404/swift-6.0.3-RELEASE/swift-6.0.3-RELEASE-ubuntu24.04.tar.gz | tar xz --strip-components=1 -C /opt/swift`
   (run `mkdir -p /opt/swift` first). Then `export PATH=/opt/swift/usr/bin:$PATH`.
-- **Engine tests:** `cd ios && swift test` (98 tests, all green). Pipe the output to a file and
+- **Engine tests:** `cd ios && swift test` (103 tests, all green). Pipe the output to a file and
   check the "Executed … with 0 failures" line before committing. One push once went out red because
   a grep in a command chain hid the failure.
 - **Whole-app type-check:** `tools/typecheck/run.sh`. It checks all 48 files against SwiftUI, UIKit
@@ -183,8 +183,14 @@ for each version in `CareerSave.migrations`.
 - **Tactics:** field Defensive / Balanced / Aggressive and batting Block / Rotate / Attack, per phase.
 - **Match day:**
   - Live view with a wagon wheel or 2D ground, highlights and **super overs**.
-  - **⏸ Match centre:** scorecard so far; mid-match changes to tactics, batting order, the next
-    over's bowler and the bowling plan.
+  - **⏸ Match centre** (modelled on Soccer Manager's in-match panel, from the owner's screen
+    recordings): a tab rail in landscape (chips in portrait). **Overview**: score, a runs-v-target
+    (or overs) bar, run rate, required rate or projection, last 5 overs, partnership, 4s/6s, dot
+    balls, and the **assistant's live advice** (1-3 lines, `LiveReport.advice`). **Ratings**: live
+    match ratings for both XIs side by side (`LiveReport.rating`, the same formula as the
+    end-of-match rating). **Around the league**: the round's other results and the matches still to
+    play (`Career.roundFixtures`). Then the scorecard so far and mid-match changes to tactics,
+    batting order, the next over's bowler and the bowling plan.
   - Matches are previewed and only recorded at the end. Changes re-simulate with the same seed, so
     balls already shown never change.
 - **Market:**

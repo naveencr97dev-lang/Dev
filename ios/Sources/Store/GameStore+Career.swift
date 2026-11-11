@@ -303,3 +303,12 @@ extension GameStore {
 
     func careerPlayer(_ id: String) -> CareerPlayer? { career?.players[id] }
 }
+
+extension GameStore {
+    /// The rest of this fixture's round (career only), for the match centre.
+    func careerRoundResults(around fixtureId: Int) -> [MatchResult] { career?.roundResults(around: fixtureId) ?? [] }
+    /// The round's matches still to play (after the user's).
+    func careerRoundLater(around fixtureId: Int) -> [Fixture] {
+        career?.roundFixtures(around: fixtureId).filter { !$0.played } ?? []
+    }
+}

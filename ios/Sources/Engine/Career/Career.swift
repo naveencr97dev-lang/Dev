@@ -544,6 +544,17 @@ struct Career: Codable {
         return (r, log)
     }
 
+    /// The other matches of a fixture's round (same day), for the match centre's "Around the league":
+    /// those already played (CONTINUE sims them before the user's match) and those still to come.
+    func roundResults(around fixtureId: Int) -> [MatchResult] {
+        roundFixtures(around: fixtureId).filter(\.played).compactMap { result($0.resultId) }
+    }
+
+    func roundFixtures(around fixtureId: Int) -> [Fixture] {
+        guard let f = fixtures.first(where: { $0.id == fixtureId }), let day = fixtureDays[f.id] else { return [] }
+        return fixtures.filter { $0.id != fixtureId && fixtureDays[$0.id] == day }.sorted { $0.id < $1.id }
+    }
+
     /// The user's team in a fixture (club or national side), if they're playing.
     func userTeam(in fixtureId: Int) -> Int? {
         if fixtureId >= Career.intlIdBase {

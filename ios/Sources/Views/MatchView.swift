@@ -113,6 +113,8 @@ struct MatchView: View {
                 MatchCentreView(result: r, log: log, shown: shown,
                                 userTeam: pendingCommit ? store.careerUserTeam(in: fixtureId) : nil,
                                 tactics: changes.last(where: { $0.tactics != nil })?.tactics ?? store.career?.tactics ?? Tactics(),
+                                round: store.inCareer ? store.careerRoundResults(around: fixtureId) : [],
+                                roundLater: store.inCareer ? store.careerRoundLater(around: fixtureId) : [],
                                 apply: applyChange)
                     .environmentObject(store)
             }
