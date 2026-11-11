@@ -83,4 +83,32 @@ extension CareerTests {
         XCTAssertEqual(half.count, 1)
         XCTAssertEqual(half[0].runs, log[39].score)
     }
+
+    /// Taking a bowler off: he bowls no more overs that innings; the past is unchanged; laws hold.
+    func testRestedBowlerDoesNotBowlAgain() {
+        var c = newCareer(seed: 93)
+        c.simUntilUserMatch()
+        let f = c.nextUserFixture!
+        let me = c.userTeam(in: f.id)!
+        let (r0, log0) = c.previewMatch(fixtureId: f.id, changes: [])!
+        let bowlInn = r0.innings[0].teamId == me ? 1 : 0
+        // After over 4 of the innings we bowl: take off whoever bowled it.
+        let k = log0.firstIndex { $0.innings == bowlInn && $0.over == 4 }!
+        let before = log0[k - 1]
+        let offender = before.bowlerId
+        var change = LiveChange(innings: bowlInn, fromBall: before.over * 6 + before.ballInOver, teamId: me)
+        change.restBowlers = [offender]
+        let (r1, log1) = c.previewMatch(fixtureId: f.id, changes: [change])!
+        XCTAssertEqual(log0[..<k].map(key), log1[..<k].map(key), "the past is unchanged")
+        XCTAssertFalse(log1[k...].contains { $0.innings == bowlInn && $0.bowlerId == offender }, "he doesn't bowl again")
+        XCTAssertTrue(r1.innings.allSatisfy { $0.bowlers.allSatisfy { $0.balls <= 24 } }, "4-over limit")
+        var last: [Int: String] = [:]
+        for e in log1 where e.innings < 2 && e.ballInOver == 1 && e.label != "wd" {
+            XCTAssertNotEqual(last[e.innings], e.bowlerId, "no consecutive overs")
+            last[e.innings] = e.bowlerId
+        }
+        // The innings still gets its 20 overs (or ends with all out / the target), bowled by others.
+        let bowled = r1.card(bowlInn).bowlers.map(\.balls).reduce(0, +)
+        XCTAssertEqual(bowled, r1.card(bowlInn).balls)
+    }
 }

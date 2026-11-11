@@ -17,6 +17,8 @@ struct MatchCentreView: View {
     /// The round's other results (career), for Around the league, and its matches still to come.
     var round: [MatchResult] = []
     var roundLater: [Fixture] = []
+    /// The tab to open on (the match screen's Order and Plan buttons).
+    var initialTab: Tab = .overview
     /// Applies a change; returns false if it couldn't be applied.
     let apply: (LiveChange) -> Bool
 
@@ -556,6 +558,7 @@ struct MatchCentreView: View {
     private func load() {
         guard !loaded else { return }
         loaded = true
+        if tabs.contains(initialTab) { tab = initialTab }
         field = tactics.field[1]
         intent = tactics.intent[1]
         if let bi = batInnings {

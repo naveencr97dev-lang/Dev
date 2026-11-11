@@ -33,6 +33,9 @@ struct MatchView: View {
     @State private var changes: [LiveChange] = []
     @State private var pendingCommit = false
     @State private var showCentre = false
+    @State private var centreTab: MatchCentreView.Tab = .overview
+    /// The bowler picked for the next over on the match screen, and the over it was picked in.
+    @State private var nextPick: (name: String, innings: Int, over: Int)? = nil
     /// Before the first ball: the Teams board (both XIs, the toss) until Start.
     @State private var prematch = true
     @Environment(\.dismiss) private var dismiss
@@ -116,6 +119,7 @@ struct MatchView: View {
                                 tactics: changes.last(where: { $0.tactics != nil })?.tactics ?? store.career?.tactics ?? Tactics(),
                                 round: store.inCareer ? store.careerRoundResults(around: fixtureId) : [],
                                 roundLater: store.inCareer ? store.careerRoundLater(around: fixtureId) : [],
+                                initialTab: centreTab,
                                 apply: applyChange)
                     .environmentObject(store)
             }
@@ -143,7 +147,8 @@ struct MatchView: View {
         if let r = store.careerCommit(fixtureId: fixtureId, changes: changes) { result = r }
     }
 
-    private func pauseForCentre() {
+    private func pauseForCentre(_ tab: MatchCentreView.Tab = .overview) {
+        centreTab = tab
         paused = true
         showCentre = true
         Haptics.tap()
@@ -184,10 +189,74 @@ struct MatchView: View {
         var t = liveTactics
         edit(&t)
         t.plan = nil
+        _ = sendChange(team: team, current: current) { $0.tactics = t }
+    }
+
+    /// One live change from the next ball; haptics say whether it took.
+    @discardableResult
+    private func sendChange(team: Int, current: BallEvent?, _ edit: (inout LiveChange) -> Void) -> Bool {
         var change = LiveChange(innings: current?.innings ?? 0,
                                 fromBall: current.map { $0.over * 6 + $0.ballInOver } ?? 0, teamId: team)
-        change.tactics = t
-        if applyChange(change) { Haptics.tap() } else { Haptics.warning() }
+        edit(&change)
+        let ok = applyChange(change)
+        if ok { Haptics.tap() } else { Haptics.warning() }
+        return ok
+    }
+
+    /// Bowlers taken off this match (live changes).
+    private var restedBowlers: Set<String> { Set(changes.flatMap { $0.restBowlers ?? [] }) }
+
+    // MARK: Bowling and batting changes on the match screen (owner's request)
+
+    /// While you bowl: Next ▾ (who bowls the next over), Off ▾ (take a bowler off for the
+    /// innings) and Plan (the bowling plan). While you bat: Order (the batting order).
+    @ViewBuilder private func quickControls(_ r: MatchResult, current: BallEvent?, userTeam: Int?, soFar: [InningsCard]) -> some View {
+        if pendingCommit, let team = userTeam, !finished, (current?.innings ?? 0) < 2 {
+            let innings = current?.innings ?? 0
+            if r.card(innings).teamId == team {
+                QuickChip(icon: "arrow.up.arrow.down", title: "Order") { pauseForCentre(.batting) }
+            } else {
+                let figures = soFar.first { $0.teamId == r.card(innings).teamId }?.bowlers ?? []
+                let xi = r.card(1 - innings).batters.map(\.id)
+                let rested = restedBowlers
+                let nowBowling = current.flatMap { $0.innings == innings ? $0.bowlerId : nil }
+                let over = current.map { $0.ballInOver >= 6 ? $0.over + 1 : $0.over } ?? 0
+                let picked = nextPick.flatMap { $0.innings == innings && $0.over == over ? $0.name : nil }
+                let options = xi.compactMap { store.player($0) }
+                    .filter { p in !rested.contains(p.id) && p.id != nowBowling && (figures.first { $0.id == p.id }?.balls ?? 0) < 24 }
+                    .sorted { $0.bowl > $1.bowl }
+                HStack(spacing: 5) {
+                    Menu {
+                        ForEach(options) { p in
+                            Button("\(p.name) · \(figureText(p.id, figures))") {
+                                if sendChange(team: team, current: current, { $0.nextOverBowler = p.id }) {
+                                    nextPick = (p.name.split(separator: " ").last.map(String.init) ?? p.name, innings, over)
+                                }
+                            }
+                        }
+                    } label: {
+                        QuickChipLabel(icon: "figure.cricket", title: picked.map { "Next: \($0)" } ?? "Next", menu: true)
+                    }
+                    .accessibilityIdentifier("quick.next")
+                    Menu {
+                        ForEach(figures.filter { $0.balls > 0 && !rested.contains($0.id) }, id: \.id) { b in
+                            Button("\(b.name) · \(b.overs)-\(b.runs)-\(b.wickets)", role: .destructive) {
+                                sendChange(team: team, current: current) { $0.restBowlers = [b.id] }
+                            }
+                        }
+                    } label: {
+                        QuickChipLabel(icon: "hand.raised", title: rested.isEmpty ? "Off" : "Off · \(rested.count)", menu: true)
+                    }
+                    .accessibilityIdentifier("quick.off")
+                    QuickChip(icon: "list.number", title: "Plan") { pauseForCentre(.bowling) }
+                }
+            }
+        }
+    }
+
+    private func figureText(_ id: String, _ figures: [BowlerCard]) -> String {
+        guard let b = figures.first(where: { $0.id == id }), b.balls > 0 else { return "fresh" }
+        return "\(b.overs)-\(b.runs)-\(b.wickets)"
     }
 
     /// Re-plays the match with one more change; everything already shown must stay the same.
@@ -327,6 +396,7 @@ struct MatchView: View {
         let userTeam = store.inCareer ? store.careerUserTeam(in: fixtureId) : nil
         let advice = userTeam.flatMap { LiveReport.advice(cards: soFar, log: log, upTo: shown, userTeam: $0).first }
         let mentality = mentalityBar(r, current: current, userTeam: userTeam)
+        let quick = quickControls(r, current: current, userTeam: userTeam, soFar: soFar)
         // Only build up to the next ball after something worth pausing on.
         let anticipating = !inningsBreak && shown < log.count && ballWait >= MatchView.ballSeconds * 0.85
             && ballClock > ballWait * 0.45
@@ -355,6 +425,7 @@ struct MatchView: View {
                             .transition(.scale.combined(with: .opacity))
                     }
                     Spacer()
+                    quick
                 }
                 .animation(.spring(response: 0.3, dampingFraction: 0.6), value: thisOver.count)
             }
@@ -388,7 +459,7 @@ struct MatchView: View {
             Group {
                 if vSize == .compact {
                     landscape(r, current: current, thisOver: thisOver, shots: shots, anticipating: anticipating,
-                              numbers: numbers, advice: advice, mentality: mentality)
+                              numbers: numbers, advice: advice, mentality: mentality, quick: quick)
                 } else {
                     ScrollView {
                         VStack(spacing: DS.Space.md) { board; feed }
@@ -410,7 +481,8 @@ struct MatchView: View {
     /// on the left, the wagon wheel filling the right half at full height. No scrolling.
     private func landscape(_ r: MatchResult, current: BallEvent?, thisOver: [BallEvent],
                            shots: [WagonWheel.Shot], anticipating: Bool,
-                           numbers: LiveReport.Numbers?, advice: String?, mentality: some View) -> some View {
+                           numbers: LiveReport.Numbers?, advice: String?, mentality: some View,
+                           quick: some View) -> some View {
         GeometryReader { geo in
             let gap: CGFloat = 12
             let col = max(0, (geo.size.width - gap) / 2)
@@ -436,6 +508,7 @@ struct MatchView: View {
                                 BallChip(label: e.label, size: 24).transition(.scale.combined(with: .opacity))
                             }
                             Spacer(minLength: 0)
+                            quick
                         }
                         .frame(height: 26)
                         .animation(.spring(response: 0.3, dampingFraction: 0.6), value: thisOver.count)
@@ -555,6 +628,37 @@ struct AssistantTicker: View {
         .padding(.horizontal, 10).padding(.vertical, compact ? 6 : 9)
         .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Palette.surface))
         .animation(.easeInOut(duration: 0.2), value: text)
+    }
+}
+
+/// A small action on the match screen (Order, Plan).
+struct QuickChip: View {
+    let icon: String
+    let title: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) { QuickChipLabel(icon: icon, title: title) }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("quick.\(title)")
+    }
+}
+
+struct QuickChipLabel: View {
+    let icon: String
+    let title: String
+    var menu = false
+
+    var body: some View {
+        HStack(spacing: 3) {
+            Image(systemName: icon).font(.system(size: 10 * TextScale.factor, weight: .bold))
+            Text(title).lineLimit(1)
+            if menu { Image(systemName: "chevron.up.chevron.down").font(.system(size: 8 * TextScale.factor, weight: .bold)) }
+        }
+        .font(.system(size: 11 * TextScale.factor, weight: .semibold))
+        .foregroundStyle(Palette.accent)
+        .padding(.horizontal, 8).frame(height: 24)
+        .background(Capsule().fill(Palette.surfaceHi))
     }
 }
 

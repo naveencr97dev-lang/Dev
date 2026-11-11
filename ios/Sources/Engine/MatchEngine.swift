@@ -183,6 +183,9 @@ struct LiveChange: Codable, Hashable {
     var bowlingPlan: [String]? = nil
     /// Who bowls the next over (once).
     var nextOverBowler: String? = nil
+    /// Bowlers taken off for the rest of the innings (owner's request: one going for 20 an over
+    /// shouldn't bowl again). Their overs go to the rest of the plan, then other bowling options.
+    var restBowlers: [String]? = nil
 
     func applies(innings i: Int, ball: Int) -> Bool { i > innings || (i == innings && ball >= fromBall) }
 }
@@ -429,6 +432,7 @@ struct MatchEngine {
         var attackList = attack
         var applied = Set<Int>()
         var usedNextOver = Set<Int>()
+        var rested = Set<String>()
         var lastOverBowler: String? = nil
         /// Deliveries bowled so far this innings (before the first, even the openers can change).
         var delivered = 0
@@ -452,6 +456,7 @@ struct MatchEngine {
                         for i in card.batters.indices { card.batters[i].batted = i < 2 }
                     }
                 }
+                if ch.teamId == bowling.teamId, let ids = ch.restBowlers { rested.formUnion(ids) }
                 if ch.teamId == bowling.teamId, let ids = ch.bowlingPlan {
                     let plan = ids.compactMap { id in bowling.xi.first { $0.id == id } }
                     if plan.count == 5 && Set(plan.map(\.id)).count == 5 { attackList = plan }
@@ -462,7 +467,7 @@ struct MatchEngine {
         func bowlerIndex(over: Int) -> Int {
             guard maxOvers == 20 else { return 0 }
             let can = { (p: Player) -> Bool in
-                (card.bowlers.first { $0.id == p.id }?.balls ?? 0) < 24 && p.id != lastOverBowler
+                (card.bowlers.first { $0.id == p.id }?.balls ?? 0) < 24 && p.id != lastOverBowler && !rested.contains(p.id)
             }
             var pick = attackList[MatchEngine.overPlan[over] % attackList.count]
             if liveOK {
@@ -472,7 +477,15 @@ struct MatchEngine {
                     usedNextOver.insert(k)
                     if let p = bowling.xi.first(where: { $0.id == id }), can(p) { pick = p }
                 }
-                if !can(pick), let alt = (attackList + bowling.xi).first(where: can) { pick = alt }
+                if !can(pick) {
+                    // The rest of the plan first, then the XI's best other bowlers; part-timers last.
+                    let others = bowling.xi.filter { o in !attackList.contains { $0.id == o.id } }
+                        .sorted { MatchEngine.effectiveBowl($0, pitch: pitch) > MatchEngine.effectiveBowl($1, pitch: pitch) }
+                    if let alt = (attackList + others).first(where: can) { pick = alt }
+                    // Nobody legal left (everyone rested or bowled out): ignore the rests, never the laws.
+                    else if let alt = (attackList + others).first(where: { p in
+                        (card.bowlers.first { $0.id == p.id }?.balls ?? 0) < 24 && p.id != lastOverBowler }) { pick = alt }
+                }
             }
             if let i = card.bowlers.firstIndex(where: { $0.id == pick.id }) { return i }
             card.bowlers.append(BowlerCard(id: pick.id, name: pick.name))
