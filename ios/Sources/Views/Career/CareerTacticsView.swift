@@ -72,23 +72,24 @@ struct TacticsView: View {
     private var phases: some View {
         PaneBox(title: "Phases", note: "Field: where the fielders stand. Batting: how hard your batters go.") {
             HStack(spacing: 8) {
-                Text("").frame(width: 76)
-                Text("FIELD").frame(maxWidth: .infinity)
-                Text("BATTING").frame(maxWidth: .infinity)
+                Text("").frame(width: 96, alignment: .leading)
+                Text("FIELD").frame(maxWidth: .infinity, alignment: .leading)
+                Text("BATTING").frame(maxWidth: .infinity, alignment: .leading)
             }
             .font(.system(size: 10 * TextScale.factor, weight: .heavy)).foregroundStyle(Palette.muted)
             ForEach(0..<3, id: \.self) { i in
+                if i > 0 { Hairline() }
                 HStack(spacing: 8) {
                     Text(Tactics.phases[i]).font(.system(size: 12 * TextScale.factor, weight: .semibold)).foregroundStyle(.white)
-                        .lineLimit(1).minimumScaleFactor(0.7).frame(width: 76, alignment: .leading)
-                    Picker("Field", selection: Binding(get: { t.field[i] }, set: { t.field[i] = $0 })) {
-                        ForEach(FieldSetting.allCases, id: \.self) { f in Text(f.label).tag(f) }
+                        .lineLimit(1).minimumScaleFactor(0.7).frame(width: 96, alignment: .leading)
+                    MenuChip(title: t.field[i].label) {
+                        ForEach(FieldSetting.allCases, id: \.self) { f in Button(f.label) { t.field[i] = f } }
                     }
-                    .pickerStyle(.segmented)
-                    Picker("Batting", selection: Binding(get: { t.intent[i] }, set: { t.intent[i] = $0 })) {
-                        ForEach(BatIntent.allCases, id: \.self) { b in Text(b.label).tag(b) }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    MenuChip(title: t.intent[i].label) {
+                        ForEach(BatIntent.allCases, id: \.self) { b in Button(b.label) { t.intent[i] = b } }
                     }
-                    .pickerStyle(.segmented)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
         }
@@ -102,13 +103,12 @@ struct TacticsView: View {
             HStack(spacing: 8) {
                 Text("If you win the toss").font(.system(size: 13 * TextScale.factor)).foregroundStyle(Palette.muted).lineLimit(1)
                 Spacer(minLength: 4)
-                Picker("Toss", selection: Binding(get: { t.toss?.rawValue ?? "auto" }, set: { t.toss = TossCall(rawValue: $0) })) {
-                    Text("Captain's call").tag("auto")
-                    ForEach(TossCall.allCases, id: \.self) { call in Text(call.label).tag(call.rawValue) }
+                MenuChip(title: t.toss?.label ?? "Captain's call") {
+                    Button("Captain's call") { t.toss = nil }
+                    ForEach(TossCall.allCases, id: \.self) { call in Button(call.label) { t.toss = call } }
                 }
-                .pickerStyle(.segmented)
-                .frame(maxWidth: 260)
             }
+            Hairline()
             HStack(spacing: 8) {
                 Text("Captain").font(.system(size: 13 * TextScale.factor)).foregroundStyle(Palette.muted)
                 Spacer(minLength: 4)

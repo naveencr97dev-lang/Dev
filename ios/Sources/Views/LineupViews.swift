@@ -80,8 +80,11 @@ struct TeamsBoard: View {
     @EnvironmentObject var store: GameStore
     let result: MatchResult
     var occasion = ""
+    /// Landscape: the panels stretch so the rows fill the screen height.
+    var fill = false
     let onStart: () -> Void
     let onSkip: () -> Void
+    private let barHeight: CGFloat = 36
 
     var body: some View {
         let home = result.teamA, away = result.teamB
@@ -96,18 +99,26 @@ struct TeamsBoard: View {
                 side(home)
                 side(away)
             }
+            .frame(maxHeight: fill ? .infinity : nil)
+            // One height for the toss band and both buttons (device feedback: they didn't line up).
             HStack(spacing: 10) {
                 Text(tossLine.uppercased()).font(.system(size: 12 * TextScale.factor, weight: .heavy)).foregroundStyle(Palette.ink)
                     .lineLimit(1).minimumScaleFactor(0.7)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 12).padding(.vertical, 8)
+                    .padding(.horizontal, 12)
+                    .frame(maxWidth: .infinity, minHeight: barHeight, maxHeight: barHeight, alignment: .leading)
                     .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Palette.accent))
-                Button("Skip to result", action: onSkip)
-                    .font(.system(size: 13 * TextScale.factor, weight: .semibold)).foregroundStyle(Palette.muted)
+                Button(action: onSkip) {
+                    Text("Skip to result").font(.system(size: 13 * TextScale.factor, weight: .semibold)).foregroundStyle(Palette.accent)
+                        .padding(.horizontal, 14)
+                        .frame(minHeight: barHeight, maxHeight: barHeight)
+                        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Palette.surfaceHi))
+                }
+                .buttonStyle(.plain)
                 Button(action: onStart) {
                     Label("Start match", systemImage: "play.fill").font(.system(size: 14 * TextScale.factor, weight: .bold))
                         .foregroundStyle(Palette.ink)
-                        .padding(.horizontal, 14).padding(.vertical, 8)
+                        .padding(.horizontal, 16)
+                        .frame(minHeight: barHeight, maxHeight: barHeight)
                         .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(.white))
                 }
                 .buttonStyle(.plain)
@@ -132,7 +143,7 @@ struct TeamsBoard: View {
                 if i > 0 { Hairline(inset: 10) }
                 let p = store.player(id)
                 LineupRow(number: i + 1, name: p?.name ?? id, keeper: p?.role == .WK, captain: id == captain,
-                          overseas: p?.overseas ?? false, tag: p?.role.short ?? "", rating: p?.rating)
+                          overseas: p?.overseas ?? false, tag: p?.role.short ?? "", rating: p?.rating, fill: fill)
             }
         }
     }

@@ -40,15 +40,25 @@ struct MatchView: View {
         Group {
             if let r = result {
                 if !finished && !log.isEmpty && prematch {
-                    ScrollView {
-                        TeamsBoard(result: r, occasion: occasion(r), onStart: {
-                            withAnimation(.easeInOut) { prematch = false }
-                            Haptics.tap()
-                        }, onSkip: { finish() })
-                        .padding(.horizontal, DS.Space.md)
-                        .padding(.vertical, DS.Space.sm)
-                        .frame(maxWidth: 960)
-                        .frame(maxWidth: .infinity)
+                    let board = TeamsBoard(result: r, occasion: occasion(r), fill: vSize == .compact, onStart: {
+                        withAnimation(.easeInOut) { prematch = false }
+                        Haptics.tap()
+                    }, onSkip: { finish() })
+                    if vSize == .compact {
+                        // Landscape (device feedback): the two XIs fill the screen; no gap at the foot.
+                        board
+                            .padding(.horizontal, DS.Space.md)
+                            .padding(.vertical, DS.Space.sm)
+                            .frame(maxWidth: 960, maxHeight: .infinity)
+                            .frame(maxWidth: .infinity)
+                    } else {
+                        ScrollView {
+                            board
+                                .padding(.horizontal, DS.Space.md)
+                                .padding(.vertical, DS.Space.sm)
+                                .frame(maxWidth: 960)
+                                .frame(maxWidth: .infinity)
+                        }
                     }
                 } else if !finished && !log.isEmpty {
                     live(r)
@@ -315,10 +325,7 @@ struct MatchView: View {
                 }
             }
             HStack(spacing: 10) {
-                Button { if paused { paused = false } else { pauseForCentre() } } label: {
-                    Image(systemName: paused ? "play.fill" : "pause.fill").frame(width: 30)
-                }
-                .buttonStyle(SecondaryButtonStyle()).frame(width: 64)
+                PauseButton(paused: paused) { if paused { paused = false } else { pauseForCentre() } }
                 SpeedPicker(speed: $speed, options: MatchView.speeds.map(\.value),
                             labels: MatchView.speeds.map(\.label))
             }
@@ -368,6 +375,9 @@ struct MatchView: View {
                             CreaseCard(event: e, battingTeam: store.team(r.card(e.innings).teamId), compact: true,
                                        order: r.card(e.innings).batters.map(\.name))
                         }
+                        // Device feedback: the column centred itself; now it spans the ground panel,
+                        // with the over and the controls at the foot.
+                        Spacer(minLength: 6)
                         HStack(spacing: 5) {
                             ForEach(Array(thisOver.enumerated()), id: \.offset) { _, e in
                                 BallChip(label: e.label, size: 24).transition(.scale.combined(with: .opacity))
@@ -377,16 +387,13 @@ struct MatchView: View {
                         .frame(height: 26)
                         .animation(.spring(response: 0.3, dampingFraction: 0.6), value: thisOver.count)
                         HStack(spacing: 8) {
-                            Button { if paused { paused = false } else { pauseForCentre() } } label: {
-                                Image(systemName: paused ? "play.fill" : "pause.fill").frame(width: 24)
-                            }
-                            .buttonStyle(SecondaryButtonStyle()).frame(width: 56)
+                            PauseButton(paused: paused) { if paused { paused = false } else { pauseForCentre() } }
                             SpeedPicker(speed: $speed, options: MatchView.speeds.map(\.value),
                                         labels: MatchView.speeds.map(\.label))
                         }
                     }
                     .frame(width: col)
-                    .frame(minHeight: geo.size.height)
+                    .frame(minHeight: geo.size.height, alignment: .top)
                 }
                 .frame(width: col)
 
@@ -439,6 +446,23 @@ struct MatchView: View {
     private func overString(_ e: BallEvent) -> String {
         let balls = e.over * 6 + e.ballInOver
         return "\(balls / 6).\(balls % 6)"
+    }
+}
+
+/// Pause / play beside the speed picker, the segmented control's height so the row lines up.
+struct PauseButton: View {
+    let paused: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: paused ? "play.fill" : "pause.fill")
+                .font(.system(size: 15 * TextScale.factor, weight: .bold))
+                .foregroundStyle(Palette.accent)
+                .frame(width: 56, height: 32)
+                .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Palette.surfaceHi))
+        }
+        .buttonStyle(.plain)
     }
 }
 
@@ -715,7 +739,7 @@ struct MatchSummaryBoard: View {
                 .lineLimit(1)
             Spacer(minLength: 0)
         }
-        .padding(.horizontal, 14).padding(.vertical, compact ? 5 : 8)
+        .padding(.horizontal, 14).padding(.vertical, compact ? 7 : 8)
         .background(Palette.surfaceHi)
     }
 
@@ -734,28 +758,36 @@ struct MatchSummaryBoard: View {
                 Text("OVERS \(inn.overs)").font(.system(size: 11 * TextScale.factor, weight: .bold)).opacity(0.85)
                 Text(inn.wickets >= 10 ? "\(inn.runs)" : "\(inn.runs)-\(inn.wickets)").font(.score(24))
                     .frame(minWidth: 70, alignment: .trailing)
+                // The total's right edge lines up with the big figures below (star + balls columns).
+                Color.clear.frame(width: MatchSummaryBoard.tailWidth - 10, height: 1)
             }
             .foregroundStyle(team.map { MatchSummaryBoard.isLight($0.colorHex) } == true ? Palette.ink : .white)
-            .padding(.horizontal, 14).padding(.vertical, compact ? 3 : 6)
+            .padding(.horizontal, 14).padding(.vertical, compact ? 5 : 6)
             .background(team.map { Color(hex: $0.colorHex) } ?? Palette.surfaceHi)
             ForEach(0..<rows, id: \.self) { i in
                 HStack(spacing: 0) {
                     cell(name: i < batters.count ? batters[i].name : nil,
-                         big: i < batters.count ? "\(batters[i].runs)\(batters[i].dismissal == nil ? "*" : "")" : "",
+                         big: i < batters.count ? "\(batters[i].runs)" : "",
+                         star: i < batters.count && batters[i].dismissal == nil,
                          small: i < batters.count ? "\(batters[i].balls)" : "")
                     Rectangle().fill(Palette.stroke).frame(width: 1)
                     cell(name: i < bowlers.count ? bowlers[i].name : nil,
                          big: i < bowlers.count ? "\(bowlers[i].wickets)-\(bowlers[i].runs)" : "",
+                         star: false,
                          small: i < bowlers.count ? bowlers[i].overs : "")
                 }
-                .frame(height: compact ? 24 : 30)
+                .frame(height: compact ? 29 : 30)
                 .background(i % 2 == 0 ? Palette.surface : Palette.surface.opacity(0.75))
             }
         }
     }
 
-    /// "Will JACKS   96* 55": first names light, surname bold, big figure, small balls/overs.
-    private func cell(name: String?, big: String, small: String) -> some View {
+    /// Width after the big figure: the not-out star slot, a gap and the balls/overs column.
+    static let tailWidth: CGFloat = 12 + 6 + 28
+
+    /// "Will JACKS   96* 55": first names light, surname bold, big figure, small balls/overs. Fixed
+    /// columns, so runs and figures line up down the board whatever the digits or the star.
+    private func cell(name: String?, big: String, star: Bool, small: String) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 6) {
             if let name {
                 let parts = name.split(separator: " ")
@@ -767,7 +799,10 @@ struct MatchSummaryBoard: View {
                 }
                 .lineLimit(1).minimumScaleFactor(0.75)
                 Spacer(minLength: 4)
-                Text(big).font(.score(19))
+                HStack(alignment: .firstTextBaseline, spacing: 0) {
+                    Text(big).font(.score(19)).frame(minWidth: 52, alignment: .trailing)
+                    Text(star ? "*" : "").font(.score(15)).frame(width: 12, alignment: .leading)
+                }
                 Text(small).font(.score(11, weight: .regular)).foregroundStyle(Palette.muted).frame(width: 28, alignment: .leading)
             } else {
                 Spacer()
@@ -794,7 +829,7 @@ struct MatchSummaryBoard: View {
                 .lineLimit(1)
         }
         .foregroundStyle(Palette.ink)
-        .padding(.horizontal, 14).padding(.vertical, compact ? 5 : 8)
+        .padding(.horizontal, 14).padding(.vertical, compact ? 7 : 8)
         .background(Palette.accent)
     }
 }

@@ -208,7 +208,7 @@ struct SecondaryButtonStyle: ButtonStyle {
             .font(.system(size: 16 * TextScale.factor, weight: .semibold))
             .foregroundStyle(Palette.accent)
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 12)
+            .padding(.vertical, 14)   // same height as PrimaryButtonStyle, so pairs line up
             .background(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous).fill(Palette.surfaceHi))
             .opacity(configuration.isPressed ? 0.75 : 1)
     }
