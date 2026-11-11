@@ -27,12 +27,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Newest Xcode
+      - name: Xcode and simulator runtimes
         run: |
+          # The runner's default Xcode: its simulator runtimes are installed (a newer Xcode may lack them).
           ls -d /Applications/Xcode*.app
-          XCODE=$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)
-          sudo xcode-select -s "$XCODE"
           xcodebuild -version
+          xcrun simctl list runtimes
 
       - name: Generate the Xcode project
         run: |
@@ -41,17 +41,24 @@ jobs:
 
       - name: Pick and boot the largest iPhone simulator
         id: sim
+        timeout-minutes: 12
         run: |
           xcrun simctl list devices available
           NAME=$(xcrun simctl list devices available | grep -oE "iPhone [0-9]+ Pro Max" | sort -V | tail -1)
           UDID=$(xcrun simctl list devices available | grep "$NAME (" | head -1 | grep -oE "[0-9A-F]{8}-[0-9A-F-]{27}")
           echo "Using $NAME ($UDID)"
+          test -n "$UDID"
           echo "name=$NAME" >> "$GITHUB_OUTPUT"
           echo "udid=$UDID" >> "$GITHUB_OUTPUT"
           xcrun simctl boot "$UDID" || true
-          xcrun simctl bootstatus "$UDID" -b
+          for i in $(seq 1 60); do
+            if xcrun simctl list devices | grep "$UDID" | grep -q Booted; then echo "Booted after ${i}0 s"; break; fi
+            sleep 10
+          done
+          xcrun simctl list devices | grep "$UDID"
 
       - name: Run the tour (with a screen recording)
+        timeout-minutes: 40
         run: |
           mkdir -p ~/ui-tour
           xcrun simctl io "${{ steps.sim.outputs.udid }}" recordVideo --codec=h264 --force ~/ui-tour/tour.mp4 &
