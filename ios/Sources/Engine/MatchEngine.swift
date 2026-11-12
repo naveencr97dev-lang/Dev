@@ -361,7 +361,8 @@ struct MatchEngine {
     private mutating func decideSuperOver(_ x: Side, _ y: Side, pitch: Pitch,
                                           log: inout [BallEvent]) -> (Side, [InningsCard]) {
         var cards: [InningsCard] = []
-        let top = { (s: Side) in Side(teamId: s.teamId, xi: Array(s.xi.prefix(3))) }
+        // Owner's device test: the openers came out and blocked. The three best hitters bat.
+        let top = { (s: Side) in Side(teamId: s.teamId, xi: MatchEngine.superOverBatters(s.xi)) }
         for round in 0..<5 {
             let i1 = innings(batting: top(y), bowling: x, target: nil, maxOvers: 1, index: 2 + round * 2, pitch: pitch, log: &log)
             let i2 = innings(batting: top(x), bowling: y, target: i1.runs + 1, maxOvers: 1, index: 3 + round * 2, pitch: pitch, log: &log)
@@ -369,6 +370,15 @@ struct MatchEngine {
             if i1.runs != i2.runs { return (i1.runs > i2.runs ? y : x, cards) }
         }
         return (rng.unit() < 0.5 ? x : y, cards)
+    }
+
+    /// The three a captain sends out in a super over: the biggest hitters, best first.
+    static func superOverBatters(_ xi: [Player]) -> [Player] {
+        func hit(_ p: Player) -> Int {
+            p.bat + (p.has(.powerHitter) ? 8 : 0) + (p.has(.finisher) ? 6 : 0) + (p.has(.powerplayBlitz) ? 3 : 0)
+                - (p.has(.anchor) ? 6 : 0)
+        }
+        return Array(xi.sorted { hit($0) != hit($1) ? hit($0) > hit($1) : $0.id < $1.id }.prefix(3))
     }
 
     // MARK: Innings
@@ -779,6 +789,11 @@ struct MatchEngine {
         if wicketsLeft <= 3 && ballsLeft > 24 { aggression = min(aggression, -0.3) }
         // Early collapse: rebuild before attacking again.
         if card.wickets >= 3 && over < 10 && maxOvers == 20 { aggression = max(-0.45, aggression - 0.3) }
+        // Super over: six balls, two wickets. Everyone swings (they averaged 8 runs before this).
+        if maxOvers == 1 {
+            aggression = target == nil ? 1.0 : max(aggression, 0.5)
+            w[0] *= 0.75; w[1] *= 0.8; w[4] *= 1.2; w[5] *= 1.35
+        }
 
         // Tactics: batting intent shifts aggression; the field trades boundaries for wickets.
         let phaseIndex = powerplay ? 0 : (death ? 2 : 1)

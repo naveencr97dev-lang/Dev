@@ -46,3 +46,29 @@ extension EngineTests {
         XCTAssertGreaterThan(found, 0, "no tie in 3000 matches")
     }
 }
+
+extension CareerTests {
+    /// Owner's device test: the openers came out and blocked (3/0 chasing 12). The best hitters
+    /// bat and everyone swings: about 12-13 runs batting first, a six an over.
+    func testSuperOversAreSwungAt() {
+        let c = newCareer(seed: 91)
+        let ids = c.clubs.map(\.id)
+        var runs = 0, sixes = 0
+        let n = 600
+        for g in 0..<n {
+            let a = c.side(ids[g % 10]), b = c.side(ids[(g + 3) % 10])
+            var e = MatchEngine(rng: SeededRNG(seed: UInt64(300 + g)))
+            e.realisticChase = true
+            var log: [BallEvent] = []
+            let three = MatchEngine.superOverBatters(a.xi)
+            let inn = e.innings(batting: MatchEngine.Side(teamId: a.teamId, xi: three), bowling: b, target: nil,
+                                maxOvers: 1, index: 2, pitch: .indianFlat, log: &log)
+            runs += inn.runs; sixes += inn.batters.map(\.sixes).reduce(0, +)
+            // The three are the side's biggest hitters, not simply the openers.
+            let best = a.xi.map(\.bat).sorted(by: >)[2]
+            XCTAssertTrue(three.allSatisfy { $0.bat >= best - 12 }, three.map(\.name).joined(separator: ", "))
+        }
+        XCTAssertGreaterThanOrEqual(Double(runs) / Double(n), 11)
+        XCTAssertGreaterThanOrEqual(Double(sixes) / Double(n), 0.8)
+    }
+}

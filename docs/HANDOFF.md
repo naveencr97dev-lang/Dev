@@ -82,7 +82,7 @@ Last updated 2026-11-11 (after the table-format pass on every pushed screen) on 
 - **Swift toolchain:** if `/opt/swift` is missing, install it with
   `curl -sSfL https://download.swift.org/swift-6.0.3-release/ubuntu2404/swift-6.0.3-RELEASE/swift-6.0.3-RELEASE-ubuntu24.04.tar.gz | tar xz --strip-components=1 -C /opt/swift`
   (run `mkdir -p /opt/swift` first). Then `export PATH=/opt/swift/usr/bin:$PATH`.
-- **Engine tests:** `cd ios && swift test` (120 tests, all green). Pipe the output to a file and
+- **Engine tests:** `cd ios && swift test` (121 tests, all green). Pipe the output to a file and
   check the "Executed … with 0 failures" line before committing. One push once went out red because
   a grep in a command chain hid the failure.
 - **Whole-app type-check:** `tools/typecheck/run.sh`. It checks all 48 files against SwiftUI, UIKit
@@ -238,6 +238,9 @@ for each version in `CareerSave.migrations`.
     ₹75 Cr cap at 99; age barely matters (0.92 from 33). Wages, retentions and auctions stay on
     `value`. Central revenue is ₹65 Cr, so a mid-table season clears about ₹15 Cr after wages and a
     title about ₹40-50 Cr: one star per good season (`testTransferFeesMatchTheOwnersTargets`).
+  - **Super overs (owner's device test):** the three biggest hitters bat
+    (`MatchEngine.superOverBatters`), and everyone swings: about 12.7 runs batting first and a six
+    an over (was 8 runs with the openers). `testSuperOversAreSwungAt`.
   - **Scouting (owner's request, `CareerScouting.swift`):** each scout has a job (`ScoutMission`):
     Upgrade a player, Fill the bowling plan, Home-pitch specialists, Young talent, Bargains. After
     each user match he watches the best unseen candidates; his shortlist (top 5 seen, priced, red
