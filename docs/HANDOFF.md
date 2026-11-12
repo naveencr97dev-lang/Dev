@@ -82,7 +82,7 @@ Last updated 2026-11-11 (after the table-format pass on every pushed screen) on 
 - **Swift toolchain:** if `/opt/swift` is missing, install it with
   `curl -sSfL https://download.swift.org/swift-6.0.3-release/ubuntu2404/swift-6.0.3-RELEASE/swift-6.0.3-RELEASE-ubuntu24.04.tar.gz | tar xz --strip-components=1 -C /opt/swift`
   (run `mkdir -p /opt/swift` first). Then `export PATH=/opt/swift/usr/bin:$PATH`.
-- **Engine tests:** `cd ios && swift test` (121 tests, all green). Pipe the output to a file and
+- **Engine tests:** `cd ios && swift test` (122 tests, all green). Pipe the output to a file and
   check the "Executed … with 0 failures" line before committing. One push once went out red because
   a grep in a command chain hid the failure.
 - **Whole-app type-check:** `tools/typecheck/run.sh`. It checks all 48 files against SwiftUI, UIKit
@@ -244,6 +244,12 @@ for each version in `CareerSave.migrations`.
     the next matches. Toss and captain stay as set before the match. The pause screen opens on
     Tactics (the Overview tab is gone: its numbers and assistant are on the match screen), and the
     Teams board has a Tactics button that changes tactics from the first ball.
+  - **Innings scorecards (owner's request):** the match stops after the first innings on
+    `InningsScorecardScreen` (batting left, bowling right, the assistant's break advice from
+    `LiveReport.breakAdvice` against the pitch par, and Tactics) until Next. Played to the end,
+    it shows the second innings the same way, then Next to the result, then Next home. Skip goes
+    straight to the result. Pars (median first innings): flat 190, seam 140, bounce 170, turner
+    and slow 160.
   - **Super overs (owner's device test):** the three biggest hitters bat
     (`MatchEngine.superOverBatters`), and everyone swings: about 12.7 runs batting first and a six
     an over (was 8 runs with the openers). `testSuperOversAreSwungAt`.

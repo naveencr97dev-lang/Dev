@@ -27,6 +27,8 @@ struct MatchView: View {
     @State private var lastBreakInnings = 0
     @State private var superOverBreak = false
     @State private var breakClock: Double = 0
+    /// Played to the last ball: the second innings' scorecard before the result (owner's request).
+    @State private var endCard = false
     @State private var paused = false
     @State private var showReel = false
     /// Career: the match is previewed, changed while paused, and recorded at the end.
@@ -68,7 +70,9 @@ struct MatchView: View {
                         }
                     }
                 } else if !finished && !log.isEmpty {
-                    live(r)
+                    if inningsBreak && !superOverBreak { breakScreen(r) } else { live(r) }
+                } else if endCard {
+                    InningsScorecardScreen(result: r, index: 1, title: "SECOND INNINGS", subtitle: resultLine(r))
                 } else if showReel && !(r.highlights ?? []).isEmpty {
                     HighlightsReel(result: r) { withAnimation(.easeInOut) { showReel = false } }
                         .transition(.opacity)
@@ -84,22 +88,21 @@ struct MatchView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                if !finished && !log.isEmpty {
+                if !finished && !log.isEmpty && inningsBreak && !superOverBreak {
+                    HStack {
+                        Button("Skip ⏭") { finish() }
+                        nextButton { continueAfterBreak() }
+                    }
+                } else if !finished && !log.isEmpty {
                     HStack {
                         Button { pauseForCentre() } label: { Image(systemName: "list.clipboard") }
                         Button("Skip ⏭") { finish() }
                     }
+                } else if endCard {
+                    nextButton { withAnimation(.easeInOut) { endCard = false } }
                 } else if result != nil {
                     // Device feedback: a clear way on after the match (back to the hub's Continue).
-                    Button {
-                        Haptics.tap()
-                        dismiss()
-                    } label: {
-                        HStack(spacing: 4) {
-                            Text("Next").fontWeight(.bold)
-                            Image(systemName: "chevron.right").font(.system(size: 13, weight: .bold))
-                        }
-                    }
+                    nextButton { dismiss() }
                 }
             }
         }
@@ -127,6 +130,35 @@ struct MatchView: View {
             }
         }
         .keepAwake()
+    }
+
+    private func nextButton(_ action: @escaping () -> Void) -> some View {
+        Button {
+            Haptics.tap()
+            action()
+        } label: {
+            HStack(spacing: 4) {
+                Text("Next").fontWeight(.bold)
+                Image(systemName: "chevron.right").font(.system(size: 13, weight: .bold))
+            }
+        }
+        .accessibilityIdentifier("next")
+    }
+
+    /// The innings break: the first innings' scorecard, the assistant and Tactics; Next starts the chase.
+    private func breakScreen(_ r: MatchResult) -> some View {
+        let first = r.card(0)
+        let userTeam = pendingCommit ? store.careerUserTeam(in: fixtureId) : nil
+        let chasing = store.team(r.card(1).teamId)
+        let need = "\(chasing?.short ?? "") need \(first.runs + 1) from 120 · \(String(format: "%.2f", Double(first.runs + 1) / 20)) an over"
+        return InningsScorecardScreen(
+            result: r, index: 0, title: "INNINGS BREAK", subtitle: need,
+            advice: userTeam.map { LiveReport.breakAdvice(first: first, pitch: r.pitch, userTeam: $0, tactics: liveTactics) } ?? [],
+            onTactics: userTeam != nil ? { pauseForCentre(.tactics) } : nil)
+    }
+
+    private func resultLine(_ r: MatchResult) -> String {
+        "\(store.team(r.winnerId)?.name ?? "") \(r.margin)"
     }
 
     private func start() {
@@ -336,6 +368,8 @@ struct MatchView: View {
     private func advance() {
         guard !finished, !log.isEmpty, !paused, !prematch else { return }
         if inningsBreak {
+            // The innings break waits for Next (owner's request); super-over breaks move on by themselves.
+            guard superOverBreak else { return }
             breakClock += MatchView.tick * speed
             if breakClock >= 7 { continueAfterBreak() }
             return
@@ -361,7 +395,10 @@ struct MatchView: View {
         default: break
         }
         GameAudio.shared.ball(log[shown - 1].label)
-        if shown >= log.count { finish() }
+        if shown >= log.count {
+            endCard = true
+            finish()
+        }
     }
 
     private func continueAfterBreak() {
@@ -471,9 +508,6 @@ struct MatchView: View {
             }
             if inningsBreak && superOverBreak {
                 SuperOverBreakCard(result: r, superOverIndex: max(0, (lastBreakInnings - 2) / 2), onContinue: continueAfterBreak)
-                    .transition(.scale(scale: 0.8).combined(with: .opacity))
-            } else if inningsBreak {
-                InningsBreakCard(result: r, onContinue: continueAfterBreak)
                     .transition(.scale(scale: 0.8).combined(with: .opacity))
             }
         }

@@ -173,4 +173,52 @@ enum LiveReport {
         if out.isEmpty { out.append("Everything is going to plan. No changes needed.") }
         return Array(out.prefix(3))
     }
+
+    // MARK: Innings break
+
+    /// Median first-innings totals in career matches (probe, 400 matches a pitch).
+    static func par(_ pitch: Pitch) -> Int {
+        switch pitch {
+        case .indianFlat: return 190
+        case .englishSeam: return 140
+        case .aussieBounce: return 170
+        case .dustyTurner: return 160
+        case .caribbeanSlow: return 160
+        }
+    }
+
+    /// The assistant at the innings break (owner's request): what the first innings means for
+    /// `userTeam` and how to play the second, most important first. `tactics` are the user's now.
+    static func breakAdvice(first: InningsCard, pitch: Pitch, userTeam: Int, tactics: Tactics) -> [String] {
+        let total = first.runs
+        let par = par(pitch)
+        let diff = total - par
+        let suits = GamePlan.suggested(for: pitch)
+        var out: [String] = []
+        if first.teamId == userTeam {
+            // Defending.
+            if diff >= 15 {
+                out.append("\(total) is \(diff) above par (about \(par)) on a \(pitch.label.lowercased()). Make them take risks: keep it tight and squeeze at the death.")
+            } else if diff <= -15 {
+                out.append("\(total) is \(-diff) below par (about \(par)). You need wickets: set an Aggressive field in the powerplay.")
+            } else {
+                out.append("\(total) is about par for a \(pitch.label.lowercased()) (\(par)). Early wickets win this.")
+            }
+        } else {
+            // Chasing.
+            let rate = Double(total + 1) / 20
+            let r = String(format: "%.2f", rate)
+            if diff >= 15 {
+                out.append("We need \(total + 1) at \(r) an over, \(diff) above par. Go hard in the powerplay: Attack, or the Powerplay blitz plan.")
+            } else if diff <= -15 {
+                out.append("\(total + 1) to win at \(r) an over, below par. Keep wickets in hand: Rotate, then attack at the death.")
+            } else {
+                out.append("\(total + 1) to win at \(r) an over, a par chase. Don't lose early wickets.")
+            }
+        }
+        if tactics.matchingPlan != suits {
+            out.append("\(suits.label) is the plan that suits a \(pitch.label.lowercased()). You're on \(tactics.matchingPlan?.label ?? "custom tactics").")
+        }
+        return out
+    }
 }
