@@ -4,59 +4,89 @@ import SwiftUI
 
 struct OffseasonCard: View {
     @EnvironmentObject var store: GameStore
+    @Environment(\.compactLandscape) private var compact
     let career: Career
     let onStarted: ([String]) -> Void
 
     var body: some View {
         let c = career
         let stage = c.offseason?.stage ?? .window
-        AppCard(tint: Palette.accent) {
-            VStack(alignment: .leading, spacing: DS.Space.md) {
-                Text("\(String(c.year)) OFF-SEASON · \(c.offseason?.mega == true ? "MEGA AUCTION" : "MINI AUCTION")")
-                    .font(.display(15, weight: .heavy)).foregroundStyle(Palette.accent)
-                step(1, "Retentions", done: stage != .retention, active: stage == .retention, skipped: c.offseason?.mega != true)
-                step(2, "Auction", done: stage == .window, active: stage == .auction, skipped: false)
-                step(3, "Transfer window", done: false, active: stage == .window, skipped: false)
-
-                switch stage {
-                case .retention:
-                    NavigationLink { RetentionView() } label: {
-                        Text("Choose who to keep ▶︎").frame(maxWidth: .infinity)
+        let mega = c.offseason?.mega == true
+        // Device feedback: in landscape the big card pushed the page (and the top bar) off the
+        // screen. Compact there: steps on one line, the two actions side by side.
+        AppCard(padding: compact ? DS.Space.md : DS.Space.lg, tint: Palette.accent) {
+            VStack(alignment: .leading, spacing: compact ? DS.Space.sm : DS.Space.md) {
+                Text("\(String(c.year)) OFF-SEASON · \(mega ? "MEGA AUCTION" : "MINI AUCTION")")
+                    .font(.display(compact ? 13 : 15, weight: .heavy)).foregroundStyle(Palette.accent).lineLimit(1)
+                if compact {
+                    HStack(spacing: 12) {
+                        step(1, mega ? "Retentions" : "No retentions", done: stage != .retention, active: stage == .retention, skipped: !mega)
+                        step(2, "Auction", done: stage == .window, active: stage == .auction, skipped: false)
+                        step(3, "Transfer window", done: false, active: stage == .window, skipped: false)
+                        Spacer(minLength: 0)
                     }
-                    .buttonStyle(PrimaryButtonStyle())
-                case .auction:
-                    NavigationLink { CareerAuctionView() } label: {
-                        Text("Enter the auction room ▶︎").frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(PrimaryButtonStyle())
-                    Button("Skip: staff bid for me") { store.careerSimAuction(autoBid: true) }
-                        .buttonStyle(SecondaryButtonStyle())
-                case .window:
-                    Text("Sign free agents or trade in the Market tab, then start the season.")
-                        .font(.subheadline).foregroundStyle(Palette.muted)
-                    Button("Start the \(String(c.year)) season ▶︎") {
-                        let signed = store.careerStartSeason()
-                        onStarted(signed)
-                        Haptics.success()
-                    }
-                    .buttonStyle(PrimaryButtonStyle())
+                } else {
+                    step(1, "Retentions", done: stage != .retention, active: stage == .retention, skipped: !mega)
+                    step(2, "Auction", done: stage == .window, active: stage == .auction, skipped: false)
+                    step(3, "Transfer window", done: false, active: stage == .window, skipped: false)
                 }
+                actions(c, stage)
                 Text("Squad \(c.squad(c.userClubId).count)/\(c.tuning.maxSquad) · wages \(Money.format(c.payroll(c.userClubId))) of \(Money.format(c.tuning.salaryCap)) · bank \(Money.format(c.bank(c.userClubId)))")
-                    .font(.caption).foregroundStyle(Palette.muted)
+                    .font(.caption).foregroundStyle(Palette.muted).lineLimit(1).minimumScaleFactor(0.8)
             }
         }
     }
 
+    @ViewBuilder private func actions(_ c: Career, _ stage: OffseasonStage) -> some View {
+        switch stage {
+        case .retention:
+            NavigationLink { RetentionView() } label: { primaryLabel("Choose who to keep ▶︎") }
+                .buttonStyle(.plain)
+        case .auction:
+            let layout = compact ? AnyLayout(HStackLayout(spacing: DS.Space.sm)) : AnyLayout(VStackLayout(spacing: DS.Space.sm))
+            layout {
+                NavigationLink { CareerAuctionView() } label: { primaryLabel("Enter the auction room ▶︎") }
+                    .buttonStyle(.plain)
+                Button { store.careerSimAuction(autoBid: true) } label: { secondaryLabel("Skip: staff bid for me") }
+                    .buttonStyle(.plain)
+            }
+        case .window:
+            Text("Sign free agents or trade in the Market tab, then start the season.")
+                .font(compact ? .caption : .subheadline).foregroundStyle(Palette.muted).lineLimit(compact ? 1 : nil)
+            Button {
+                let signed = store.careerStartSeason()
+                onStarted(signed)
+                Haptics.success()
+            } label: { primaryLabel("Start the \(String(c.year)) season ▶︎") }
+                .buttonStyle(.plain)
+        }
+    }
+
+    private func primaryLabel(_ title: String) -> some View {
+        Text(title).font(.system(size: (compact ? 14 : 16) * TextScale.factor, weight: .bold)).foregroundStyle(Palette.ink)
+            .lineLimit(1).minimumScaleFactor(0.8)
+            .frame(maxWidth: .infinity).frame(height: compact ? 38 : 48)
+            .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Palette.accent))
+    }
+
+    private func secondaryLabel(_ title: String) -> some View {
+        Text(title).font(.system(size: (compact ? 14 : 16) * TextScale.factor, weight: .semibold)).foregroundStyle(Palette.accent)
+            .lineLimit(1).minimumScaleFactor(0.8)
+            .frame(maxWidth: .infinity).frame(height: compact ? 38 : 48)
+            .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Palette.surfaceHi))
+    }
+
     private func step(_ n: Int, _ title: String, done: Bool, active: Bool, skipped: Bool) -> some View {
-        HStack(spacing: 10) {
+        HStack(spacing: compact ? 6 : 10) {
             Text(skipped ? "–" : (done ? "✓" : "\(n)"))
-                .font(.display(15, weight: .heavy))
+                .font(.display(compact ? 12 : 15, weight: .heavy))
                 .foregroundStyle(active ? Palette.ink : Palette.muted)
-                .frame(width: 24, height: 24)
+                .frame(width: compact ? 20 : 24, height: compact ? 20 : 24)
                 .background(Circle().fill(active ? Palette.accent : Palette.surfaceHi))
-            Text(skipped ? "\(title) (mega-auction years only)" : title)
-                .font(.subheadline.weight(active ? .bold : .regular))
+            Text(skipped && !compact ? "\(title) (mega-auction years only)" : title)
+                .font(compact ? .caption.weight(active ? .bold : .regular) : .subheadline.weight(active ? .bold : .regular))
                 .foregroundStyle(active ? .white : Palette.muted)
+                .lineLimit(1)
         }
     }
 }

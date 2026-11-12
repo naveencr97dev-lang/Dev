@@ -454,7 +454,9 @@ struct CareerHomeTab: View {
     var body: some View {
         if let c = store.career {
             // Device feedback: in landscape every box has its place and only News scrolls.
-            AdaptiveColumns(leftScrolls: false, rightScrolls: false) {
+            // Off-season: the left column may scroll, so a long rollover note can never push the
+            // page (and the top bar) off the screen again (device feedback).
+            AdaptiveColumns(leftScrolls: c.phase == .offseason, rightScrolls: false) {
                 // The one thing to do now.
                 if c.phase == .seasonEnd {
                     SeasonEndCard(career: c) {
@@ -481,9 +483,10 @@ struct CareerHomeTab: View {
                 }
                 if let note {
                     Text(note).font(.display(12, weight: .regular)).foregroundStyle(Palette.muted)
+                        .lineLimit(compact ? 2 : nil)
                 }
                 if !compact, c.phase == .season { AssistantCard(career: c) }
-                SeasonSummary(career: c, path: $path, fill: compact)
+                SeasonSummary(career: c, path: $path, fill: compact && c.phase != .offseason)
             } right: {
                 if compact, c.phase == .season { AssistantCard(career: c) }
                 BoardObjectivesCard(career: c)
