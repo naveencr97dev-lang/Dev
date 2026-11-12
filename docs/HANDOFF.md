@@ -241,7 +241,9 @@ for each version in `CareerSave.migrations`.
   - **Tactics mid-match (owner's request):** the paused match's Tactics tab is the full Squad ›
     Tactics screen (`TacticsEditor`, shared): game plans (with the plan that suits this pitch),
     phases and batting roles. Apply sends it from the next ball; Apply and keep also saves it for
-    the next matches. Toss and captain stay as set before the match.
+    the next matches. Toss and captain stay as set before the match. The pause screen opens on
+    Tactics (the Overview tab is gone: its numbers and assistant are on the match screen), and the
+    Teams board has a Tactics button that changes tactics from the first ball.
   - **Super overs (owner's device test):** the three biggest hitters bat
     (`MatchEngine.superOverBatters`), and everyone swings: about 12.7 runs batting first and a six
     an over (was 8 runs with the openers). `testSuperOversAreSwungAt`.

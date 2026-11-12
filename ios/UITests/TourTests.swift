@@ -125,7 +125,7 @@ final class TourTests: XCTestCase {
         }
         if tap(app.buttons["pause"].firstMatch, "Pause") {
             sleep(1)
-            for t in ["Overview", "Ratings", "Around the league", "Scorecard", "Tactics", "Batting", "Bowling"] {
+            for t in ["Tactics", "Batting", "Bowling", "Ratings", "Around the league", "Scorecard"] {
                 if tap(app.buttons["centre.\(t)"].firstMatch, "Centre › \(t)", timeout: 2) {
                     shot("centre-\(t.lowercased().replacingOccurrences(of: " ", with: "-"))")
                 }

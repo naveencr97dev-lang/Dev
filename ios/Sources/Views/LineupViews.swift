@@ -100,6 +100,8 @@ struct TeamsBoard: View {
     var fill = false
     let onStart: () -> Void
     let onSkip: () -> Void
+    /// Your own career match: opens the tactics (they apply from the first ball).
+    var onTactics: (() -> Void)? = nil
     private let barHeight: CGFloat = 36
 
     var body: some View {
@@ -123,6 +125,17 @@ struct TeamsBoard: View {
                     .padding(.horizontal, 12)
                     .frame(maxWidth: .infinity, minHeight: barHeight, maxHeight: barHeight, alignment: .leading)
                     .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Palette.accent))
+                if let onTactics {
+                    Button(action: onTactics) {
+                        Label("Tactics", systemImage: "slider.horizontal.3").font(.system(size: 13 * TextScale.factor, weight: .semibold))
+                            .foregroundStyle(Palette.accent)
+                            .padding(.horizontal, 14)
+                            .frame(minHeight: barHeight, maxHeight: barHeight)
+                            .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Palette.surfaceHi))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("teams.tactics")
+                }
                 Button(action: onSkip) {
                     Text("Skip to result").font(.system(size: 13 * TextScale.factor, weight: .semibold)).foregroundStyle(Palette.accent)
                         .padding(.horizontal, 14)

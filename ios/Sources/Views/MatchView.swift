@@ -33,7 +33,7 @@ struct MatchView: View {
     @State private var changes: [LiveChange] = []
     @State private var pendingCommit = false
     @State private var showCentre = false
-    @State private var centreTab: MatchCentreView.Tab = .overview
+    @State private var centreTab: MatchCentreView.Tab = .tactics
     /// The bowler picked for the next over on the match screen, and the over it was picked in.
     @State private var nextPick: (name: String, innings: Int, over: Int)? = nil
     /// Before the first ball: the Teams board (both XIs, the toss) until Start.
@@ -48,7 +48,9 @@ struct MatchView: View {
                     let board = TeamsBoard(result: r, occasion: occasion(r), fill: vSize == .compact, onStart: {
                         withAnimation(.easeInOut) { prematch = false }
                         Haptics.tap()
-                    }, onSkip: { finish() })
+                    }, onSkip: { finish() },
+                    // Owner's request: set tactics on the Teams board, before the first ball.
+                    onTactics: pendingCommit && store.careerUserTeam(in: fixtureId) != nil ? { pauseForCentre(.tactics) } : nil)
                     if vSize == .compact {
                         // Landscape (device feedback): the two XIs fill the screen; no gap at the foot.
                         board
@@ -147,7 +149,7 @@ struct MatchView: View {
         if let r = store.careerCommit(fixtureId: fixtureId, changes: changes) { result = r }
     }
 
-    private func pauseForCentre(_ tab: MatchCentreView.Tab = .overview) {
+    private func pauseForCentre(_ tab: MatchCentreView.Tab = .tactics) {
         centreTab = tab
         paused = true
         showCentre = true

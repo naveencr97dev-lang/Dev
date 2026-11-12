@@ -18,17 +18,16 @@ struct MatchCentreView: View {
     var round: [MatchResult] = []
     var roundLater: [Fixture] = []
     /// The tab to open on (the match screen's Order and Plan buttons).
-    var initialTab: Tab = .overview
+    var initialTab: Tab = .tactics
     /// Applies a change; returns false if it couldn't be applied.
     let apply: (LiveChange) -> Bool
 
     enum Tab: String, CaseIterable, Identifiable {
-        case overview = "Overview", ratings = "Ratings", league = "Around the league", scorecard = "Scorecard"
+        case ratings = "Ratings", league = "Around the league", scorecard = "Scorecard"
         case tactics = "Tactics", batting = "Batting", bowling = "Bowling"
         var id: String { rawValue }
         var icon: String {
             switch self {
-            case .overview: return "gauge.with.dots.needle.50percent"
             case .ratings: return "star"
             case .league: return "trophy"
             case .scorecard: return "list.bullet.rectangle"
@@ -41,7 +40,7 @@ struct MatchCentreView: View {
     }
 
     @Environment(\.verticalSizeClass) private var vSize
-    @State private var tab: Tab = .overview
+    @State private var tab: Tab = .ratings
     /// The whole tactics set, edited on the Tactics tab (owner's request: the full screen mid-match).
     @State private var live = Tactics()
     @State private var order: [String] = []
@@ -56,10 +55,11 @@ struct MatchCentreView: View {
     private var bowlInnings: Int? { batInnings.map { 1 - $0 } }
 
     private var tabs: [Tab] {
-        var t: [Tab] = [.overview, .ratings]
+        // Owner's request: tactics first, so a change is one tap away (the numbers and the
+        // assistant are on the match screen itself; the Overview tab is gone).
+        var t: [Tab] = userTeam != nil ? [.tactics, .batting, .bowling, .ratings] : [.ratings]
         if !round.isEmpty || !roundLater.isEmpty { t.append(.league) }
         t.append(.scorecard)
-        if userTeam != nil { t += [.tactics, .batting, .bowling] }
         return t
     }
 
@@ -132,7 +132,6 @@ struct MatchCentreView: View {
                     .padding(.horizontal, DS.Space.md).padding(.top, DS.Space.sm)
             }
             switch tab {
-            case .overview: overviewTab
             case .ratings: ratingsTab
             case .league: leagueTab
             case .tactics: tacticsTab
@@ -141,111 +140,6 @@ struct MatchCentreView: View {
             case .scorecard: scorecardTab
             }
         }
-    }
-
-    // MARK: Overview: the numbers and the assistant
-
-    private var overviewTab: some View {
-        let n = LiveReport.numbers(cards: cards, log: log, upTo: shown)
-        let advice = userTeam.map {
-            LiveReport.advice(cards: cards, log: log, upTo: shown, userTeam: $0,
-                              intent: live.intent[phaseNow], field: live.field[phaseNow])
-        } ?? []
-        let team = n.flatMap { store.team($0.battingTeam) }
-        let wide = vSize == .compact
-        let layout = wide ? AnyLayout(HStackLayout(alignment: .top, spacing: DS.Space.md))
-                          : AnyLayout(VStackLayout(alignment: .leading, spacing: DS.Space.md))
-        return ScrollView {
-            layout {
-                VStack(alignment: .leading, spacing: DS.Space.sm) {
-                    if let n {
-                        HStack(alignment: .firstTextBaseline, spacing: 8) {
-                            if let team { TeamBadge(team: team, size: 26) }
-                            Text("\(n.runs)-\(n.wickets)").font(.score(26))
-                            Text("\(n.balls / 6).\(n.balls % 6) ov").font(.score(13)).foregroundStyle(Palette.muted)
-                            Spacer(minLength: 4)
-                            if let need = n.runsNeeded {
-                                Text(need > 0 ? "Need \(need) off \(n.ballsLeft)" : "Target reached")
-                                    .font(.system(size: 12 * TextScale.factor, weight: .bold)).foregroundStyle(Palette.accent)
-                            }
-                        }
-                        progressBar(n, team: team)
-                        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 3), spacing: 6) {
-                            tile(String(format: "%.2f", n.runRate), "Run rate")
-                            if let rrr = n.requiredRate {
-                                tile(String(format: "%.2f", rrr), "Required", color: rrr > n.runRate + 1.5 ? .orange : Palette.accent)
-                            } else {
-                                tile(n.projected.map { "\($0)" } ?? "–", "Projected")
-                            }
-                            tile("\(n.lastFive)", "Last 5 overs")
-                            tile("\(n.partnershipRuns) (\(n.partnershipBalls))", "Partnership")
-                            tile("\(n.fours) · \(n.sixes)", "4s · 6s")
-                            tile("\(n.dotPercent)%", "Dot balls", color: n.dotPercent >= 45 ? .orange : .white)
-                        }
-                    } else {
-                        Text("No balls bowled yet.").font(.system(size: 13 * TextScale.factor)).foregroundStyle(Palette.muted)
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .topLeading)
-                if userTeam != nil {
-                    PaneBox(title: "Assistant manager") {
-                        ForEach(Array(advice.enumerated()), id: \.offset) { i, line in
-                            if i > 0 { Hairline() }
-                            HStack(alignment: .top, spacing: 8) {
-                                Image(systemName: i == 0 ? "person.wave.2.fill" : "arrow.turn.down.right")
-                                    .font(.system(size: 13 * TextScale.factor, weight: .semibold))
-                                    .foregroundStyle(i == 0 ? Palette.accent : Palette.muted)
-                                    .frame(width: 18)
-                                Text(line).font(.system(size: 13 * TextScale.factor, weight: i == 0 ? .semibold : .regular))
-                                    .fixedSize(horizontal: false, vertical: true)
-                                Spacer(minLength: 0)
-                            }
-                        }
-                        HStack(spacing: 6) {
-                            ActionChip(icon: Tab.tactics.icon, title: "Tactics") { tab = .tactics }
-                            ActionChip(icon: Tab.batting.icon, title: "Batting") { tab = .batting }
-                            ActionChip(icon: Tab.bowling.icon, title: "Bowling") { tab = .bowling }
-                        }
-                    }
-                    .frame(maxWidth: .infinity, alignment: .topLeading)
-                }
-            }
-            .padding(.horizontal, DS.Space.md)
-            .padding(.vertical, DS.Space.sm)
-        }
-    }
-
-    /// Chase: runs against the target. First innings: balls bowled against the 20 overs.
-    private func progressBar(_ n: LiveReport.Numbers, team: Franchise?) -> some View {
-        let value = n.target.map { Double(n.runs) / Double(max(1, $0)) } ?? Double(n.balls) / Double(max(1, n.maxBalls))
-        let color = team.map { Color(hex: $0.colorHex) } ?? Palette.accent
-        return VStack(alignment: .leading, spacing: 3) {
-            GeometryReader { g in
-                ZStack(alignment: .leading) {
-                    Capsule().fill(Palette.surfaceHi)
-                    Capsule().fill(color).frame(width: max(4, g.size.width * min(1, value)))
-                }
-            }
-            .frame(height: 6)
-            HStack {
-                Text(n.target == nil ? "Overs" : "Runs").font(.system(size: 10 * TextScale.factor, weight: .heavy))
-                Spacer()
-                Text(n.target.map { "\(n.runs) / \($0)" } ?? "\(n.balls / 6).\(n.balls % 6) / \(n.maxBalls / 6)")
-                    .font(.score(11))
-            }
-            .foregroundStyle(Palette.muted)
-        }
-    }
-
-    private func tile(_ value: String, _ label: String, color: Color = .white) -> some View {
-        VStack(spacing: 2) {
-            Text(value).font(.score(17)).foregroundStyle(color).lineLimit(1).minimumScaleFactor(0.7)
-            Text(label.uppercased()).font(.system(size: 9 * TextScale.factor, weight: .heavy)).foregroundStyle(Palette.muted)
-                .lineLimit(1).minimumScaleFactor(0.8)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 8)
-        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Palette.surface))
     }
 
     // MARK: Ratings: both XIs side by side
@@ -569,7 +463,7 @@ struct MatchCentreView: View {
     private func load() {
         guard !loaded else { return }
         loaded = true
-        if tabs.contains(initialTab) { tab = initialTab }
+        tab = tabs.contains(initialTab) ? initialTab : tabs[0]
         live = tactics
         if let bi = batInnings {
             order = result.card(bi).batters.map(\.id)
