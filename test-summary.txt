@@ -1,0 +1,5 @@
+Test Case '-[AuctionXIUITests.TourTests testTour]' started.
+Test Case '-[AuctionXIUITests.TourTests testTour]' passed (751.730 seconds).
+	 Executed 1 test, with 0 failures (0 unexpected) in 751.730 (751.734) seconds
+	 Executed 1 test, with 0 failures (0 unexpected) in 751.730 (751.736) seconds
+	 Executed 1 test, with 0 failures (0 unexpected) in 751.730 (751.739) seconds

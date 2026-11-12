@@ -1,0 +1,10 @@
+[L] missing: Money
+[P] missing: Money
+[P] no back button; edge swipe
+[P] missing: Facilities
+[P] missing: Manager
+[P] missing: Store
+[P] missing: History
+[P] missing: News
+[P] missing: Settings
+[S] missing: Money
