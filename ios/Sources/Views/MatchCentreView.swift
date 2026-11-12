@@ -42,8 +42,8 @@ struct MatchCentreView: View {
 
     @Environment(\.verticalSizeClass) private var vSize
     @State private var tab: Tab = .overview
-    @State private var field: FieldSetting = .balanced
-    @State private var intent: BatIntent = .rotate
+    /// The whole tactics set, edited on the Tactics tab (owner's request: the full screen mid-match).
+    @State private var live = Tactics()
     @State private var order: [String] = []
     @State private var plan: [String] = []
     @State private var nextBowler = ""
@@ -148,7 +148,8 @@ struct MatchCentreView: View {
     private var overviewTab: some View {
         let n = LiveReport.numbers(cards: cards, log: log, upTo: shown)
         let advice = userTeam.map {
-            LiveReport.advice(cards: cards, log: log, upTo: shown, userTeam: $0, intent: intent, field: field)
+            LiveReport.advice(cards: cards, log: log, upTo: shown, userTeam: $0,
+                              intent: live.intent[phaseNow], field: live.field[phaseNow])
         } ?? []
         let team = n.flatMap { store.team($0.battingTeam) }
         let wide = vSize == .compact
@@ -377,42 +378,52 @@ struct MatchCentreView: View {
         }
     }
 
+    /// Powerplay, middle or death, from the ball shown.
+    private var phaseNow: Int {
+        guard let e = current else { return 0 }
+        let over = e.ballInOver >= 6 ? e.over + 1 : e.over
+        return over < 6 ? 0 : (over >= 16 ? 2 : 1)
+    }
+
+    /// The batting XI for roles: the user's side in this match, in batting order.
+    private var userXI: [Player] {
+        guard let bi = batInnings else { return [] }
+        return result.card(bi).batters.compactMap { store.player($0.id) }
+    }
+
     private var tacticsTab: some View {
-        ScrollView {
+        let wide = vSize == .compact
+        let layout = wide ? AnyLayout(HStackLayout(alignment: .top, spacing: DS.Space.md))
+                          : AnyLayout(VStackLayout(alignment: .leading, spacing: DS.Space.sm))
+        return ScrollView {
             VStack(alignment: .leading, spacing: DS.Space.sm) {
-                let boxes = vSize == .compact ? AnyLayout(HStackLayout(alignment: .top, spacing: DS.Space.md))
-                                              : AnyLayout(VStackLayout(alignment: .leading, spacing: DS.Space.sm))
-                boxes {
-                    PaneBox(title: "Field (when you bowl)", note: field.blurb) {
-                        Picker("Field", selection: $field) {
-                            ForEach([FieldSetting.defend, .balanced, .attack], id: \.self) { f in Text(f.label).tag(f) }
-                        }
-                        .pickerStyle(.segmented)
-                    }
-                    PaneBox(title: "Batting intent (when you bat)", note: intent.blurb) {
-                        Picker("Batting", selection: $intent) {
-                            ForEach(BatIntent.allCases, id: \.self) { b in Text(b.label).tag(b) }
-                        }
-                        .pickerStyle(.segmented)
-                    }
-                }
-                HStack {
-                    TableNote(text: "Applies to all three phases from the next ball. Toss, captain and roles stay.")
+                HStack(spacing: 6) {
+                    TableNote(text: "Changes apply from the next ball. Toss and captain stay as they are for this match.")
                     Spacer(minLength: 4)
-                    ActionChip(icon: "checkmark", title: "Apply from the next ball", primary: true) {
-                        var ch = change()
-                        // Keep the toss call, captain and batting roles; only the phase settings change.
-                        var t = tactics
-                        t.field = [field, field, field]
-                        t.intent = [intent, intent, intent]
-                        t.plan = nil
-                        ch.tactics = t
-                        send(ch, "Tactics changed: \(field.label) field, \(intent.label) batting.")
-                    }
+                    ActionChip(icon: "checkmark", title: "Apply", primary: true) { applyTactics(keep: false) }
+                    ActionChip(icon: "square.and.arrow.down", title: "Apply and keep") { applyTactics(keep: true) }
+                }
+                layout {
+                    TacticsEditor(t: $live, pitch: result.pitch, xi: userXI, part: .left, showToss: false)
+                    TacticsEditor(t: $live, pitch: result.pitch, xi: userXI, part: .right, showToss: false)
                 }
             }
             .padding(.horizontal, DS.Space.md)
+            .padding(.vertical, DS.Space.sm)
         }
+    }
+
+    /// Sends the whole set from the next ball; "keep" also saves it for the next matches.
+    private func applyTactics(keep: Bool) {
+        var t = live
+        // The toss and captain were settled before the first ball.
+        t.toss = tactics.toss
+        t.captain = tactics.captain
+        var ch = change()
+        ch.tactics = t
+        let name = t.matchingPlan?.label ?? "Custom tactics"
+        send(ch, keep ? "\(name) from the next ball, and saved for the next matches." : "\(name) from the next ball.")
+        if keep, store.inCareer { store.careerSetTactics(t) }
     }
 
     private var battingTab: some View {
@@ -559,8 +570,7 @@ struct MatchCentreView: View {
         guard !loaded else { return }
         loaded = true
         if tabs.contains(initialTab) { tab = initialTab }
-        field = tactics.field[1]
-        intent = tactics.intent[1]
+        live = tactics
         if let bi = batInnings {
             order = result.card(bi).batters.map(\.id)
             let xi = order

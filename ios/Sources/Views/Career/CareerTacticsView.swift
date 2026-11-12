@@ -9,16 +9,13 @@ struct TacticsView: View {
     @State private var loaded = false
 
     var body: some View {
+        let c = store.career
+        let xi = c?.userClub.xi.compactMap { store.player($0) } ?? []
+        let pitch = c?.nextUserFixture?.pitch
         PaneScreen(title: "Tactics") {
-            if let c = store.career {
-                plans(c)
-                tossAndCaptain(c)
-            }
+            TacticsEditor(t: $t, pitch: pitch, xi: xi, part: .left)
         } right: {
-            if let c = store.career {
-                phases
-                roles(c)
-            }
+            TacticsEditor(t: $t, pitch: pitch, xi: xi, part: .right)
         }
         .onAppear {
             if !loaded, let c = store.career {
@@ -30,14 +27,41 @@ struct TacticsView: View {
             if loaded { store.careerSetTactics(v) }
         }
     }
+}
+
+/// The tactics boxes, shared by Squad › Tactics and the paused match (owner's request: change the
+/// whole plan mid-match, e.g. after forgetting to set it for a turner). Left: game plan (and the
+/// toss and captain before a match). Right: the phases and batting roles.
+struct TacticsEditor: View {
+    enum Part { case left, right }
+    @Binding var t: Tactics
+    /// The pitch the plan is for (the next match, or the one being played): marks the suggested plan.
+    let pitch: Pitch?
+    /// The XI, batting order, for the captain and batting roles.
+    let xi: [Player]
+    let part: Part
+    /// Toss and captain: before a match only.
+    var showToss = true
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: DS.Space.sm) {
+            switch part {
+            case .left:
+                plans
+                if showToss { tossAndCaptain }
+            case .right:
+                phases
+                roles
+            }
+        }
+    }
 
     // MARK: Game plan
 
-    @ViewBuilder private func plans(_ c: Career) -> some View {
-        let pitch = c.nextUserFixture?.pitch
+    private var plans: some View {
         let suggested = pitch.map { GamePlan.suggested(for: $0) }
-        PaneBox(title: "Game plan",
-                note: t.matchingPlan == nil ? "Custom: your own phase settings." : "Sets batting and field for all three phases.") {
+        return PaneBox(title: "Game plan",
+                       note: t.matchingPlan == nil ? "Custom: your own phase settings." : "Sets batting and field for all three phases.") {
             ForEach(Array(GamePlan.allCases.enumerated()), id: \.element.id) { i, plan in
                 if i > 0 { Hairline() }
                 Button { t = plan.apply(to: t); Haptics.tap() } label: {
@@ -63,6 +87,7 @@ struct TacticsView: View {
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .accessibilityIdentifier("plan.\(plan.rawValue)")
             }
         }
     }
@@ -97,8 +122,7 @@ struct TacticsView: View {
 
     // MARK: Toss, captain, roles
 
-    @ViewBuilder private func tossAndCaptain(_ c: Career) -> some View {
-        let xi = c.userClub.xi.compactMap { c.players[$0] }
+    private var tossAndCaptain: some View {
         PaneBox(title: "Toss and captain", note: "Captain's call reads the pitch. The captain gets +1 batting and bowling while he plays.") {
             HStack(spacing: 8) {
                 Text("If you win the toss").font(.system(size: 13 * TextScale.factor)).foregroundStyle(Palette.muted).lineLimit(1)
@@ -114,14 +138,13 @@ struct TacticsView: View {
                 Spacer(minLength: 4)
                 MenuChip(title: xi.first { $0.id == t.captain }?.name ?? "None") {
                     Button("None") { t.captain = nil }
-                    ForEach(xi) { p in Button(p.name) { t.captain = p.id } }
+                    ForEach(xi, id: \.id) { p in Button(p.name) { t.captain = p.id } }
                 }
             }
         }
     }
 
-    @ViewBuilder private func roles(_ c: Career) -> some View {
-        let xi = c.userClub.xi.compactMap { c.players[$0] }
+    private var roles: some View {
         PaneBox(title: "Batting roles",
                 note: "\(BatRole.anchor.label): \(BatRole.anchor.blurb.lowercased()). \(BatRole.hitter.label): \(BatRole.hitter.blurb.lowercased()).") {
             ForEach(Array(xi.prefix(8).enumerated()), id: \.element.id) { i, p in

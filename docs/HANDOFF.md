@@ -238,6 +238,10 @@ for each version in `CareerSave.migrations`.
     ₹75 Cr cap at 99; age barely matters (0.92 from 33). Wages, retentions and auctions stay on
     `value`. Central revenue is ₹65 Cr, so a mid-table season clears about ₹15 Cr after wages and a
     title about ₹40-50 Cr: one star per good season (`testTransferFeesMatchTheOwnersTargets`).
+  - **Tactics mid-match (owner's request):** the paused match's Tactics tab is the full Squad ›
+    Tactics screen (`TacticsEditor`, shared): game plans (with the plan that suits this pitch),
+    phases and batting roles. Apply sends it from the next ball; Apply and keep also saves it for
+    the next matches. Toss and captain stay as set before the match.
   - **Super overs (owner's device test):** the three biggest hitters bat
     (`MatchEngine.superOverBatters`), and everyone swings: about 12.7 runs batting first and a six
     an over (was 8 runs with the openers). `testSuperOversAreSwungAt`.
