@@ -30,7 +30,7 @@ struct GoalsView: View {
     }
 
     private func goalRow(_ goal: Goal) -> some View {
-        let habits = store.habits(for: goal)
+        let habits = store.habitsForGoal( goal)
         let progress = store.goalProgress(goal)
         return HStack(spacing: 14) {
             ZStack {
@@ -67,7 +67,7 @@ struct GoalDetailView: View {
     @State private var showingEdit = false
 
     private var live: Goal { store.goals.first { $0.id == goal.id } ?? goal }
-    private var habits: [Habit] { store.habits(for: live) }
+    private var habits: [Habit] { store.habitsForGoal( live) }
     private var today: Date { Calendar.current.startOfDay(for: Date()) }
 
     var body: some View {

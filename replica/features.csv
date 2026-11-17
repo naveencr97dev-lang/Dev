@@ -51,3 +51,6 @@ Today grouped by goal (collapsible),ux,should,no,yes,reduce clutter with multipl
 Violet accent + rounded type,ux,should,no,yes,applied design direction
 Spring check-off + haptics,ux,should,no,yes,motion
 Confetti on all-done,ux,should,no,yes,success state
+In-app calendar with month grid,planner,should,no,yes,own idea
+Tasks with time/reminder/repeat,planner,should,no,yes,own idea
+Combined day agenda (habits+tasks+events),planner,should,no,yes,own idea

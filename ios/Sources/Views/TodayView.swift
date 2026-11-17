@@ -9,6 +9,7 @@ struct TodayView: View {
     @State private var timeFilter: TimeFilter = .all
     @State private var collapsedGroups: Set<String> = []
     @State private var showConfetti = false
+    @State private var showingReports = false
 
     private var stats: Stats { Stats(store: store) }
 
@@ -59,6 +60,9 @@ struct TodayView: View {
                 ToolbarItem(placement: .topBarLeading) {
                     Button { showingJournal = true } label: { Image(systemName: "face.smiling") }
                 }
+                ToolbarItem(placement: .topBarLeading) {
+                    Button { showingReports = true } label: { Image(systemName: "chart.bar.fill") }
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showingNew = true } label: { Image(systemName: "plus") }
                 }
@@ -68,6 +72,9 @@ struct TodayView: View {
             }
             .sheet(isPresented: $showingJournal) {
                 MoodView()
+            }
+            .sheet(isPresented: $showingReports) {
+                StatsView()
             }
             .overlay {
                 if showConfetti { ConfettiView() }
@@ -111,7 +118,7 @@ struct TodayView: View {
     private func groupSection(_ group: HabitGroup) -> some View {
         let done = group.habits.filter { store.isDone($0, on: selected) }.count
         // With goals present, collapse into disclosure groups to cut clutter.
-        if group.goal != nil || store.goals.contains(where: { !store.habits(for: $0).isEmpty }) {
+        if group.goal != nil || store.goals.contains(where: { !store.habitsForGoal( $0).isEmpty }) {
             Section {
                 DisclosureGroup(isExpanded: expansion(group.id)) {
                     ForEach(group.habits) { habit in

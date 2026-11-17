@@ -7,6 +7,8 @@ final class Store: ObservableObject {
     @Published var checkins: [Checkin] = []
     @Published var moods: [MoodEntry] = []
     @Published var goals: [Goal] = []
+    @Published var events: [CalEvent] = []
+    @Published var tasks: [TaskItem] = []
     @Published var feedback: [FeedbackNote] = []
     @Published var groceryItems: [GroceryItem] = []
     @Published var groceryChecks: [GroceryCheck] = []
@@ -29,6 +31,8 @@ final class Store: ObservableObject {
         var checkins: [Checkin]
         var moods: [MoodEntry]
         var goals: [Goal]?
+        var events: [CalEvent]?
+        var tasks: [TaskItem]?
         var feedback: [FeedbackNote]?
         var groceryItems: [GroceryItem]?
         var groceryChecks: [GroceryCheck]?
@@ -48,6 +52,8 @@ final class Store: ObservableObject {
         checkins = snap.checkins
         moods = snap.moods
         goals = snap.goals ?? []
+        events = snap.events ?? []
+        tasks = snap.tasks ?? []
         feedback = snap.feedback ?? []
         groceryItems = snap.groceryItems ?? []
         groceryChecks = snap.groceryChecks ?? []
@@ -57,7 +63,7 @@ final class Store: ObservableObject {
 
     func save() {
         let snap = Snapshot(habits: habits, checkins: checkins, moods: moods,
-                            goals: goals, feedback: feedback,
+                            goals: goals, events: events, tasks: tasks, feedback: feedback,
                             groceryItems: groceryItems, groceryChecks: groceryChecks,
                             appearance: appearance, textSize: textSize)
         if let data = try? JSONEncoder().encode(snap) {
@@ -199,13 +205,13 @@ final class Store: ObservableObject {
 
     var sortedGoals: [Goal] { goals.sorted { $0.sortIndex < $1.sortIndex } }
 
-    func habits(for goal: Goal) -> [Habit] {
+    func habitsForGoal(_ goal: Goal) -> [Habit] {
         activeHabits.filter { $0.goalId == goal.id }
     }
 
     /// Share of a goal's habits that are done in their current period (0...1).
     func goalProgress(_ goal: Goal) -> Double {
-        let hs = habits(for: goal)
+        let hs = habitsForGoal(goal)
         guard !hs.isEmpty else { return 0 }
         let done = hs.filter { isDone($0, on: Date()) }.count
         return Double(done) / Double(hs.count)
@@ -334,6 +340,63 @@ final class Store: ObservableObject {
         }
     }
 
+    // MARK: - Calendar & Tasks
+
+    func nextOccurrence(_ day: Date, _ rule: Frequency) -> Date {
+        switch rule {
+        case .daily: return calendar.date(byAdding: .day, value: 1, to: day)!
+        case .weekly: return calendar.date(byAdding: .day, value: 7, to: day)!
+        case .monthly: return calendar.date(byAdding: .month, value: 1, to: day)!
+        }
+    }
+
+    func eventsOn(_ date: Date) -> [CalEvent] {
+        events.filter { calendar.isDate($0.day, inSameDayAs: date) }
+            .sorted { ($0.startMinutes ?? 1_000_000) < ($1.startMinutes ?? 1_000_000) }
+    }
+
+    func tasksOn(_ date: Date) -> [TaskItem] {
+        tasks.filter { calendar.isDate($0.dueDay, inSameDayAs: date) }
+            .sorted { ($0.dueMinutes ?? 1_000_000) < ($1.dueMinutes ?? 1_000_000) }
+    }
+
+    var openTasks: [TaskItem] {
+        tasks.filter { !$0.done }.sorted {
+            if !calendar.isDate($0.dueDay, inSameDayAs: $1.dueDay) { return $0.dueDay < $1.dueDay }
+            return ($0.dueMinutes ?? 1_000_000) < ($1.dueMinutes ?? 1_000_000)
+        }
+    }
+
+    func hasPlannerItems(on date: Date) -> Bool {
+        events.contains { calendar.isDate($0.day, inSameDayAs: date) } ||
+        tasks.contains { !$0.done && calendar.isDate($0.dueDay, inSameDayAs: date) }
+    }
+
+    func addEvent(_ e: CalEvent) { events.append(e); save() }
+    func updateEvent(_ e: CalEvent) {
+        if let i = events.firstIndex(where: { $0.id == e.id }) { events[i] = e; save() }
+    }
+    func deleteEvent(_ e: CalEvent) { events.removeAll { $0.id == e.id }; save() }
+
+    func addTask(_ t: TaskItem) { tasks.append(t); save(); Reminders.sync(store: self) }
+    func updateTask(_ t: TaskItem) {
+        if let i = tasks.firstIndex(where: { $0.id == t.id }) { tasks[i] = t; save(); Reminders.sync(store: self) }
+    }
+    func deleteTask(_ t: TaskItem) { tasks.removeAll { $0.id == t.id }; save(); Reminders.sync(store: self) }
+
+    /// Complete a task. A repeating task rolls to its next occurrence instead
+    /// of being marked done, so it "comes back".
+    func toggleTask(_ t: TaskItem) {
+        guard let i = tasks.firstIndex(where: { $0.id == t.id }) else { return }
+        if let rule = tasks[i].repeatRule, !tasks[i].done {
+            tasks[i].dueDay = nextOccurrence(tasks[i].dueDay, rule)
+        } else {
+            tasks[i].done.toggle()
+        }
+        save()
+        Reminders.sync(store: self)
+    }
+
     // MARK: - Feedback (ideas & issues)
 
     var sortedFeedback: [FeedbackNote] {
@@ -371,7 +434,7 @@ final class Store: ObservableObject {
 
     func resetAll() {
         habits = []; checkins = []; moods = []
-        goals = []; feedback = []
+        goals = []; feedback = []; events = []; tasks = []
         groceryItems = []; groceryChecks = []
         save()
     }
