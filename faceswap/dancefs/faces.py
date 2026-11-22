@@ -14,9 +14,11 @@ class Face:
 
 
 class FaceAnalyzer:
-    def __init__(self, providers=None, det_size=(640, 640)):
+    def __init__(self, providers=None, det_size=(640, 640), root=None):
+        import os
         from insightface.app import FaceAnalysis  # lazy: heavy import
-        self.app = FaceAnalysis(name="buffalo_l", providers=providers or
+        root = root or os.environ.get("INSIGHTFACE_ROOT", "~/.insightface")
+        self.app = FaceAnalysis(name="buffalo_l", root=root, providers=providers or
                                 ["CUDAExecutionProvider", "CPUExecutionProvider"])
         self.app.prepare(ctx_id=0, det_size=det_size)
 

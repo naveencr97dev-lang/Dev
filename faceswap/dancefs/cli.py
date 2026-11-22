@@ -1,17 +1,18 @@
 """dancefs CLI.
 
-  python -m dancefs.cli --video dance.mp4 --ref me1.jpg me2.jpg me3.jpg \
-      --out out.mp4 --consent --consent-note "self"
+  # diffusion only
+  python -m dancefs.cli --video dance.mp4 --ref me1.jpg me2.jpg --out out.mp4 --consent --consent-note self
+  # your existing inswapper model + diffusion refine (recommended)
+  python -m dancefs.cli ... --backend hybrid --swap-model /workspace/models/inswapper_128.onnx
 """
 from __future__ import annotations
 
 import argparse
 import json
 
-import cv2
-
 from .config import SwapConfig
-from .provenance import require_consent, write_sidecar
+from .backends import BACKENDS
+from .job import run_job
 
 
 def main(argv=None):
@@ -21,7 +22,10 @@ def main(argv=None):
     p.add_argument("--out", required=True)
     p.add_argument("--consent", action="store_true", help="I confirm the reference person consented")
     p.add_argument("--consent-note", help="Who consented and how")
-    p.add_argument("--model", default=None, help="Override base inpainting model")
+    p.add_argument("--backend", choices=BACKENDS, default="diffusion")
+    p.add_argument("--swap-model", help="Path to an inswapper-compatible .onnx (inswapper/hybrid)")
+    p.add_argument("--refine-strength", type=float, default=0.3, help="Hybrid: diffusion strength over the swap")
+    p.add_argument("--model", default=None, help="Override base inpainting model (HF id or local path)")
     p.add_argument("--sd15", action="store_true", help="Use SD1.5 (lower VRAM, 512px)")
     p.add_argument("--strength", type=float)
     p.add_argument("--id-scale", type=float)
@@ -29,11 +33,13 @@ def main(argv=None):
     p.add_argument("--seed", type=int)
     p.add_argument("--target", type=int, default=-1, help="Face index left->right in first frame; -1=largest")
     p.add_argument("--max-frames", type=int)
-    p.add_argument("--dry-run", action="store_true", help="No diffusion: test tracking/masks/blending on CPU")
+    p.add_argument("--dry-run", action="store_true", help="No generation: test tracking/masks/blending on CPU")
     a = p.parse_args(argv)
+    print(json.dumps(run_job(a.video, a.ref, a.out, a.consent, a.consent_note, config_from_args(a),
+                             a.backend, a.swap_model, a.refine_strength, a.dry_run, a.max_frames), indent=2))
 
-    require_consent(a.consent, a.consent_note)
 
+def config_from_args(a) -> SwapConfig:
     cfg = SwapConfig(target_face_index=a.target)
     if a.sd15:
         cfg.base_model = "stable-diffusion-v1-5/stable-diffusion-inpainting"
@@ -43,19 +49,7 @@ def main(argv=None):
                  "steps": a.steps, "seed": a.seed}.items():
         if v is not None:
             setattr(cfg, k, v)
-
-    from .faces import FaceAnalyzer, reference_identity
-    from .diffusion import SDXLFaceIDGenerator, PassthroughGenerator
-    from .pipeline import FrameSwapper, swap_video
-
-    analyzer = FaceAnalyzer()
-    identity = reference_identity(analyzer, [cv2.imread(r) for r in a.ref])
-    gen = PassthroughGenerator() if a.dry_run else SDXLFaceIDGenerator(cfg)
-
-    stats = swap_video(a.video, a.out, lambda fps: FrameSwapper(cfg, analyzer, gen, identity, fps),
-                       cfg, max_frames=a.max_frames)
-    sidecar = write_sidecar(a.out, a.video, a.ref, a.consent_note, cfg)
-    print(json.dumps({"output": a.out, "provenance": str(sidecar), **stats}, indent=2))
+    return cfg
 
 
 if __name__ == "__main__":
