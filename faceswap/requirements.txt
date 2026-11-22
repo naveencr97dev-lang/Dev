@@ -1,0 +1,12 @@
+# Core (CPU-safe)
+numpy>=1.26
+opencv-python-headless>=4.9
+# Face analysis (detection, 106-pt landmarks, ArcFace identity embeddings)
+insightface>=0.7.3
+onnxruntime-gpu>=1.17   # or onnxruntime on CPU
+# Diffusion (GPU strongly recommended: >=12 GB VRAM for SDXL)
+torch>=2.2
+diffusers>=0.30
+transformers>=4.40
+accelerate>=0.30
+safetensors>=0.4
