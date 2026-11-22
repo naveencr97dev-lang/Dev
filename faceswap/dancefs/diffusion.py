@@ -37,6 +37,9 @@ class SDXLFaceIDGenerator(FaceGenerator):
         # FaceID adapters take precomputed ArcFace embeddings, so no CLIP image encoder is needed.
         self.pipe.load_ip_adapter(cfg.ip_adapter_repo, subfolder=None,
                                   weight_name=cfg.ip_adapter_weight, image_encoder_folder=None)
+        self.prompt = cfg.prompt
+        if cfg.identity_lora:
+            self.prompt = load_identity_lora(self.pipe, cfg.identity_lora, cfg.identity_lora_scale, cfg.prompt)
         self.pipe.to(cfg.device)
         try:
             self.pipe.enable_xformers_memory_efficient_attention()
@@ -56,13 +59,27 @@ class SDXLFaceIDGenerator(FaceGenerator):
         img = Image.fromarray(cv2.cvtColor(init_bgr, cv2.COLOR_BGR2RGB))
         msk = Image.fromarray((np.clip(mask, 0, 1) * 255).astype(np.uint8))
         out = self.pipe(
-            prompt=self.cfg.prompt, negative_prompt=self.cfg.negative_prompt,
+            prompt=self.prompt, negative_prompt=self.cfg.negative_prompt,
             image=img, mask_image=msk, width=size, height=size,
             strength=strength, num_inference_steps=self.cfg.steps,
             guidance_scale=self.cfg.guidance_scale, generator=g,
             ip_adapter_image_embeds=[self._id_embeds(identity)],
         ).images[0]
         return cv2.cvtColor(np.array(out.resize((size, size))), cv2.COLOR_RGB2BGR)
+
+
+def load_identity_lora(pipe, lora_dir: str, scale: float, base_prompt: str) -> str:
+    """Load a dancefs identity LoRA into any SDXL pipeline; returns the prompt with its trigger word."""
+    import json
+    from pathlib import Path
+    pipe.load_lora_weights(lora_dir, weight_name="pytorch_lora_weights.safetensors", adapter_name="identity")
+    pipe.set_adapters(["identity"], adapter_weights=[scale])
+    meta = Path(lora_dir) / "dancefs_lora.json"
+    if meta.exists():
+        trigger = json.loads(meta.read_text()).get("trigger")
+        if trigger:
+            return f"photo of {trigger} person's face, {base_prompt}"
+    return base_prompt
 
 
 class PassthroughGenerator(FaceGenerator):

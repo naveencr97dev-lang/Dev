@@ -101,3 +101,37 @@ python -m dancefs.cli --video dance.mp4 --ref me*.jpg --out out.mp4 \
 
 Warm workers keep models in memory between jobs. The handler only loads model files from inside
 `MODELS_DIR`, only downloads `http(s)` URLs, and rejects jobs without consent.
+
+## Personal identity LoRA (a new model that makes SDXL look like the person)
+
+IP-Adapter FaceID alone gives a "looks related" likeness. `dancefs.train_identity` trains a small
+**SDXL LoRA** (about 25–50 MB) on 10–30 photos of the consenting person, so the diffusion model learns
+that exact face. Then pass it to the swap with `--identity-lora`.
+
+What makes it suited to face swapping:
+* trains on the **same aligned face crops** the swap pipeline uses (same framing at train and swap time)
+* **inpainting-aware**: with the SDXL-inpaint UNet (9 channels) it trains on real inpaint inputs
+  (noisy latents + face mask + masked image), using face-shaped masks
+* loss is **weighted toward the face** so the LoRA spends its capacity on identity
+* lighting and pose augmentations to handle stage lights and off-centre dancers
+
+```bash
+# 1. train (~15–25 min on a 24 GB GPU, 1200 steps)
+python -m dancefs.train_identity --refs photos/me/*.jpg --out models/loras/me \
+    --consent --consent-note "self"
+# 2. swap with it (works with the diffusion and hybrid backends)
+python -m dancefs.cli --video dance.mp4 --ref photos/me/*.jpg --out out.mp4 \
+    --backend hybrid --swap-model models/inswapper_128.onnx --identity-lora models/loras/me \
+    --consent --consent-note "self"
+```
+
+Photo tips: varied angles (front, 3/4, profile), expressions and lighting. Sharp, one person per
+photo, no sunglasses. More variety beats more photos. If results look "baked" or ignore the
+dancer's expression, lower `--lora-scale` (0.6–0.8) or train fewer steps.
+
+**On RunPod Serverless** (needs a Network Volume attached to the endpoint):
+```json
+{"input": {"task": "train_identity", "lora_name": "me", "ref_urls": ["https://..."],
+           "consent": true, "consent_note": "self", "options": {"steps": 1200}}}
+```
+This saves to `$MODELS_DIR/loras/me`. Then add `"identity_lora": "me"` to swap jobs.

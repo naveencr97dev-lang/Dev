@@ -25,6 +25,8 @@ def main(argv=None):
     p.add_argument("--backend", choices=BACKENDS, default="diffusion")
     p.add_argument("--swap-model", help="Path to an inswapper-compatible .onnx (inswapper/hybrid)")
     p.add_argument("--refine-strength", type=float, default=0.3, help="Hybrid: diffusion strength over the swap")
+    p.add_argument("--identity-lora", help="Dir of a LoRA from `python -m dancefs.train_identity`")
+    p.add_argument("--lora-scale", type=float)
     p.add_argument("--model", default=None, help="Override base inpainting model (HF id or local path)")
     p.add_argument("--sd15", action="store_true", help="Use SD1.5 (lower VRAM, 512px)")
     p.add_argument("--strength", type=float)
@@ -46,7 +48,8 @@ def config_from_args(a) -> SwapConfig:
         cfg.ip_adapter_weight = "ip-adapter-faceid_sd15.bin"
         cfg.crop_size = 512
     for k, v in {"base_model": a.model, "strength": a.strength, "ip_adapter_scale": a.id_scale,
-                 "steps": a.steps, "seed": a.seed}.items():
+                 "steps": a.steps, "seed": a.seed,
+                 "identity_lora": a.identity_lora, "identity_lora_scale": a.lora_scale}.items():
         if v is not None:
             setattr(cfg, k, v)
     return cfg

@@ -50,6 +50,16 @@ def resolve_model(name: str | None) -> str | None:
     return str(p)
 
 
+def resolve_dir(name: str | None, sub: str = "loras") -> str | None:
+    if not name:
+        return None
+    base = (MODELS_DIR / sub).resolve()
+    p = (base / name).resolve()
+    if base not in p.parents or not p.is_dir():
+        raise InputError(f"{sub[:-1]} {name!r} not found under {base}")
+    return str(p)
+
+
 def download(url: str, dest: Path) -> str:
     if not url.startswith(("https://", "http://")):
         raise InputError(f"only http(s) URLs are accepted: {url!r}")
@@ -81,10 +91,13 @@ def handler(job: dict, runner=None) -> dict:
     try:
         if not inp.get("consent") or not inp.get("consent_note"):
             raise ConsentError("consent=true and consent_note are required")
+        opts = inp.get("options") or {}
+        if inp.get("task") == "train_identity":
+            return train_identity(inp, opts)
         if not inp.get("video_url") or not inp.get("ref_urls"):
             raise InputError("video_url and ref_urls are required")
-        opts = inp.get("options") or {}
         cfg = build_config(opts)
+        cfg.identity_lora = resolve_dir(inp.get("identity_lora"))
         swap_model = resolve_model(inp.get("swap_model"))
         backend = inp.get("backend", "hybrid" if swap_model else "diffusion")
 
@@ -110,6 +123,38 @@ def handler(job: dict, runner=None) -> dict:
             return result
     except (ConsentError, InputError) as e:
         return {"error": str(e)}
+
+
+LORA_NAME_OK = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_")
+
+
+def train_identity(inp: dict, opts: dict, trainer=None) -> dict:
+    """Train an identity LoRA from ref_urls and store it at $MODELS_DIR/loras/<lora_name>."""
+    name = inp.get("lora_name", "")
+    if not name or not set(name) <= LORA_NAME_OK or len(name) > 64:
+        raise InputError("lora_name is required (letters, digits, - and _ only)")
+    if not inp.get("ref_urls"):
+        raise InputError("ref_urls are required")
+    from dancefs.train_identity import TrainConfig
+    cfg = TrainConfig()
+    for k in ("steps", "rank", "lr", "resolution", "trigger", "base_model"):
+        if k in opts:
+            setattr(cfg, k, opts[k])
+    import cv2
+    if trainer is None:
+        from dancefs.train_identity import train as trainer
+    analyzer = None
+    if not opts.get("no_detector"):
+        from dancefs.faces import FaceAnalyzer
+        analyzer = FaceAnalyzer()
+    out = MODELS_DIR / "loras" / name
+    with tempfile.TemporaryDirectory() as td:
+        refs = [download(u, Path(td) / f"ref{i}.jpg") for i, u in enumerate(inp["ref_urls"][:40])]
+        res = trainer([cv2.imread(r) for r in refs], str(out), cfg, analyzer,
+                      consent_note=inp["consent_note"], ref_paths=refs, log_every=50)
+    res.pop("loss_history", None)
+    res["identity_lora"] = name
+    return res
 
 
 if __name__ == "__main__":

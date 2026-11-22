@@ -23,7 +23,8 @@ def run_job(video: str, refs: list[str], out: str, consent: bool, consent_note: 
     if "analyzer" not in _CACHE:
         _CACHE["analyzer"] = FaceAnalyzer()
     analyzer = _CACHE["analyzer"]
-    key = (backend, swap_model, cfg.base_model, cfg.ip_adapter_weight, refine_strength, dry_run)
+    key = (backend, swap_model, cfg.base_model, cfg.ip_adapter_weight, cfg.identity_lora,
+           cfg.identity_lora_scale, refine_strength, dry_run)
     if _CACHE.get("gen_key") != key:
         _CACHE.pop("gen", None)  # free VRAM before loading another model
         _CACHE["gen"] = build_generator(backend, cfg, analyzer, swap_model, refine_strength, dry_run)

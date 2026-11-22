@@ -91,3 +91,33 @@ def test_handler_happy_path(server, models):
 def test_handler_rejects_bad_input(inp, msg, models):
     res = rp.handler({"input": inp}, runner=fake_runner([]))
     assert msg in res["error"]
+
+
+def test_handler_train_identity(server, models):
+    seen = {}
+    def fake_trainer(images, out_dir, cfg, analyzer, consent_note, ref_paths, log_every):
+        seen.update(n=len(images), out=out_dir, steps=cfg.steps, note=consent_note)
+        return {"out_dir": out_dir, "loss_history": [0.1], "trigger": cfg.trigger}
+    inp = {"task": "train_identity", "lora_name": "me", "ref_urls": [f"{server}/r.jpg"] * 3,
+           "consent": True, "consent_note": "self"}
+    res = rp.train_identity(inp, {"steps": 10, "no_detector": True}, trainer=fake_trainer)
+    assert seen == {"n": 3, "out": str(models / "loras" / "me"), "steps": 10, "note": "self"}
+    assert res["identity_lora"] == "me" and "loss_history" not in res
+
+
+@pytest.mark.parametrize("name", ["", "../evil", "a/b", "x" * 65])
+def test_handler_train_rejects_bad_names(name, models):
+    res = rp.handler({"input": {"task": "train_identity", "lora_name": name, "ref_urls": ["http://x"],
+                                "consent": True, "consent_note": "self"}})
+    assert "lora_name" in res["error"]
+
+
+def test_handler_train_requires_consent(models):
+    res = rp.handler({"input": {"task": "train_identity", "lora_name": "me", "ref_urls": ["http://x"]}})
+    assert "consent" in res["error"]
+
+
+def test_swap_rejects_missing_lora(models):
+    res = rp.handler({"input": {"video_url": "http://x", "ref_urls": ["http://x"], "consent": True,
+                                "consent_note": "self", "identity_lora": "nope"}})
+    assert "not found" in res["error"]

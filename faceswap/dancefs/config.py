@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 
 
@@ -8,6 +10,8 @@ class SwapConfig:
     ip_adapter_repo: str = "h94/IP-Adapter-FaceID"
     ip_adapter_weight: str = "ip-adapter-faceid_sdxl.bin"
     ip_adapter_scale: float = 0.8          # identity strength
+    identity_lora: str | None = None       # dir from dancefs.train_identity (personal identity LoRA)
+    identity_lora_scale: float = 0.9
     prompt: str = "photo of a person's face, natural skin texture, sharp focus, high detail"
     negative_prompt: str = "blurry, deformed, extra eyes, cartoon, lowres, watermark, text"
     steps: int = 25
