@@ -17,7 +17,7 @@ swiftc -parse-as-library -emit-module -module-name AVFoundation -emit-module-pat
 swiftc -parse-as-library -emit-module -module-name Charts -emit-module-path "$OUT/Charts.swiftmodule" \
   -I "$OUT" tools/typecheck/Charts.swift
 
-S=ios/Sources
+S=${TYPECHECK_SRC:-ios/Sources}  # TYPECHECK_SRC=scorebook/Sources for Score Book
 # Every app source file: the whole app must type-check.
 FILES=( $(find "$S" -name '*.swift' | sort) )
 swiftc -typecheck -parse-as-library -swift-version 5 -I "$OUT" "${FILES[@]}"

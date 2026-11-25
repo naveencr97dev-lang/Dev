@@ -1,0 +1,11 @@
+{
+  "": {
+    "swift-dependencies": "/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/CoreTests.build/master.swiftdeps"
+  },
+  "/home/user/Dev/scorebook/Tests/CoreTests/GuideTests.swift": {
+    "dependencies": "/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/CoreTests.build/GuideTests.d",
+    "object": "/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/CoreTests.build/GuideTests.swift.o",
+    "swiftmodule": "/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/CoreTests.build/GuideTests~partial.swiftmodule",
+    "swift-dependencies": "/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/CoreTests.build/GuideTests.swiftdeps"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "": {
+    "swift-dependencies": "/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookPackageTests.build/master.swiftdeps"
+  },
+  "/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookPackageTests.derived/runner.swift": {
+    "dependencies": "/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookPackageTests.build/runner.d",
+    "object": "/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookPackageTests.build/runner.swift.o",
+    "swiftmodule": "/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookPackageTests.build/runner~partial.swiftmodule",
+    "swift-dependencies": "/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookPackageTests.build/runner.swiftdeps"
+  }
+}

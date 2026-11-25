@@ -662,3 +662,16 @@ extension View {
 /// CoreTransferable (re-exported by SwiftUI on device).
 public protocol Transferable {}
 extension String: Transferable {}
+
+// Score Book
+public struct TabView<C: View>: View {
+    public init(@ViewBuilder content: () -> C) {}
+    public var body: Never { fatalError() }
+}
+extension View {
+    public func tabItem<V: View>(@ViewBuilder _ label: () -> V) -> _Mod { _Mod() }
+}
+public struct TintShapeStyle: ShapeStyle { public init() {} }
+extension ShapeStyle where Self == TintShapeStyle {
+    public static var tint: TintShapeStyle { TintShapeStyle() }
+}

@@ -46,3 +46,45 @@ workflows:
           ls -lh AuctionXI-unsigned.ipa
     artifacts:
       - build/AuctionXI-unsigned.ipa
+
+  # Score Book (GTA 6 money + robbery guide). Start a build -> branch claude/stoic-thompson-m3qf11
+  # -> workflow "Score Book unsigned IPA", then sign ScoreBook-unsigned.ipa with Signulous.
+  scorebook-unsigned:
+    name: Score Book unsigned IPA
+    max_build_duration: 30
+    environment:
+      xcode: latest
+    scripts:
+      - name: Install XcodeGen
+        script: brew install xcodegen
+
+      - name: Generate Xcode project
+        script: |
+          cd "$CM_BUILD_DIR/scorebook"
+          xcodegen generate
+
+      - name: Build unsigned archive
+        script: |
+          cd "$CM_BUILD_DIR/scorebook"
+          xcodebuild \
+            -project ScoreBook.xcodeproj \
+            -scheme ScoreBook \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$CM_BUILD_DIR/build/ScoreBook.xcarchive" \
+            archive \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Package unsigned IPA
+        script: |
+          cd "$CM_BUILD_DIR/build"
+          APP_PATH="ScoreBook.xcarchive/Products/Applications/ScoreBook.app"
+          test -d "$APP_PATH"
+          mkdir -p Payload
+          cp -R "$APP_PATH" Payload/
+          zip -qry ScoreBook-unsigned.ipa Payload
+          ls -lh ScoreBook-unsigned.ipa
+    artifacts:
+      - build/ScoreBook-unsigned.ipa

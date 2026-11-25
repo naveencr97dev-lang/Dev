@@ -1,0 +1,164 @@
+client:
+  name: basic
+  file-system: device-agnostic
+tools: {}
+targets:
+  "CoreTests-x86_64-unknown-linux-gnu-debug.module": ["<CoreTests-x86_64-unknown-linux-gnu-debug.module>"]
+  "PackageStructure": ["<PackageStructure>"]
+  "ScoreBookCore-x86_64-unknown-linux-gnu-debug.module": ["<ScoreBookCore-x86_64-unknown-linux-gnu-debug.module>"]
+  "ScoreBookPackageDiscoveredTests-x86_64-unknown-linux-gnu-debug.module": ["<ScoreBookPackageDiscoveredTests-x86_64-unknown-linux-gnu-debug.module>"]
+  "ScoreBookPackageTests-x86_64-unknown-linux-gnu-debug.module": ["<ScoreBookPackageTests-x86_64-unknown-linux-gnu-debug.module>"]
+  "ScoreBookPackageTests-x86_64-unknown-linux-gnu-debug.test": ["<ScoreBookPackageTests-x86_64-unknown-linux-gnu-debug.test>"]
+  "main": ["<ScoreBookCore-x86_64-unknown-linux-gnu-debug.module>"]
+  "test": ["<CoreTests-x86_64-unknown-linux-gnu-debug.module>","<ScoreBookCore-x86_64-unknown-linux-gnu-debug.module>","<ScoreBookPackageTests-x86_64-unknown-linux-gnu-debug.test>"]
+default: "main"
+nodes:
+  "/home/user/Dev/scorebook/Sources/Core/":
+    is-directory-structure: true
+    content-exclusion-patterns: [".git",".build"]
+  "/home/user/Dev/scorebook/Tests/CoreTests/":
+    is-directory-structure: true
+    content-exclusion-patterns: [".git",".build"]
+commands:
+  "/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/CoreTests.build/CoreTests.swiftmodule.o":
+    tool: shell
+    inputs: ["/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/Modules/CoreTests.swiftmodule"]
+    outputs: ["/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/CoreTests.build/CoreTests.swiftmodule.o"]
+    description: "Wrapping AST for CoreTests for debugging"
+    args: ["/opt/swift/usr/bin/swiftc","-modulewrap","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/Modules/CoreTests.swiftmodule","-o","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/CoreTests.build/CoreTests.swiftmodule.o","-target","x86_64-unknown-linux-gnu"]
+
+  "/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/CoreTests.build/sources":
+    tool: write-auxiliary-file
+    inputs: ["<sources-file-list>","/home/user/Dev/scorebook/Tests/CoreTests/GuideTests.swift"]
+    outputs: ["/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/CoreTests.build/sources"]
+    description: "Write auxiliary file /home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/CoreTests.build/sources"
+
+  "/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookCore.build/ScoreBookCore.swiftmodule.o":
+    tool: shell
+    inputs: ["/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/Modules/ScoreBookCore.swiftmodule"]
+    outputs: ["/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookCore.build/ScoreBookCore.swiftmodule.o"]
+    description: "Wrapping AST for ScoreBookCore for debugging"
+    args: ["/opt/swift/usr/bin/swiftc","-modulewrap","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/Modules/ScoreBookCore.swiftmodule","-o","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookCore.build/ScoreBookCore.swiftmodule.o","-target","x86_64-unknown-linux-gnu"]
+
+  "/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookCore.build/sources":
+    tool: write-auxiliary-file
+    inputs: ["<sources-file-list>","/home/user/Dev/scorebook/Sources/Core/Guide.swift"]
+    outputs: ["/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookCore.build/sources"]
+    description: "Write auxiliary file /home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookCore.build/sources"
+
+  "/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookPackageDiscoveredTests.build/ScoreBookPackageDiscoveredTests.swiftmodule.o":
+    tool: shell
+    inputs: ["/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/Modules/ScoreBookPackageDiscoveredTests.swiftmodule"]
+    outputs: ["/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookPackageDiscoveredTests.build/ScoreBookPackageDiscoveredTests.swiftmodule.o"]
+    description: "Wrapping AST for ScoreBookPackageDiscoveredTests for debugging"
+    args: ["/opt/swift/usr/bin/swiftc","-modulewrap","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/Modules/ScoreBookPackageDiscoveredTests.swiftmodule","-o","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookPackageDiscoveredTests.build/ScoreBookPackageDiscoveredTests.swiftmodule.o","-target","x86_64-unknown-linux-gnu"]
+
+  "/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookPackageDiscoveredTests.build/sources":
+    tool: write-auxiliary-file
+    inputs: ["<sources-file-list>","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookPackageDiscoveredTests.derived/CoreTests.swift","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookPackageDiscoveredTests.derived/all-discovered-tests.swift"]
+    outputs: ["/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookPackageDiscoveredTests.build/sources"]
+    description: "Write auxiliary file /home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookPackageDiscoveredTests.build/sources"
+
+  "/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookPackageDiscoveredTests.derived/all-discovered-tests.swift":
+    tool: test-discovery-tool
+    inputs: ["/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/CoreTests.build/GuideTests.swift.o"]
+    outputs: ["/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookPackageDiscoveredTests.derived/CoreTests.swift","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookPackageDiscoveredTests.derived/all-discovered-tests.swift"]
+
+  "/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookPackageTests.build/ScoreBookPackageTests.swiftmodule.o":
+    tool: shell
+    inputs: ["/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/Modules/ScoreBookPackageTests.swiftmodule"]
+    outputs: ["/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookPackageTests.build/ScoreBookPackageTests.swiftmodule.o"]
+    description: "Wrapping AST for ScoreBookPackageTests for debugging"
+    args: ["/opt/swift/usr/bin/swiftc","-modulewrap","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/Modules/ScoreBookPackageTests.swiftmodule","-o","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookPackageTests.build/ScoreBookPackageTests.swiftmodule.o","-target","x86_64-unknown-linux-gnu"]
+
+  "/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookPackageTests.build/sources":
+    tool: write-auxiliary-file
+    inputs: ["<sources-file-list>","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookPackageTests.derived/runner.swift"]
+    outputs: ["/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookPackageTests.build/sources"]
+    description: "Write auxiliary file /home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookPackageTests.build/sources"
+
+  "/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookPackageTests.derived/runner.swift":
+    tool: test-entry-point-tool
+    inputs: ["/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/Modules/ScoreBookPackageDiscoveredTests.swiftmodule"]
+    outputs: ["/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookPackageTests.derived/runner.swift"]
+
+  "/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookPackageTests.product/Objects.LinkFileList":
+    tool: write-auxiliary-file
+    inputs: ["<link-file-list>","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/CoreTests.build/CoreTests.swiftmodule.o","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/CoreTests.build/GuideTests.swift.o","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookCore.build/Guide.swift.o","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookCore.build/ScoreBookCore.swiftmodule.o","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookPackageDiscoveredTests.build/CoreTests.swift.o","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookPackageDiscoveredTests.build/ScoreBookPackageDiscoveredTests.swiftmodule.o","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookPackageDiscoveredTests.build/all-discovered-tests.swift.o","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookPackageTests.build/ScoreBookPackageTests.swiftmodule.o","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookPackageTests.build/runner.swift.o"]
+    outputs: ["/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookPackageTests.product/Objects.LinkFileList"]
+    description: "Write auxiliary file /home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookPackageTests.product/Objects.LinkFileList"
+
+  "/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/swift-version-6A52383ED409C6A7.txt":
+    tool: write-auxiliary-file
+    inputs: ["<swift-get-version>","/opt/swift/usr/bin/swiftc"]
+    outputs: ["/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/swift-version-6A52383ED409C6A7.txt"]
+    always-out-of-date: "true"
+    description: "Write auxiliary file /home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/swift-version-6A52383ED409C6A7.txt"
+
+  "<CoreTests-x86_64-unknown-linux-gnu-debug.module>":
+    tool: phony
+    inputs: ["/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/CoreTests.build/GuideTests.swift.o","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/Modules/CoreTests.swiftmodule"]
+    outputs: ["<CoreTests-x86_64-unknown-linux-gnu-debug.module>"]
+
+  "<ScoreBookCore-x86_64-unknown-linux-gnu-debug.module>":
+    tool: phony
+    inputs: ["/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookCore.build/Guide.swift.o","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/Modules/ScoreBookCore.swiftmodule"]
+    outputs: ["<ScoreBookCore-x86_64-unknown-linux-gnu-debug.module>"]
+
+  "<ScoreBookPackageDiscoveredTests-x86_64-unknown-linux-gnu-debug.module>":
+    tool: phony
+    inputs: ["/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookPackageDiscoveredTests.build/CoreTests.swift.o","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookPackageDiscoveredTests.build/all-discovered-tests.swift.o","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/Modules/ScoreBookPackageDiscoveredTests.swiftmodule"]
+    outputs: ["<ScoreBookPackageDiscoveredTests-x86_64-unknown-linux-gnu-debug.module>"]
+
+  "<ScoreBookPackageTests-x86_64-unknown-linux-gnu-debug.module>":
+    tool: phony
+    inputs: ["/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookPackageTests.build/runner.swift.o","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/Modules/ScoreBookPackageTests.swiftmodule"]
+    outputs: ["<ScoreBookPackageTests-x86_64-unknown-linux-gnu-debug.module>"]
+
+  "<ScoreBookPackageTests-x86_64-unknown-linux-gnu-debug.test>":
+    tool: phony
+    inputs: ["/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookPackageTests.xctest"]
+    outputs: ["<ScoreBookPackageTests-x86_64-unknown-linux-gnu-debug.test>"]
+
+  "C.CoreTests-x86_64-unknown-linux-gnu-debug.module":
+    tool: shell
+    inputs: ["/home/user/Dev/scorebook/Tests/CoreTests/GuideTests.swift","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/swift-version-6A52383ED409C6A7.txt","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/Modules/ScoreBookCore.swiftmodule","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/CoreTests.build/sources"]
+    outputs: ["/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/CoreTests.build/GuideTests.swift.o","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/Modules/CoreTests.swiftmodule"]
+    description: "Compiling Swift Module 'CoreTests' (1 sources)"
+    args: ["/opt/swift/usr/bin/swiftc","-module-name","CoreTests","-emit-dependencies","-emit-module","-emit-module-path","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/Modules/CoreTests.swiftmodule","-output-file-map","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/CoreTests.build/output-file-map.json","-parse-as-library","-incremental","-c","@/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/CoreTests.build/sources","-I","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/Modules","-target","x86_64-unknown-linux-gnu","-enable-batch-mode","-index-store-path","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/index/store","-Onone","-enable-testing","-j4","-DSWIFT_PACKAGE","-DDEBUG","-module-cache-path","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ModuleCache","-parseable-output","-parse-as-library","-swift-version","5","-g","-Xcc","-fPIC","-Xcc","-g","-package-name","scorebook","-Xcc","-fno-omit-frame-pointer"]
+
+  "C.ScoreBookCore-x86_64-unknown-linux-gnu-debug.module":
+    tool: shell
+    inputs: ["/home/user/Dev/scorebook/Sources/Core/Guide.swift","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/swift-version-6A52383ED409C6A7.txt","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookCore.build/sources"]
+    outputs: ["/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookCore.build/Guide.swift.o","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/Modules/ScoreBookCore.swiftmodule"]
+    description: "Compiling Swift Module 'ScoreBookCore' (1 sources)"
+    args: ["/opt/swift/usr/bin/swiftc","-module-name","ScoreBookCore","-emit-dependencies","-emit-module","-emit-module-path","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/Modules/ScoreBookCore.swiftmodule","-output-file-map","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookCore.build/output-file-map.json","-parse-as-library","-incremental","-c","@/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookCore.build/sources","-I","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/Modules","-target","x86_64-unknown-linux-gnu","-enable-batch-mode","-index-store-path","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/index/store","-Onone","-enable-testing","-j4","-DSWIFT_PACKAGE","-DDEBUG","-module-cache-path","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ModuleCache","-parseable-output","-parse-as-library","-swift-version","5","-g","-Xcc","-fPIC","-Xcc","-g","-package-name","scorebook","-Xcc","-fno-omit-frame-pointer"]
+
+  "C.ScoreBookPackageDiscoveredTests-x86_64-unknown-linux-gnu-debug.module":
+    tool: shell
+    inputs: ["/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookPackageDiscoveredTests.derived/CoreTests.swift","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookPackageDiscoveredTests.derived/all-discovered-tests.swift","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/swift-version-6A52383ED409C6A7.txt","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/Modules/CoreTests.swiftmodule","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookPackageDiscoveredTests.build/sources"]
+    outputs: ["/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookPackageDiscoveredTests.build/CoreTests.swift.o","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookPackageDiscoveredTests.build/all-discovered-tests.swift.o","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/Modules/ScoreBookPackageDiscoveredTests.swiftmodule"]
+    description: "Compiling Swift Module 'ScoreBookPackageDiscoveredTests' (2 sources)"
+    args: ["/opt/swift/usr/bin/swiftc","-module-name","ScoreBookPackageDiscoveredTests","-emit-dependencies","-emit-module","-emit-module-path","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/Modules/ScoreBookPackageDiscoveredTests.swiftmodule","-output-file-map","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookPackageDiscoveredTests.build/output-file-map.json","-parse-as-library","-incremental","-c","@/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookPackageDiscoveredTests.build/sources","-I","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/Modules","-target","x86_64-unknown-linux-gnu","-enable-batch-mode","-index-store-path","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/index/store","-Onone","-enable-testing","-j4","-DSWIFT_PACKAGE","-DDEBUG","-module-cache-path","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ModuleCache","-parseable-output","-parse-as-library","-g","-Xcc","-fPIC","-Xcc","-g","-package-name","scorebook","-Xcc","-fno-omit-frame-pointer"]
+
+  "C.ScoreBookPackageTests-x86_64-unknown-linux-gnu-debug.module":
+    tool: shell
+    inputs: ["/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookPackageTests.derived/runner.swift","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/swift-version-6A52383ED409C6A7.txt","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/Modules/CoreTests.swiftmodule","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/Modules/ScoreBookPackageDiscoveredTests.swiftmodule","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookPackageTests.build/sources"]
+    outputs: ["/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookPackageTests.build/runner.swift.o","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/Modules/ScoreBookPackageTests.swiftmodule"]
+    description: "Compiling Swift Module 'ScoreBookPackageTests' (1 sources)"
+    args: ["/opt/swift/usr/bin/swiftc","-module-name","ScoreBookPackageTests","-emit-dependencies","-emit-module","-emit-module-path","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/Modules/ScoreBookPackageTests.swiftmodule","-output-file-map","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookPackageTests.build/output-file-map.json","-parse-as-library","-incremental","-c","@/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookPackageTests.build/sources","-I","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/Modules","-target","x86_64-unknown-linux-gnu","-enable-batch-mode","-index-store-path","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/index/store","-Onone","-enable-testing","-j4","-DSWIFT_PACKAGE","-DDEBUG","-module-cache-path","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ModuleCache","-parseable-output","-parse-as-library","-g","-Xcc","-fPIC","-Xcc","-g","-package-name","scorebook","-Xcc","-fno-omit-frame-pointer"]
+
+  "C.ScoreBookPackageTests-x86_64-unknown-linux-gnu-debug.test":
+    tool: shell
+    inputs: ["/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/CoreTests.build/CoreTests.swiftmodule.o","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/CoreTests.build/GuideTests.swift.o","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookCore.build/Guide.swift.o","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookCore.build/ScoreBookCore.swiftmodule.o","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookPackageDiscoveredTests.build/CoreTests.swift.o","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookPackageDiscoveredTests.build/ScoreBookPackageDiscoveredTests.swiftmodule.o","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookPackageDiscoveredTests.build/all-discovered-tests.swift.o","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookPackageTests.build/ScoreBookPackageTests.swiftmodule.o","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookPackageTests.build/runner.swift.o","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookPackageTests.product/Objects.LinkFileList"]
+    outputs: ["/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookPackageTests.xctest"]
+    description: "Linking ./.build/x86_64-unknown-linux-gnu/debug/ScoreBookPackageTests.xctest"
+    args: ["/opt/swift/usr/bin/swiftc","-L","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug","-o","/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookPackageTests.xctest","-module-name","ScoreBookPackageTests","-emit-executable","-Xlinker","-rpath=$ORIGIN","@/home/user/Dev/scorebook/.build/x86_64-unknown-linux-gnu/debug/ScoreBookPackageTests.product/Objects.LinkFileList","-target","x86_64-unknown-linux-gnu","-g"]
+
+  "PackageStructure":
+    tool: package-structure-tool
+    inputs: ["/home/user/Dev/scorebook/Sources/Core/","/home/user/Dev/scorebook/Tests/CoreTests/","/home/user/Dev/scorebook/Package.swift","/home/user/Dev/scorebook/Package.resolved"]
+    outputs: ["<PackageStructure>"]
+    description: "Planning build"
+    allow-missing-inputs: true
+
